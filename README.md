@@ -1,2 +1,3 @@
-# BlueShark
-Open Source Bushless Linear Motor &amp; Driver for 3D printers (Coming Soon)
+Open Source Motor Design & Optimizer:
+
+Uses FEMM (finite element magnetic methods) for simualations and pyqt6 for GUI 
