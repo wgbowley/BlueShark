@@ -1,0 +1,30 @@
+model:
+  numCoils: 6
+  numPoles: 8
+  currentRMS: 2.5
+  axialLength: 25
+  wasteFactor: 0.25
+
+coil:
+  length: 3
+  height: 6
+  innerLength: 3
+  outerLength: 1
+  material: 0.315
+
+pole:
+  length: 5
+  height: 2
+  material: N52
+
+backIron:
+  length: 0
+  height: 0
+  material: Pure Iron
+
+armature:
+  backHeight: 2
+  magneticGap: 0.2
+  teethLength: 0
+  teethHeight: 0
+  material: Pure Iron

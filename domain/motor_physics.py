@@ -8,12 +8,12 @@ Description:
     of the FEMM Program
     
     Functions:
-    - inverted_park_transform(currentFlux, currentForce, electricalAngle)
-    - inverted_clark_transform(alpha, beta)
+    - inverted_park_transform(currentFlux, currentForce, electricalAngle)   -> (alpha, beta)
+    - inverted_clark_transform(alpha, beta)                                 -> {a,b,c}
     
-    - motor_power(lineVoltage, lineCurrent, powerFactor)
-    - wye_motor(voltagePhase, voltageCurrent, powerFactor)
-    - delta_motor(voltagePhase, voltageCurrent, powerFactor)
+    - motor_power(lineVoltage, lineCurrent, powerFactor)                    -> (power)
+    - wye_motor(voltagePhase, voltageCurrent, powerFactor)                  -> (power)
+    - delta_motor(voltagePhase, voltageCurrent, powerFactor)                -> (power)
 """
 
 from math import *
@@ -26,7 +26,8 @@ def inverted_park_transform(
         electricalAngle:   float
     ) -> tuple[float, float]:
     
-    # Ref: https://en.wikipedia.org/wiki/Direct-quadrature-zero_transformation
+    # Reference: 
+    # https://en.wikipedia.org/wiki/Direct-quadrature-zero_transformation
     alpha   = currentFlux * cos(electricalAngle) - currentForce * sin(electricalAngle)
     beta    = currentFlux * sin(electricalAngle) + currentForce * cos(electricalAngle)
     
@@ -39,7 +40,8 @@ def inverted_clarke_transform(
         beta:   float,
     ) -> tuple[float, float, float]:
     
-    # Ref: https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_transformation
+    # Reference: 
+    # https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_transformation
     a = alpha
     b = 1/2 * (sqrt(3)*beta - alpha)
     c = 1/2 * (-sqrt(3)*beta - alpha)
@@ -54,7 +56,8 @@ def motor_rms_power(
         powerFactor:    float
     ) -> float:
     
-    # Ref: https://www.electricaltechnology.org/2020/10/power-formulas-ac-dc.html
+    # Reference: 
+    # https://www.electricaltechnology.org/2020/10/power-formulas-ac-dc.html
     power = sqrt(3)*abs(lineVoltage)*abs(lineCurrent)*powerFactor
     
     return power
@@ -67,7 +70,8 @@ def wye_motor(
         powerFactor:  float = 1
     ) -> float:
     
-    # ref: https://www.allaboutcircuits.com/textbook/alternating-current/chpt-10/three-phase-y-delta-configurations/
+    # Reference: 
+    # https://www.allaboutcircuits.com/textbook/alternating-current/chpt-10/three-phase-y-delta-configurations/
     lineVoltage = sqrt(3)*voltagePhase
     lineCurrent = currentPhase
     wyePower = motor_rms_power(lineVoltage, lineCurrent, powerFactor)
@@ -82,9 +86,34 @@ def delta_motor(
         powerFactor:  float = 1
     ) -> float:
     
-    # ref: https://www.allaboutcircuits.com/textbook/alternating-current/chpt-10/three-phase-y-delta-configurations/
+    # Reference: 
+    # https://www.allaboutcircuits.com/textbook/alternating-current/chpt-10/three-phase-y-delta-configurations/
     lineVoltage = voltagePhase
     lineCurrent = sqrt(3)*currentPhase
     deltaPower = motor_rms_power(lineVoltage, lineCurrent, powerFactor)
     
     return deltaPower
+
+
+""" Calculates the synchronous frequency of the motor for a given speed (m/s)"""
+def synchronous_frequency(
+        targetSpeed: float,
+        polePitch: float
+    ) -> float:
+    
+    frequency = (targetSpeed) / (2*polePitch)
+    
+    return frequency
+
+
+""" Calculates the applied current density (J : A/mm^2)"""
+def applied_current_density(
+    coilLength: float,
+    coilHeight: float,
+    appliedCurrent: float
+    ) -> float:
+    
+    # J = Ampres / Area
+    currentDensity = appliedCurrent / (coilLength * coilHeight)
+    
+    return currentDensity
