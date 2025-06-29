@@ -2,7 +2,7 @@
 Filename: femm_addons.py
 Author: William Bowley
 Version: 1.0
-Date: 26 - 06 - 2025
+Date: 29 - 06 - 2025
 Description:
     This script contains addon functions for FEMM to make drawing the motor easier.
     
@@ -11,11 +11,16 @@ Description:
     - draw_and_set_properties(coords, length, height, material, 
                               direction, incircuit, groups, turns)  -> None
     - origin_points(objectNum, xPitch, yPitch, xOffset, yOffset)    -> [(x,y),(x,y),...]
+    - addcoil(origin, phase, length, height, 
+              innerLength, outerLength, group)                      -> None
+    - addPole(origin, length, height, group, magnetizeDirection,
+              magnetMaterial, backplateMaterial, backplateLength, 
+              backplateHeight)                                      -> None
 """
 
 # Libraries
-import math
 import femm 
+
 
 """ Gets the center point of a square or rectangular object """
 def get_centroid_point(
@@ -74,7 +79,92 @@ def draw_and_set_properties(
     femm.mi_clearselected()
     
     # Add the label & properties 
-    femm.mi_addblocklabel(object_label['x'], object_label['y'])
-    femm.mi_selectlabel(object_label['x'], object_label['y'])
+    femm.mi_addblocklabel(object_label[0], object_label[1])
+    femm.mi_selectlabel(object_label[0], object_label[1])
     femm.mi_setblockprop(material, 0, 0, incircuit, direction, group, turns)
     femm.mi_clearselected()
+
+
+""" Draws the negative and positive slot to the simulation space (Assumes teethLength = 0)"""
+def add_coil(
+        origin: tuple[float, float],
+        phase: str,
+        length: float,
+        height: float,
+        innerLength: float,
+        group: int,
+        teethLength: float = 0.0,
+    ) -> None:
+    
+    # Positive Current Density Side
+    positiveSlot = (origin[0]+ teethLength, origin[1])
+    positiveMaterial = f'{phase}+'
+    
+    # Negative Current Density Side
+    negativeSlot = (origin[0]+teethLength+innerLength+length, origin[1])
+    negativeMaterial = f'{phase}-'
+    
+    draw_and_set_properties(
+        origin      = positiveSlot,
+        length      = length,
+        height      = height,
+        material    = positiveMaterial,
+        direction   = 0,
+        incircuit   = "<None>",
+        group       = group,
+        turns       = 0
+    )
+    
+    draw_and_set_properties(
+        origin      = negativeSlot,
+        length      = length,
+        height      = height,
+        material    = negativeMaterial,
+        direction   = 0,
+        incircuit   = "<None>",
+        group       = group,
+        turns       = 0
+    )
+
+
+""" Draws a magnet and if defined its backplate (Assumes that the backplate isn't defined)"""
+def add_pole(
+        origin: tuple[float, float],
+        length: float,
+        height: float,
+        group: int,
+        magnetizeDirection: int,
+        magnetMaterial: str,
+        backplateMaterial: str = "Pure Iron",
+        backplateLength: float = 0.0,
+        backplateHeight: float = 0.0,
+    ) -> None:
+    
+    draw_and_set_properties(
+        origin      = origin,
+        length      = length,
+        height      = -height,
+        material    = magnetMaterial,
+        direction   = magnetizeDirection,
+        incircuit   = "<None>",
+        group       = group,
+        turns       = 0 
+    )
+    
+    # Draws backplate if its defined (x,y)
+    if backplateLength > 0 and backplateHeight > 0: 
+        
+        # Shifts the backplate backwards so that the magnets in the center
+        xBackPlateShift = 0.5*(backplateLength-length)
+        backplate = (origin[0] - xBackPlateShift, origin[1] - height)
+        
+        draw_and_set_properties( 
+            origin      =   backplate, 
+            length      =   backplateLength,
+            height      =   -backplateHeight,
+            material    =   backplateMaterial,
+            direction   =   0,
+            incircuit   =   "<None>",
+            group       =   group,
+            turns       =   0
+        )

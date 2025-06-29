@@ -2,16 +2,19 @@
 Filename: prototype_v0
 Author: William Bowley
 Version: 1.1
-Date: 27 - 06 - 2025
+Date: 29 - 06 - 2025
 Description:
     This script describes the POC motor or prototype V0 which was made on 22-04-2025.
     It models the same configuration of motor but with your different params.
     
     Class prototype_v0:
         functions:
-            _init_(self, param_file)    -> None
-            generate_model              -> None
-            _unpack_params(params)      -> None
+            _init_(param_file)      -> None
+            generate_model()        -> None
+            draw_armuture()         -> None
+            draw_stator()           -> None
+            _unpack_params(params)  -> None
+            
 """
 
 # Libraries
@@ -37,6 +40,14 @@ class prototype_v0:
         with open(param_file, "r") as file:
             params = yaml.safe_load(file)
         self._unpack_params(params)
+        
+        # Femm object groups 
+        self.coreGroup = 0 
+        self.coilGroup = 1
+        self.poleGroup = 2
+        
+        # Phases
+        self.phases = ['a','b','c']
         
         # xPitch for coil and pole series
         self.coilPitch = motor_generation.coil_pitch(
@@ -77,7 +88,7 @@ class prototype_v0:
         
         # Defines the magnetic problem 
         femm.mi_probdef(
-            self.frequency,
+            0, #self.frequency,
             "millimeters",
             "planar",
             1e-8,
@@ -91,13 +102,61 @@ class prototype_v0:
         femm.mi_getmaterial("Air")
         
         # Add Coil 'Materials'
-        # femm.mi_getmaterial(str(str(self.coilMaterial) + 'mm'))
-        """
-            J -> Current Density for each coil
-            Each coil has a negative and positive current density region
-        """
+        femm.mi_addmaterial("a+", 1, 1, 0, 0)
+        femm.mi_addmaterial("a-", 1, 1, 0, 0)
+        femm.mi_addmaterial("b+", 1, 1, 0, 0)
+        femm.mi_addmaterial("b-", 1, 1, 0, 0)
+        femm.mi_addmaterial("c+", 1, 1, 0, 0)
+        femm.mi_addmaterial("c-", 1, 1, 0, 0)
         
-    # takes values from params file and adds them to the class
+        self.draw_armuture()
+        self.draw_stator()
+        
+        femm.mi_makeABC(7, self.coilPitch*self.numCoils, 0.5*self.coilPitch*self.numCoils, 0, 1)
+        
+        femm.mi_saveas("motofr.fem")
+    
+    
+    """ Draws the armuture to the simulation space"""
+    def draw_armuture(self) -> None:
+        # Prototype V0 has no metal core in its armuture
+        
+        # Draws coils to simulation
+        for i in range(0,len(self.coilOrigins)-1):
+            phase = self.phases[i % len(self.phases)]
+            
+            femm_addons.add_coil(
+                origin      = self.coilOrigins[i],
+                phase       = phase,
+                length      = self.coilLength,
+                height      = self.coilHeight,
+                innerLength = self.innerLength,
+                group       = self.coilGroup
+            )
+    
+    
+    """ Draws the stator to the simulation space"""
+    def draw_stator(self) -> None:
+        # Prototype V0 has no backplate
+        
+        pole_magnetization = 0
+        for i in range(0, self.numPoles):
+            if i % 2 == 0:
+                pole_magnetization = 90
+            else: 
+                pole_magnetization = -90
+            
+            femm_addons.add_pole(
+                origin  = self.poleOrigin[i],
+                length  = self.poleLength,
+                height  = self.poleHeight,
+                group   = self.poleGroup,
+                magnetizeDirection = pole_magnetization,
+                magnetMaterial     = self.poleMaterial
+            )
+                
+        
+    """ Takes values from params file and adds them to the class """
     def _unpack_params(self, params: dict) -> None:
         # Motor Model & Simulation Parameters
         model = params.get('model', {})
