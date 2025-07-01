@@ -42,9 +42,10 @@ class prototype_v0:
         self._unpack_params(params)
         
         # Femm object groups 
-        self.coreGroup = 0 
-        self.coilGroup = 1
-        self.poleGroup = 2
+        # Bounds is group 0 
+        self.coreGroup = 1
+        self.coilGroup = 2
+        self.poleGroup = 3
         
         # Phases
         self.phases = ['a','b','c']
@@ -95,6 +96,7 @@ class prototype_v0:
             self.axialLength
         )
         
+        currentDensity = motor_physics.applied_current_density(0.2, 0.2, 1)
         # Adds materials to simulation
         femm.mi_getmaterial(self.backIronMaterial)
         femm.mi_getmaterial(self.armatureMaterial)
@@ -102,19 +104,30 @@ class prototype_v0:
         femm.mi_getmaterial("Air")
         
         # Add Coil 'Materials'
+        # femm.mi_addmaterial("a+", 1, 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 100, 0.2)
+        # femm.mi_addmaterial("a-", 1, 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 100, 0.2)
+        # femm.mi_addmaterial("b+", 1, 1, 0, -currentDensity, 0, 0, 0, 0, 3, 0, 0, 100, 0.2)
+        # femm.mi_addmaterial("b-", 1, 1, 0, currentDensity, 0, 0, 0, 0, 3, 0, 0, 100, 0.2)
+        # femm.mi_addmaterial("c+", 1, 1, 0, currentDensity, 0, 0, 0, 0, 3, 0, 0, 100, 0.2)
+        # femm.mi_addmaterial("c-", 1, 1, 0, -currentDensity, 0, 0, 0, 0, 3, 0, 0, 100, 0.2)
+        
         femm.mi_addmaterial("a+", 1, 1, 0, 0)
         femm.mi_addmaterial("a-", 1, 1, 0, 0)
-        femm.mi_addmaterial("b+", 1, 1, 0, 0)
-        femm.mi_addmaterial("b-", 1, 1, 0, 0)
-        femm.mi_addmaterial("c+", 1, 1, 0, 0)
-        femm.mi_addmaterial("c-", 1, 1, 0, 0)
+        femm.mi_addmaterial("b+", 1, 1, 0, -currentDensity)
+        femm.mi_addmaterial("b-", 1, 1, 0, currentDensity)
+        femm.mi_addmaterial("c+", 1, 1, 0, currentDensity)
+        femm.mi_addmaterial("c-", 1, 1, 0, -currentDensity)
         
         self.draw_armuture()
         self.draw_stator()
         
-        femm.mi_makeABC(7, self.coilPitch*self.numCoils, 0.5*self.coilPitch*self.numCoils, 0, 1)
         
-        femm.mi_saveas("motofr.fem")
+        femm_addons.add_bounds(
+            origin  = [(self.coilPitch*self.numCoils*1/2), 0],
+            radius  = self.coilPitch*self.numCoils,   
+        )
+        
+        femm.mi_saveas("motor.fem")
     
     
     """ Draws the armuture to the simulation space"""
@@ -122,7 +135,7 @@ class prototype_v0:
         # Prototype V0 has no metal core in its armuture
         
         # Draws coils to simulation
-        for i in range(0,len(self.coilOrigins)-1):
+        for i in range(0,len(self.coilOrigins)):
             phase = self.phases[i % len(self.phases)]
             
             femm_addons.add_coil(

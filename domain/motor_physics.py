@@ -106,14 +106,14 @@ def synchronous_frequency(
     return frequency
 
 
-""" Calculates the applied current density (J : A/mm^2)"""
+""" Calculates the applied current density (J : MA/m^2)"""
 def applied_current_density(
-    coilLength: float,
-    coilHeight: float,
+    wireLength: float,
+    wireHeight: float,
     appliedCurrent: float
     ) -> float:
     
     # J = Ampres / Area
-    currentDensity = appliedCurrent / (coilLength * coilHeight)
+    currentDensity = appliedCurrent / (wireLength * wireHeight)
     
     return currentDensity

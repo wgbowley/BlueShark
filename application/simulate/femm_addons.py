@@ -11,6 +11,7 @@ Description:
     - draw_and_set_properties(coords, length, height, material, 
                               direction, incircuit, groups, turns)  -> None
     - origin_points(objectNum, xPitch, yPitch, xOffset, yOffset)    -> [(x,y),(x,y),...]
+    - add_bounds(origin, radius, numShells, boundType, material)    -> None
     - addcoil(origin, phase, length, height, 
               innerLength, outerLength, group)                      -> None
     - addPole(origin, length, height, group, magnetizeDirection,
@@ -68,7 +69,7 @@ def draw_and_set_properties(
     ) -> None:
     
     # Calculates the label & vertex positions (bottom left, top right)
-    object_label = get_centroid_point(origin, length, height)
+    objectLabel = get_centroid_point(origin, length, height)
     bLVertex    = (origin[0],           origin[1])
     tRVertex    = (origin[0] + length,  origin[1] + height)
     
@@ -79,11 +80,32 @@ def draw_and_set_properties(
     femm.mi_clearselected()
     
     # Add the label & properties 
-    femm.mi_addblocklabel(object_label[0], object_label[1])
-    femm.mi_selectlabel(object_label[0], object_label[1])
+    femm.mi_addblocklabel(objectLabel[0], objectLabel[1])
+    femm.mi_selectlabel(objectLabel[0], objectLabel[1])
     femm.mi_setblockprop(material, 0, 0, incircuit, direction, group, turns)
     femm.mi_clearselected()
 
+""" Adds a series of circular shells that emulate an unbounded domain"""
+def add_bounds(
+        origin: tuple[float, float],
+        radius: float,
+        numShells: int = 7,
+        boundType: bool = 1, # 0 = Dirichlet & 1 = Neumann outer edges
+        material: str = "Air"
+    ) -> None:
+    
+    # Creates a series of circular shells
+    femm.mi_makeABC(numShells, radius, origin[0], origin[1], boundType)
+    
+    # Shift block label up.
+    objectLabel = (origin[0], origin[1] + 1/2*radius)
+    
+    # Add the label & properties 
+    femm.mi_addblocklabel(objectLabel[0], objectLabel[1])
+    femm.mi_selectlabel(objectLabel[0], objectLabel[1])
+    femm.mi_setblockprop(material, 0, 0, "<None>", 0, 0, 0)
+    femm.mi_clearselected()
+    
 
 """ Draws the negative and positive slot to the simulation space (Assumes teethLength = 0)"""
 def add_coil(
