@@ -1,16 +1,17 @@
 model:
   numCoils: 6
   numPoles: 8
-  currentRMS: 0.6
+  currentRMS: 1
   axialLength: 40
   wasteFactor: 0.25
+  operatingSpeed: 400
 
 coil:
-  length: 3
+  length: 2.5
   height: 6
   innerLength: 3
-  outerLength: 4.83
-  material: 0.315
+  outerLength: 5.08
+  material: 0.2
 
 pole:
   length: 10

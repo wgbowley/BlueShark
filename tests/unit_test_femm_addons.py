@@ -20,19 +20,19 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Modules
-from application.simulate import femm_addons
+from application.simulate import femm_mi_addons
 
 class TestAddons(unittest.TestCase):
     
     # Tests the get centroid point function
     def test_get_centroid_point(self):
         
-        centroidAtOrigin = femm_addons.get_centroid_point(
+        centroidAtOrigin = femm_mi_addons.get_centroid_point(
             origin          =   (0,0), 
             objectLength    =   10, 
             objectHeight    =   10
         )
-        centroidOffOrigin = femm_addons.get_centroid_point(
+        centroidOffOrigin = femm_mi_addons.get_centroid_point(
             origin          =   (100,98.2), 
             objectLength    =   10, 
             objectHeight    =   15
@@ -45,15 +45,17 @@ class TestAddons(unittest.TestCase):
     # Tests the origin points function
     def test_origin_points(self):
         
+        # Correct Outputs 
         originNoOffset = [(0,0), (30,0), (60,0), (90,0), (120,0)]
         originOffset = [(12,2), (32,12), (52, 22)]
 
-        originPointNoOffset = femm_addons.origin_points(
+        # Test functions
+        originPointNoOffset = femm_mi_addons.origin_points(
             objectNum   = 5,
             xPitch      = 30,
             yPitch      = 0,
         )
-        originPointOffset = femm_addons.origin_points(
+        originPointOffset = femm_mi_addons.origin_points(
             objectNum   = 3,
             xPitch      = 20,
             yPitch      = 10,

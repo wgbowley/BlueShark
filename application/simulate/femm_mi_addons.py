@@ -2,9 +2,9 @@
 Filename: femm_addons.py
 Author: William Bowley
 Version: 1.0
-Date: 29 - 06 - 2025
+Date: 01 - 07 - 2025
 Description:
-    This script contains addon functions for FEMM to make drawing the motor easier.
+    This script contains addon functions for FEMM pre processor.
     
     Addons:
     - get_centroid_point(origin, objectLength, objectHeight)        -> (x,y)
@@ -17,6 +17,7 @@ Description:
     - addPole(origin, length, height, group, magnetizeDirection,
               magnetMaterial, backplateMaterial, backplateLength, 
               backplateHeight)                                      -> None
+    
 """
 
 # Libraries
@@ -85,14 +86,16 @@ def draw_and_set_properties(
     femm.mi_setblockprop(material, 0, 0, incircuit, direction, group, turns)
     femm.mi_clearselected()
 
-""" Adds a series of circular shells that emulate an unbounded domain"""
+
+""" Adds a series of circular shells that emulate an unbounded domain (Assumes Neumann outer edges)"""
 def add_bounds(
         origin: tuple[float, float],
         radius: float,
         numShells: int = 7,
-        boundType: bool = 1, # 0 = Dirichlet & 1 = Neumann outer edges
+        boundType: bool = 1,
         material: str = "Air"
     ) -> None:
+    # BoundType: 0 = Dirichlet & 1 = Neumann outer edges
     
     # Creates a series of circular shells
     femm.mi_makeABC(numShells, radius, origin[0], origin[1], boundType)
@@ -113,39 +116,39 @@ def add_coil(
         phase: str,
         length: float,
         height: float,
+        turns: float,
         innerLength: float,
         group: int,
+        material: str,
         teethLength: float = 0.0,
     ) -> None:
     
-    # Positive Current Density Side
+    # Positive & Negative Side origins 
     positiveSlot = (origin[0]+ teethLength, origin[1])
-    positiveMaterial = f'{phase}+'
-    
-    # Negative Current Density Side
     negativeSlot = (origin[0]+teethLength+innerLength+length, origin[1])
-    negativeMaterial = f'{phase}-'
     
+    # Positive slot
     draw_and_set_properties(
         origin      = positiveSlot,
         length      = length,
         height      = height,
-        material    = positiveMaterial,
+        material    = material,
         direction   = 0,
-        incircuit   = "<None>",
+        incircuit   = phase,
         group       = group,
-        turns       = 0
+        turns       = turns
     )
     
+    # Negative slot
     draw_and_set_properties(
         origin      = negativeSlot,
         length      = length,
         height      = height,
-        material    = negativeMaterial,
+        material    = material,
         direction   = 0,
-        incircuit   = "<None>",
+        incircuit   = phase,
         group       = group,
-        turns       = 0
+        turns       = -turns
     )
 
 
