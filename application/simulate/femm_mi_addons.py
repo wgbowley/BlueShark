@@ -54,6 +54,7 @@ def origin_points(
         # xOffset & yOffset shifts the whole series
         origin = (xOffset + i * xPitch, yOffset + i * yPitch)
         objectOrigins.append(origin)
+        
     return objectOrigins
     
 
@@ -71,8 +72,8 @@ def draw_and_set_properties(
     
     # Calculates the label & vertex positions (bottom left, top right)
     objectLabel = get_centroid_point(origin, length, height)
-    bLVertex    = (origin[0],           origin[1])
-    tRVertex    = (origin[0] + length,  origin[1] + height)
+    bLVertex    = (origin[0], origin[1])
+    tRVertex    = (origin[0] + length, origin[1] + height)
     
     # Draw the object based on provided coordinates
     femm.mi_drawrectangle(bLVertex[0], bLVertex[1],  tRVertex[0], tRVertex[1])
@@ -111,6 +112,7 @@ def add_bounds(
     
 
 """ Draws the negative and positive slot to the simulation space (Assumes teethLength = 0)"""
+""" This function only works for flat style linear motors. """
 def add_coil(
         origin: tuple[float, float],
         phase: str,

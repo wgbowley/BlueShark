@@ -22,7 +22,6 @@ def coil_pitch(
 
     slotLength = 2*coilLength + slotInterLength
     mechanicalPitch = slotLength + 2 * slotOuterLength
-
     return mechanicalPitch
 
 

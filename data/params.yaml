@@ -1,13 +1,13 @@
 model:
   numCoils: 6
   numPoles: 8
-  currentRMS: 1
+  currentPeak: 0.707
   axialLength: 40
   wasteFactor: 0.25
   operatingSpeed: 400
 
 coil:
-  length: 2.5
+  length: 2.75
   height: 6
   innerLength: 3
   outerLength: 5.08
@@ -25,7 +25,7 @@ backIron:
 
 armature:
   backHeight: 2
-  magneticGap: 1.5
+  magneticGap: 0.25
   teethLength: 0
   teethHeight: 0
   material: Pure Iron

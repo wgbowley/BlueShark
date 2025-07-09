@@ -22,7 +22,7 @@ Description:
 import yaml
 import femm
 import math
-import os
+import sys, os
 
 # Modules 
 from application.simulate import femm_mi_addons
@@ -101,7 +101,7 @@ class prototype_v0:
         
         # Defines the magnetic problem 
         femm.mi_probdef(
-            0,
+            0, #self.frequency,
             "millimeters",
             "planar",
             1e-8,
@@ -183,7 +183,7 @@ class prototype_v0:
         stepSize    =   motorLength / numberSamples
         numPairs    =   self.numPoles /  2
         
-        profile = motor_physics.commutation(motorLength, numPairs, (0, self.currentRMS), numberSamples)
+        profile = motor_physics.commutation(motorLength, numPairs, (0, self.currentPeak), numberSamples)
         
         data = []
         for step in range(0, len(profile)):
@@ -206,14 +206,31 @@ class prototype_v0:
             femm.mi_analyse(1)
             femm.mi_loadsolution()
             force = femm_mo_addons.resulstantForce(self.coilGroup)[0]
+            
+            # Calculates the power used by the motor should be a straight line
+            power = 0
+            for index in range(0, len(self.phases)):
+                circuit = femm_mo_addons.circuitAnalysis(self.phases[index])
+                
+                power += abs(circuit[0]) * abs(profile[step][index])
+            
+            # # Calculates average inductance
+            # inductance = 0
+
+            # circuit = femm_mo_addons.circuitAnalysis(self.phases[0])
+            
+            # if round(circuit[0], 2) > 0:
+            #     inductance += abs(circuit[1])
+            # else: 
+            #     inductance += 0
+            # femm_mo_addons.imageOfFrame([-50, -50], 300, 100, f"data/image{step}.png")
             femm.closefemm()
             
             # Checks and than removes the result file
             answerFile = os.path.join(self.simFolder + self.fileName + ".ans")
             if os.path.exists(answerFile):
                 os.remove(answerFile)
-            
-            data.append([step*stepSize, force])
+            data.append([step*stepSize,  force])
             
         return data
      
@@ -224,7 +241,7 @@ class prototype_v0:
         model = params.get('model', {})
         self.numCoils       = model.get('numCoils', 0)
         self.numPoles       = model.get('numPoles', 0) 
-        self.currentRMS     = model.get('currentRMS', 0.0)
+        self.currentPeak    = model.get('currentPeak', 0.0)
         self.axialLength    = model.get('axialLength', 0.0)
         self.wasteFactor    = model.get('wasteFactor', 0.0)
         self.velocity       = model.get('operatingSpeed', 0.0)

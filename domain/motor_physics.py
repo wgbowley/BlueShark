@@ -31,6 +31,7 @@ def inverted_park_transform(
         electricalAngle:   float
     ) -> tuple[float, float]:
     
+
     # Reference: 
     # https://en.wikipedia.org/wiki/Direct-quadrature-zero_transformation
     alpha   = currentFlux * cos(electricalAngle) - currentForce * sin(electricalAngle)
@@ -145,7 +146,7 @@ def commutation(
     profile = []
     for step in range(0, numberSamples+1):
         mechanicalAngle = mechanical_angle(motorLength, step*stepSize)
-        electricalAngle = electrical_angle(numPairs, mechanicalAngle) # +math.pi 
+        electricalAngle = electrical_angle(numPairs, mechanicalAngle) 
         
         alpha, beta     = inverted_park_transform(currentsRMS[0], currentsRMS[1], electricalAngle)
         pa, pb, pc      = inverted_clarke_transform(alpha, beta)

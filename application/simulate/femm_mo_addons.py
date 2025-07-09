@@ -7,8 +7,9 @@ Description:
     This script contains addon functions for FEMM post processor
     
     addons:
-    - resultantForce(group, method) -> (magnitude, angle)
-    - circuitAnalysis(circuitName)  -> (peakVoltage, inductance)
+    - resultantForce(group, method)             -> (magnitude, angle)
+    - circuitAnalysis(circuitName)              -> (peakVoltage, inductance)
+    - imageOfFame(origin, length, height, path) -> None
 """
 
 # Libraries
@@ -52,9 +53,26 @@ def circuitAnalysis(circuitName: str) -> tuple[float, float]:
     
     # Inductance = (Flux Linkage) / current 
     if current != 0:
-        inductance = fluxLinkage / current[0]
+        inductance = fluxLinkage / current
     else:
         inductance = 0
     
     return (peakVoltage, inductance)
 
+
+""" Takes a density plot of a frame """
+def imageOfFrame(
+        origin: tuple[float, float],
+        length: float, 
+        height: float,
+        path: str
+    ) -> None:
+    
+    # Calculates the vertex positions for the frame
+    bLVertex = (origin[0], origin[1])
+    tRVertex = (origin[0] + length, origin[1] + height)
+    femm.mo_resize(10000, 10000)
+    
+    femm.mo_zoom(bLVertex[0], bLVertex[1], tRVertex[0], tRVertex[1])
+    femm.mo_showdensityplot(1,0,0.5,0,"bmag")
+    femm.mo_savebitmap(path)
