@@ -7,13 +7,14 @@ import sys
 import matplotlib.pyplot as plt
 
 # Modules
-from models.prototype_v0 import *
+from models.tubular_motor import *
 
+precision = 6
 # Example usage
-motor = prototype_v0("data/params.yaml")
+motor = tublur_motor("data/tubular.yaml")
 motor.generate_model()
 
-data = motor.analysis(100)
+data = motor.analysis(1000)
 
 # Separate into x and y lists
 x_vals = [point[0] for point in data]
@@ -22,9 +23,9 @@ y_vals = [point[1] for point in data]
 # Plot
 plt.figure(figsize=(10, 6))
 plt.plot(x_vals, y_vals)
-plt.title("Plot of [x, y] Data Points")
-plt.xlabel("x")
-plt.ylabel("y")
+plt.title("Force Vs Displacement")
+plt.xlabel("Displacement (mm)")
+plt.ylabel("Force (N)")
 plt.grid(True)
 
 # Force y-axis to start at 0

@@ -2,7 +2,7 @@
 Filename: motor_physics.py
 Author: William Bowley
 Version: 1.0
-Date: 07 - 06 - 2025
+Date: 10 - 06 - 2025
 Description:
     This script contains functions that are used to process inputs & outputs 
     of the FEMM Program
@@ -18,19 +18,20 @@ Description:
     - mechanical_angle(motorLength, displacement)                           -> (mAngle)
     - electrical_angle(numPolePair, mechanicalAngle)                        -> (eAngle)
     
-    - commutation(motorLength, numPairs, currentRMS, numberSamples)         -> [(pa,pb,pc), (pa,pb,pc),...]
+    - commutation(motorLength, numPairs, currentsPeak, numberSamples)         -> [(pa,pb,pc), (pa,pb,pc),...]
 """
 
 from math import *
 precision = 6
 
-""" Converts flux-force frame currents to stationary alpha-beta frame currents"""
 def inverted_park_transform(
         currentFlux:       float, 
         currentForce:      float, 
         electricalAngle:   float
     ) -> tuple[float, float]:
     
+    """ Converts flux-force frame currents to stationary alpha-beta frame currents.
+        Only works for 3 phase motors """
 
     # Reference: 
     # https://en.wikipedia.org/wiki/Direct-quadrature-zero_transformation
@@ -40,11 +41,13 @@ def inverted_park_transform(
     return (round(alpha, precision), round(beta, precision))
 
 
-""" Converts alpha-beta frame currents to 3 phase step currents"""
 def inverted_clarke_transform(
         alpha:  float,
         beta:   float,
     ) -> tuple[float, float, float]:
+    
+    """ Converts alpha-beta frame currents to 3 phase step currents.
+        Only works for 3 phase motors """
     
     # Reference: 
     # https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_transformation
@@ -55,13 +58,13 @@ def inverted_clarke_transform(
     return (a,b,c)
 
 
-""" Calculates the power (watts) being used by the motor"""
 def motor_rms_power(
         lineVoltage:    complex | float,
         lineCurrent:    complex | float,
         powerFactor:    float
     ) -> float:
     
+    """ Calculates the power (watts) being used by the motor """
     # Reference: 
     # https://www.electricaltechnology.org/2020/10/power-formulas-ac-dc.html
     power = sqrt(3)*abs(lineVoltage)*abs(lineCurrent)*powerFactor
@@ -69,12 +72,13 @@ def motor_rms_power(
     return power
 
 
-""" Calculates the line voltages for a wye motor and returns rms power. Assumes power factor of 1"""
 def wye_motor(
         voltagePhase: float,
         currentPhase: float,
         powerFactor:  float = 1
     ) -> float:
+    
+    """ Calculates the line voltages for a wye motor and returns rms power. Assumes power factor of 1"""
     
     # Reference: 
     # https://www.allaboutcircuits.com/textbook/alternating-current/chpt-10/three-phase-y-delta-configurations/
@@ -85,12 +89,13 @@ def wye_motor(
     return wyePower
 
 
-""" Calculates the line voltages for a delta motor and returns power used. Assumes power factor of 1"""
 def delta_motor(
         voltagePhase: float,
         currentPhase: float,
         powerFactor:  float = 1
     ) -> float:
+    
+    """ Calculates the line voltages for a delta motor and returns power used. Assumes power factor of 1"""
     
     # Reference: 
     # https://www.allaboutcircuits.com/textbook/alternating-current/chpt-10/three-phase-y-delta-configurations/
@@ -101,56 +106,67 @@ def delta_motor(
     return deltaPower
 
 
-""" Calculates the synchronous frequency of the motor for a given speed (m/s)"""
 def synchronous_frequency(
         targetSpeed: float,
         polePitch: float
     ) -> float:
+    
+    """ Calculates the synchronous frequency of the motor for a given speed (m/s)"""
     
     frequency = (targetSpeed) / (2*polePitch)
     
     return frequency
 
 
-""" Gets the mechanical angle of the motor from origin"""
 def mechanical_angle(
         motorLength: float,
         displacement: float
     ) -> float:
-    
+     
+    """ Converts linear displacement to mechincal angle in radians """
+     
+    # motor length is the length corresponding to one full mechanical rotation
     angle = (2*pi*displacement) / motorLength
+    angle = angle % (2 * pi) # Restricits domain to [0, 2pi)
     
     return round(angle, precision)
 
 
-""" Gets the electrical angle of the motor from mechanical angle"""
 def electrical_angle(
         numPolePair: int,
         mechanicalAngle
     ):
     
+    """ Converts mechincal angle (radians) to electrical angle (radians)"""
+    
     angle = mechanicalAngle*numPolePair
     
     return round(angle, precision)
 
-""" Gets the commutation profile of the motor over one mechanical rotation"""
+
 def commutation(
         motorLength: float,
         numPairs: int,
-        currentsRMS: tuple[float,float],
+        currentsPeak: tuple[float, float],
         numberSamples: int
-    ) -> list[(float,float,float)]:
+    ) -> list[tuple[float, float, float]]:
+
     
-    stepSize = motorLength / numberSamples
+    """ Gets the commutation profile of the motor over one mechanical rotation.
+        Only works for 3 phase motors """
+        
+    stepSize = motorLength / numberSamples  # Linear step per sample
     
     profile = []
-    for step in range(0, numberSamples+1):
-        mechanicalAngle = mechanical_angle(motorLength, step*stepSize)
-        electricalAngle = electrical_angle(numPairs, mechanicalAngle) 
+    for step in range(numberSamples + 1):
+        # Displacement -> Mech Angle -> Elec Angle
+        mechanicalAngle = mechanical_angle(motorLength, step * stepSize)
+        electricalAngle = electrical_angle(numPairs, mechanicalAngle)
         
-        alpha, beta     = inverted_park_transform(currentsRMS[0], currentsRMS[1], electricalAngle)
-        pa, pb, pc      = inverted_clarke_transform(alpha, beta)
+        # Alpha-beta frame currents -> Phase A, Phase B, Phase C currents
+        alpha, beta = inverted_park_transform(currentsPeak[0], currentsPeak[1], electricalAngle)
+        pa, pb, pc = inverted_clarke_transform(alpha, beta)
         
-        profile.append([pa,pb,pc])
+        profile.append((pa, pb, pc))
         
     return profile

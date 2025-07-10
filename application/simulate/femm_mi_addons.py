@@ -24,12 +24,13 @@ Description:
 import femm 
 
 
-""" Gets the center point of a square or rectangular object """
 def get_centroid_point(
         origin: tuple[float, float], 
         objectLength: float, 
         objectHeight: float
     ) -> dict[str, float]:
+
+    """ Gets the center point of a square or rectangular object """
     
     # Origin[x,y] is the bottom left corner of the object 
     x = origin[0] + objectLength / 2
@@ -38,7 +39,6 @@ def get_centroid_point(
     return (x,y)
 
 
-""" Gets the origin points for a series of objects"""
 def origin_points(
         objectNum: int,
         xPitch: float, 
@@ -46,6 +46,8 @@ def origin_points(
         xOffset: float = 0.0,
         yOffset: float = 0.0
     ) -> list[tuple[float, float]]:
+    
+    """ Gets the origin points for a series of objects"""
     
     objectOrigins = []
     
@@ -57,8 +59,7 @@ def origin_points(
         
     return objectOrigins
     
-
-""" Draws square or rectangular object and sets its properties """
+    
 def draw_and_set_properties(
         origin: tuple[float, float], 
         length: float,
@@ -69,6 +70,8 @@ def draw_and_set_properties(
         group: int, 
         turns: int
     ) -> None:
+    
+    """ Draws square or rectangular object and sets its properties """
     
     # Calculates the label & vertex positions (bottom left, top right)
     objectLabel = get_centroid_point(origin, length, height)
@@ -88,7 +91,6 @@ def draw_and_set_properties(
     femm.mi_clearselected()
 
 
-""" Adds a series of circular shells that emulate an unbounded domain (Assumes Neumann outer edges)"""
 def add_bounds(
         origin: tuple[float, float],
         radius: float,
@@ -97,12 +99,13 @@ def add_bounds(
         material: str = "Air"
     ) -> None:
     # BoundType: 0 = Dirichlet & 1 = Neumann outer edges
+    """ Adds a series of circular shells that emulate an unbounded domain (Assumes Neumann outer edges)"""
     
     # Creates a series of circular shells
     femm.mi_makeABC(numShells, radius, origin[0], origin[1], boundType)
     
     # Shift block label up.
-    objectLabel = (origin[0], origin[1] + 1/2*radius)
+    objectLabel = (origin[0] + 1/2*radius, origin[1] + 1/2*radius)
     
     # Add the label & properties 
     femm.mi_addblocklabel(objectLabel[0], objectLabel[1])
@@ -111,8 +114,6 @@ def add_bounds(
     femm.mi_clearselected()
     
 
-""" Draws the negative and positive slot to the simulation space (Assumes teethLength = 0)"""
-""" This function only works for flat style linear motors. """
 def add_coil(
         origin: tuple[float, float],
         phase: str,
@@ -124,6 +125,9 @@ def add_coil(
         material: str,
         teethLength: float = 0.0,
     ) -> None:
+    
+    """ Draws the negative and positive slot to the simulation space (Assumes teethLength = 0).
+    This function only works for flat style linear motors. """
     
     # Positive & Negative Side origins 
     positiveSlot = (origin[0]+ teethLength, origin[1])
@@ -154,7 +158,6 @@ def add_coil(
     )
 
 
-""" Draws a magnet and if defined its backplate (Assumes that the backplate isn't defined)"""
 def add_pole(
         origin: tuple[float, float],
         length: float,
@@ -166,6 +169,8 @@ def add_pole(
         backplateLength: float = 0.0,
         backplateHeight: float = 0.0,
     ) -> None:
+    
+    """ Draws a magnet and if defined its backplate (Assumes that the backplate isn't defined)"""
     
     draw_and_set_properties(
         origin      = origin,

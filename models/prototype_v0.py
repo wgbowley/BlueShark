@@ -7,22 +7,21 @@ Description:
     This script describes the POC motor or prototype V0 which was made on 22-04-2025.
     It models the same configuration of motor but with your different params.
     
-    Class prototype_v0:
-        functions:
-            _init_(param_file)      -> None
-            generate_model()        -> None
-            draw_armature()         -> None
-            draw_stator()           -> None
-            analysis(numberSamples) -> (displacement, force, power, inductance)
-            _unpack_params(params)  -> None
+Class prototype_v0:
+    functions:
+        _init_(paramFile)       -> None
+        generate_model()        -> None
+        draw_armature()         -> None
+        draw_stator()           -> None
+        analysis(numberSamples) -> (displacement, force)
+        _unpack_params(params)  -> None
             
 """
 
 # Libraries
 import yaml
 import femm
-import math
-import sys, os
+import os
 
 # Modules 
 from application.simulate import femm_mi_addons
@@ -32,10 +31,10 @@ from domain import motor_physics
 
 class prototype_v0:
     
-    def __init__(self, param_file: str) -> None:
+    def __init__(self, paramFile: str) -> None:
         
         # Loads in the yaml file and unpacks it
-        with open(param_file, "r") as file:
+        with open(paramFile, "r") as file:
             params = yaml.safe_load(file)
         self._unpack_params(params)
         
@@ -57,7 +56,6 @@ class prototype_v0:
             wireDiameter= self.coilMaterial,
             wasteFactor= self.wasteFactor
         )
-        #self.turns  = 208
         
         # xPitch for coil and pole series
         self.coilPitch = motor_generation.coil_pitch(
@@ -85,15 +83,16 @@ class prototype_v0:
         )
         
         self.poleOrigin = femm_mi_addons.origin_points(
-            objectNum   = self.numPoles + 8,
+            objectNum   = self.numPoles + 9,
             xPitch      = self.polePitch,
             yPitch      = 0,
             yOffset     = -self.magneticGap
         )
     
     
-    """ Defines problem & add motor to simulation under self.fileName """
     def generate_model(self) -> None:
+        
+        """ Defines problem & add motor to simulation under self.fileName """
         
         # Opens femm in hiden window and selects magnetic problem
         femm.openfemm(1)
@@ -129,15 +128,15 @@ class prototype_v0:
             origin  = [(self.coilPitch*self.numCoils*1/2), 0],
             radius  = 2*self.coilPitch*self.numCoils,   
         )
-        femm.mi_movetranslate(5, 0)
         
         # Saves the file to "self.simFolder/self.fileName.fem"
         femm.mi_saveas(self.simFolder + self.fileName + ".fem")
     
     
-    """ Draws the armature to the simulation space"""
     def draw_armature(self) -> None:
         # Prototype V0 has no metal core in its armature
+        
+        """ Draws the armature to the simulation space"""
         
         # Draws coils to simulation
         for i in range(0,len(self.coilOrigins)):
@@ -155,13 +154,14 @@ class prototype_v0:
             )
     
     
-    """ Draws the stator to the simulation space"""
     def draw_stator(self) -> None:
         # Prototype V0 has no backplate
         
+        """ Draws the stator to the simulation space"""
+        
         pole_magnetization = 0
         
-        for i in range(0, self.numPoles+8):
+        for i in range(0, self.numPoles+9):
             if i % 2 == 0:
                 pole_magnetization = 90
             else: 
@@ -176,9 +176,11 @@ class prototype_v0:
                 magnetMaterial     = self.poleMaterial
             )
                 
-        
-    """ Moves armature to understand the field dynamics & solves """
+    
     def analysis(self, numberSamples) -> list:
+        
+        """ Moves armature to understand the field dynamics & solves """
+        
         motorLength =   self.coilPitch*self.numCoils
         stepSize    =   motorLength / numberSamples
         numPairs    =   self.numPoles /  2
@@ -188,13 +190,13 @@ class prototype_v0:
         data = []
         for step in range(0, len(profile)):
             
+            # Opens the femm document in background
             femm.openfemm(1)
             femm.opendocument(self.simFolder + self.fileName + ".fem")
             
-            femm.mi_selectgroup(self.coilGroup)
-            
             # Prevents the armuture from moving from origin on first loop
             if step != 0:
+                femm.mi_selectgroup(self.coilGroup)
                 femm.mi_movetranslate(stepSize, 0)
             
             # Changes the set current in the coils
@@ -205,38 +207,24 @@ class prototype_v0:
             # femm post-processor
             femm.mi_analyse(1)
             femm.mi_loadsolution()
+            
             force = femm_mo_addons.resulstantForce(self.coilGroup)[0]
-            
-            # Calculates the power used by the motor should be a straight line
-            power = 0
-            for index in range(0, len(self.phases)):
-                circuit = femm_mo_addons.circuitAnalysis(self.phases[index])
-                
-                power += abs(circuit[0]) * abs(profile[step][index])
-            
-            # # Calculates average inductance
-            # inductance = 0
-
-            # circuit = femm_mo_addons.circuitAnalysis(self.phases[0])
-            
-            # if round(circuit[0], 2) > 0:
-            #     inductance += abs(circuit[1])
-            # else: 
-            #     inductance += 0
-            # femm_mo_addons.imageOfFrame([-50, -50], 300, 100, f"data/image{step}.png")
             femm.closefemm()
             
             # Checks and than removes the result file
             answerFile = os.path.join(self.simFolder + self.fileName + ".ans")
             if os.path.exists(answerFile):
                 os.remove(answerFile)
+                
             data.append([step*stepSize,  force])
             
         return data
      
         
-    """ Takes values from params file and adds them to the class """
     def _unpack_params(self, params: dict) -> None:
+        
+        """Unpack parameters from YAML config matching this model."""
+
         # Motor Model & Simulation Parameters
         model = params.get('model', {})
         self.numCoils       = model.get('numCoils', 0)

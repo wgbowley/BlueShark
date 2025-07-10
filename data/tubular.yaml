@@ -1,0 +1,19 @@
+model:
+  numCoils: 6
+  numPoles: 2
+  currentPeak: 4.2 # 3A RMS
+  axialLength: 1
+  wasteFactor: 0.10
+  operatingSpeed: 400
+
+coil:
+  length: 5
+  height: 6
+  outerLength: 0.7
+  material: 0.315
+  magneticGap: 1
+  
+pole:
+  length: 6
+  height: 20
+  material: N42
