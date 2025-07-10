@@ -11,7 +11,7 @@ coil:
   height: 6
   outerLength: 0.7
   material: 0.315
-  magneticGap: 1
+  magneticGap: 2
   
 pole:
   length: 6

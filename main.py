@@ -23,7 +23,7 @@ y_vals = [point[1] for point in data]
 # Plot
 plt.figure(figsize=(10, 6))
 plt.plot(x_vals, y_vals)
-plt.title("Force Vs Displacement")
+plt.title("Cmore Motor Force Vs Displacement @ 3A RMS")
 plt.xlabel("Displacement (mm)")
 plt.ylabel("Force (N)")
 plt.grid(True)

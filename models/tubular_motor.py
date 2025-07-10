@@ -79,7 +79,7 @@ class tublur_motor:
         )
         
         self.poleOrigins = femm_mi_addons.origin_points(
-            objectNum   = self.numPoles + 2*self.numPoles,
+            objectNum   = self.numPoles + 3*self.numPoles,
             xPitch      = 0,
             yPitch      = self.polePitch,
             yOffset     = -self.numPoles*self.polePitch
@@ -136,9 +136,9 @@ class tublur_motor:
             
             turn = 0
             if PATTERN[i] == 0:
-                turn = -self.numTurns
-            elif PATTERN[i] == 1:
                 turn = self.numTurns
+            elif PATTERN[i] == 1:
+                turn = -self.numTurns
                 
             femm_mi_addons.draw_and_set_properties(
                 origin      = self.coilOrigins[i],
@@ -158,7 +158,7 @@ class tublur_motor:
         
         pole_magnetization = 0
         
-        for i in range(0, self.numPoles+2*self.numPoles):
+        for i in range(0, self.numPoles+3*self.numPoles):
             if i % 2 == 0:
                 pole_magnetization = 90
             else: 
@@ -178,7 +178,7 @@ class tublur_motor:
         
         """ Moves armature to understand the field dynamics & solves """
         
-        motorHeight =   self.coilPitch*self.numCoils
+        motorHeight =   self.numPoles*self.poleHeight
         stepSize    =   motorHeight / numberSamples
         numPairs    =   self.numPoles /  2
         
@@ -205,7 +205,7 @@ class tublur_motor:
             femm.mi_analyse(1)
             femm.mi_loadsolution()
             
-            force = femm_mo_addons.resulstantForce(self.coilGroup)[0]
+            force = femm_mo_addons.resulstantForce(self.coilGroup, 1)[0]
             femm.closefemm()
             
             # Checks and than removes the result file
