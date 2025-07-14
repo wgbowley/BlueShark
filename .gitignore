@@ -1,3 +1,5 @@
 *.pyc
 *.ans
 *.fem
+prototypeV0.yaml
+tubular_motor.py

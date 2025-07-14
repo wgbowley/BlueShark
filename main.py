@@ -1,39 +1,55 @@
-# Libraries
-import time
-import json
-import os
-import sys
+"""
+Filename: main.py
+Author: William Bowley
+Version: 1.0
+Date: 2025-07-14
+"""
+
 
 import matplotlib.pyplot as plt
 
-# Modules
-from models.tubular_motor import *
+from core.simulation.output_selector import OutputSelector
+from core.simulation.rotational_analysis import rotational_analysis
+from motors.tubular_motor import TubularMotor
 
-precision = 6
-# Example usage
-motor = tublur_motor("data/tubular.yaml")
-motor.generate_model()
 
-data = motor.analysis(1000)
+motorConfigPath = "configs/tubular.yaml"
+requestedOutputs = ["lorentz_force", "force_via_stress_tensor", "circuit_analysis"]  
+numSamples = 10000
 
-# Separate into x and y lists
-x_vals = [point[0] for point in data]
-y_vals = [point[1] for point in data]
+# Set up motor
+motor = TubularMotor(motorConfigPath)
+motor.draw()
 
-# Plot
-plt.figure(figsize=(10, 6))
-plt.plot(x_vals, y_vals)
-plt.title("Cmore Motor Force Vs Displacement @ 3A RMS")
+# Output Selector
+outputSelector = OutputSelector(requestedOutputs)
+
+# Output context
+baseContext = {
+    "group": motor.movingGroup,         
+    "circuitName": motor.phases         
+}
+
+# --- Run Rotation Analysis ---
+results = rotational_analysis(
+    motor=motor,
+    outputSelector=outputSelector,
+    baseContext=baseContext,
+    numSamples=numSamples
+)
+
+# Map position to force (assumes "position" and "lorentz_force" exist in results)
+positions = [result["position"] for result in results]
+
+lorentz_forces = [result.get("lorentz_force", [0])[0] for result in results]
+stress_tensor_forces = [result.get("force_via_stress_tensor", [0])[0] for result in results]
+
+plt.plot(positions, lorentz_forces, color='b', label="Lorentz Force")
+plt.plot(positions, stress_tensor_forces, color='r', label="Stress Tensor Force")
+
 plt.xlabel("Displacement (mm)")
 plt.ylabel("Force (N)")
+plt.title("Tubular Motor Force vs Displacement @ 3A RMS")
+plt.legend()
 plt.grid(True)
-
-# Force y-axis to start at 0
-plt.ylim(0, max(y_vals) * 1.1)
-
-plt.tight_layout()
 plt.show()
-
-# Save to JSON
-with open("data.json", "w") as f:
-    json.dump(data, f, indent=4)
