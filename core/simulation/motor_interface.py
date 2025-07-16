@@ -65,21 +65,16 @@ class MotorBase(ABC):
         pass
 
     @abstractmethod
-    def draw(self) -> None:
-        """Draw the motor geometry or prepare the simulation environment."""
+    def generate(self) -> None:
+        """Generate the motor geometry or prepare the simulation environment."""
         pass
 
     @abstractmethod
     def step(self, step: float) -> None:
-        """Move the motor by a specific step size from the origin."""
+        """Move the motor by a specific step size from last point."""
         pass
 
     @abstractmethod
     def set_currents(self, currents: tuple[float, float, float]) -> None:
         """Set the phase currents for the motor simulation at the current step."""
-        pass
-
-    @abstractmethod
-    def cleanup(self) -> None:
-        """Clean up resources used by the motor simulation."""
         pass

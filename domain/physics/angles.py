@@ -13,7 +13,7 @@ Functions:
 
 from math import pi
 
-precision = 6
+import configs.constants as constants
 
 def mechanical_angle(
         circumference: float,
@@ -24,7 +24,7 @@ def mechanical_angle(
     
     angle = (2 * pi * displacement) / circumference
     angle = angle % (2 * pi)  # Restrict domain to [0, 2pi)
-    return round(angle, precision)
+    return round(angle, constants.precision)
 
 
 def electrical_angle(
@@ -35,4 +35,5 @@ def electrical_angle(
     """ Converts mechanical angle (radians) to electrical angle (radians) """
     
     angle = mechanicalAngle * numPolePair
-    return round(angle, precision)
+
+    return round(angle, constants.precision)

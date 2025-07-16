@@ -13,7 +13,7 @@ Functions:
 
 from math import cos, sin, sqrt
 
-precision = 6
+import configs.constants as constants 
 
 def inverted_park_transform(
         currentFlux:       float, 
@@ -26,7 +26,7 @@ def inverted_park_transform(
         
     alpha   = currentFlux * cos(electricalAngle) - currentForce * sin(electricalAngle)
     beta    = currentFlux * sin(electricalAngle) + currentForce * cos(electricalAngle)
-    return (round(alpha, precision), round(beta, precision))
+    return (round(alpha, constants.precision), round(beta, constants.precision))
 
 
 def inverted_clarke_transform(
@@ -37,7 +37,7 @@ def inverted_clarke_transform(
     """ Converts alpha-beta frame currents to 3 phase step currents.
         Only works for 3 phase motors """
         
-    a = round(alpha, precision)
-    b = round(0.5 * (sqrt(3)*beta - alpha), precision)
-    c = round(0.5 * (-sqrt(3)*beta - alpha), precision)
+    a = round(alpha, constants.precision)
+    b = round(0.5 * (sqrt(3)*beta - alpha), constants.precision)
+    c = round(0.5 * (-sqrt(3)*beta - alpha), constants.precision)
     return (a, b, c)

@@ -8,11 +8,13 @@ Description:
     
 Functions:
 - motor_rms_power(lineVoltage, lineCurrent, powerFactor)      -> float
+- balanced_power()
 - wye_motor(voltagePhase, currentPhase, powerFactor)          -> float
 - delta_motor(voltagePhase, currentPhase, powerFactor)        -> float
 """
 
 from math import sqrt
+
 
 def motor_rms_power(
         lineVoltage: complex | float,
@@ -24,6 +26,19 @@ def motor_rms_power(
     
     power = sqrt(3) * abs(lineVoltage) * abs(lineCurrent) * powerFactor
     return power
+
+
+def balanced_power(
+        pAPower: complex | float,
+        pBPower: complex | float,
+        pCPower: complex | float
+    ) -> float:
+    
+    """ Calculates the total power of the balanced 3 phase system """
+    
+    totalPower = pAPower + pBPower + pCPower
+    
+    return totalPower
 
 
 def wye_motor(

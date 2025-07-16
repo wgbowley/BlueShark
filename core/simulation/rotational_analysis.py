@@ -14,6 +14,7 @@ Description:
 
 import femm
 import os
+import time
 from typing import Any
 
 # Modules
@@ -31,8 +32,8 @@ def rotational_analysis(
 
     motorCir = motor.motorCircumference
     stepSize = motorCir / numSamples
-
-    profile = commutation(
+    
+    profile = rotational_commutation(
         circumference   = motorCir,
         numPairs        = motor.numberPoles // 2,
         currentsPeak    = motor.peakCurrents,
@@ -47,14 +48,24 @@ def rotational_analysis(
         femm.openfemm(1)
         femm.opendocument(motor.femmdocumentpath + ".fem")
 
+        # Prevents the armuture from moving on the first step
         if step != 0:
             femm.mi_selectgroup(motor.movingGroup)
             motor.step(stepSize)
 
         motor.set_currents(profile[step])
 
-        femm.mi_analyse(1)
-        femm.mi_loadsolution()
+        # Was having a werid error with femm thats why I added this
+        for attempt in range(5):
+            try:
+                femm.mi_analyse(1)
+                femm.mi_loadsolution()
+                break 
+            except Exception as e:
+                print(f"Attempt {attempt+1} failed with error: {e}")
+                if attempt == 1:
+                    raise  
+                time.sleep(0.5)  
 
         stepContext = dict(baseContext)
         stepResults = outputSelector.compute(stepContext)

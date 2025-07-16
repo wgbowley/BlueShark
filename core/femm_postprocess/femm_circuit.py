@@ -9,23 +9,60 @@ Description:
 
 import femm
 
-def circuitAnalysis(circuitName: str) -> tuple[float, float]:
-    """
-    Calculates the inductance and peak voltage in the specified circuit.
+# Modules
+import configs.constants as constants 
+import domain.physics.power as power 
+
+def circuit_voltage(circuitName: str) -> float:
     
-    Parameters:
-        circuitName (str): The circuit property name in FEMM.
-        
-    Returns:
-        peakVoltage (float): Peak voltage in the circuit.
-        inductance (float): Inductance calculated as fluxLinkage / current.
-    """
+    """ Gets the voltage drop across the circuit """
+    circuitProps = femm.mo_getcircuitproperties(circuitName)
+    voltage = circuitProps[1]
     
+    return voltage
+
+
+def circuit_current(circuitName: str) -> float: 
+    
+    """ Gets the instanteous current across the circuit """
     circuitProps = femm.mo_getcircuitproperties(circuitName)
     current = circuitProps[0]
-    peakVoltage = circuitProps[1]
+    
+    return current 
+
+
+def circuit_inductance(circuitName: str) -> float:
+    
+    """ Gets circuit properties and calculates the inductance of the circuit"""
+    circuitProps = femm.mo_getcircuitproperties(circuitName)
+    
+    current = circuitProps[0]
     fluxLinkage = circuitProps[2]
+
+    if abs(current) > constants.epsilon:
+        inductance = fluxLinkage / current 
+    else: 
+        inductance = 0 
     
-    inductance = fluxLinkage / current if current != 0 else 0
+    return inductance
+
+
+def circuit_flux_linkage(circuitName: str) -> float:
     
-    return (peakVoltage, inductance)
+    """ Gets the flux linkage between the circuit and simulation elements"""
+    circuitProps = femm.mo_getcircuitproperties(circuitName)
+    fluxLinkage = circuitProps[2]
+    return fluxLinkage
+
+
+def circuit_power(circuitName: str) -> float:
+    
+    """ Gets the instantaneous power across the circuit"""
+    circuitProps = femm.mo_getcircuitproperties(circuitName)
+    
+    current = circuitProps[0]
+    voltage = circuitProps[1]
+    
+    power = current * voltage
+    
+    return power    

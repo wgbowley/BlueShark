@@ -2,7 +2,7 @@ model:
   numSlots: 6
   numPoles: 2
   iForcePeak: 4.2
-  iFluxPeak: 0 
+  iFluxPeak: 0
   wasteFactor: 0.1
 
 coil:
@@ -10,7 +10,7 @@ coil:
   height: 6
   spacing: 0.7
   material: 0.315
-  magneticGap: 2
+  magneticGap: 1
   
 pole:
   radius: 6
