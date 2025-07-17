@@ -10,7 +10,7 @@ coil:
   height: 6
   spacing: 0.7
   material: 0.315
-  magneticGap: 1
+  magneticGap: 2
   
 pole:
   radius: 6

@@ -1,5 +1,5 @@
 """
-Filename: tubular_rotational_example.py
+Filename: run_example.py
 Author: William Bowley
 Version: 1.0
 Date: 2025-07-14
@@ -17,30 +17,26 @@ import os
 import sys
 import matplotlib.pyplot as plt
 
-# Add project root to sys.path to enable imports
-projectRoot = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if projectRoot not in sys.path:
-    sys.path.insert(0, projectRoot)
 
 # Framework imports
 from core.simulation.output_selector import OutputSelector
 from core.simulation.rotational_analysis import rotational_analysis
 from core.outputs.json_exporter import save_json, flatten_results
-from motors.tubular_motor import TubularMotor
+from motors.tubular.tubular_motor import TubularMotor
 
 
 # --- Configuration ---
-numSamples = 100
-motorConfigPath = "configs/tubular.yaml"
+numSamples = 10
+motorConfigPath = "motors/tubular/tubular.yaml"
 jsonFilename = "rotational_analysis_results.json"
 requestedOutputs = ["lorentz_force"]
 
 # --- Initialize and simulate ---
 motor = TubularMotor(motorConfigPath)
 motor.generate()
-# motor.iForcePeak = 4.2
+
 outputSelector = OutputSelector(requestedOutputs)
-subjects = {"group": motor.movingGroup}
+subjects = {"group": motor.movingGroup, "circuitName": motor.phases}
 
 results = rotational_analysis(motor, outputSelector, subjects, numSamples)
 

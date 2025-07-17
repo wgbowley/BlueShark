@@ -1,2 +1,2 @@
 precision = 6
-epsilon   = 1e-7
+epsilon   = 1e-5

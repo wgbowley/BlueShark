@@ -44,7 +44,7 @@ def circuit_inductance(circuitName: str) -> float:
     else: 
         inductance = 0 
     
-    return inductance
+    return abs(inductance)
 
 
 def circuit_flux_linkage(circuitName: str) -> float:
