@@ -21,15 +21,15 @@ import matplotlib.pyplot as plt
 # Framework imports
 from core.simulation.output_selector import OutputSelector
 from core.simulation.rotational_analysis import rotational_analysis
-from core.outputs.json_exporter import save_json, flatten_results
+from core.outputs.output_writer import *
 from motors.tubular.tubular_motor import TubularMotor
 
 
 # --- Configuration ---
-numSamples = 10
-motorConfigPath = "motors/tubular/tubular.yaml"
-jsonFilename = "rotational_analysis_results.json"
-requestedOutputs = ["lorentz_force"]
+numSamples = 1
+motorConfigPath = "data/flat/flat.yaml"
+outputPath = "rotational_analysis_results"
+requestedOutputs = ["lorentz_force", "circuit_voltage"]
 
 # --- Initialize and simulate ---
 motor = TubularMotor(motorConfigPath)
@@ -39,9 +39,12 @@ outputSelector = OutputSelector(requestedOutputs)
 subjects = {"group": motor.movingGroup, "circuitName": motor.phases}
 
 results = rotational_analysis(motor, outputSelector, subjects, numSamples)
+print(results)
 
 # --- Save results ---
-save_json(flatten_results(results), jsonFilename)
+save = OutputWriter(outputPath)
+save.add(results)
+save.write_json()
 
 
 # --- Plotting ---

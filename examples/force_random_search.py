@@ -61,7 +61,7 @@ bestHeight = 0
 bestRadius = 0
 
 # Motor config and requested outputs
-motorConfigPath = "motors/tubular/tubular.yaml"
+motorConfigPath = "data/tublar/tubular.yaml"
 requestedOutputs = ["lorentz_force", "circuit_power"]
 samples = 10                 # Number of simulation steps per evaluation
 

@@ -14,6 +14,7 @@ Description:
 import os
 import sys
 import random
+import json
 from deap import base, creator, tools, algorithms
 
 # === Add project root to sys.path for framework imports ===
@@ -28,17 +29,17 @@ from motors.tubular.tubular_motor import TubularMotor
 
 # === Optimization Setup ===
 individuals = 20
-generations = 10
+generations = 20
 
-maxPower = 200
-maxInductance = 0.04
-maxVoltage = 28
-maxCoilHeight = 20
-maxCoilRadius = 20
+maxPower = 250
+maxInductance = 0.1
+maxVoltage = 56
+maxCoilHeight = 7.5
+maxCoilRadius = 7.5
 
 # === Simulation Configuration ===
 numberSamples = 10
-motorConfigPath = "motors/tubular/tubular.yaml"
+motorConfigPath = "data/tublar/tubular.yaml"
 requestedOutputs = ["lorentz_force", "circuit_power", "circuit_voltage", "circuit_inductance"]
 
 # === Input Generation ===
@@ -61,17 +62,20 @@ def simulate(radius, height) -> dict:
 
 # === Evaluation Function ===
 def evaluateMotor(individual):
-    """Evaluates motor performance based on average outputs from simulation."""
     total_force = 0
     total_power = 0
     total_inductance = 0
     samples = 0
 
     results = simulate(individual[0], individual[1])
+    print(f"Evaluating individual: height={individual[0]:.3f}, radius={individual[1]:.3f}")
+    print("Simulation first step sample:", results[0])
 
     for step in results:
+        print("Voltages:", step["circuit_voltage"])
         for phaseVoltage in step["circuit_voltage"]:
             if abs(phaseVoltage) > maxVoltage:
+                print('failed voltage:', phaseVoltage)
                 return (0.0, 0.0, 0.0)
 
         total_force += step['lorentz_force'][0]
@@ -79,20 +83,21 @@ def evaluateMotor(individual):
         total_inductance += sum(step["circuit_inductance"])
         samples += 1
 
-    if samples == 0:
-        return (0.0, 0.0, 0.0)
-
     avg_force = total_force / samples
     avg_power = total_power / samples
     avg_inductance = total_inductance / samples
 
+    print(f"Avg Power: {avg_power}, Avg Force: {avg_force}, Avg Inductance: {avg_inductance}")
+
     if avg_power >= maxPower or avg_inductance > maxInductance:
+        print('failed power or inductance constraints')
         return (0.0, 0.0, 0.0)
 
     return (avg_power, avg_force, avg_inductance)
 
+
 # === DEAP Setup ===
-creator.create("FitnessMulti", base.Fitness, weights=(-0.1, 4.0, -0.5))
+creator.create("FitnessMulti", base.Fitness, weights=(-1, 4.0, -1))
 creator.create("Individual", list, fitness=creator.FitnessMulti)
 
 toolbox = base.Toolbox()
@@ -110,16 +115,38 @@ population = toolbox.population(n=individuals)
 crossoverPB = 0.7
 mutationPB = 0.5
 
+output_data = []  # To save all results
+
 for generation in range(generations):
     offspring = algorithms.varAnd(population, toolbox, cxpb=crossoverPB, mutpb=mutationPB)
     fits = list(map(toolbox.evaluate, offspring))
 
+    generation_data = {
+        "generation": generation,
+        "individuals": []
+    }
+
     for fit, ind in zip(fits, offspring):
         ind.fitness.values = fit
+        generation_data["individuals"].append({
+            "coil_height": ind[0],
+            "coil_radius": ind[1],
+            "fitness": {
+                "avg_power": fit[0],
+                "avg_force": fit[1],
+                "avg_inductance": fit[2]
+            }
+        })
+
+    output_data.append(generation_data)
 
     population = toolbox.select(offspring, len(population))
     best_individual = tools.selBest(population, 1)[0]
     print(f"Generation {generation}: Fitness = {best_individual.fitness.values}")
+
+# === Save JSON Output ===
+with open("deap_optimization_results.json", "w") as f:
+    json.dump(output_data, f, indent=2)
 
 # === Final Best Solution ===
 final_best = tools.selBest(population, 1)[0]
