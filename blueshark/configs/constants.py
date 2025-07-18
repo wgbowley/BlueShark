@@ -1,0 +1,2 @@
+PRECISION = 6
+EPSILON   = 1e-7
