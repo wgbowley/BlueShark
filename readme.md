@@ -14,7 +14,8 @@
 
 <b>Improvements in Newer Versions:</b><br>
 - Refactored modular architecture.<br>
-- Support for tubular, flat, and rotary linear motors.<br>
+- Support for tubular, flat linear motors.<br>
+- Error handling & improved reliability.<br>
 - Easier extensibility and cleaner code structure.<br>
 <br>
 
