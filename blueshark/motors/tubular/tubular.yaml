@@ -1,0 +1,22 @@
+model:
+  numSlots: 12
+  numPoles: 2
+  iForcePeak: 4.2
+  iFluxPeak: 0
+  wasteFactor: 0.1
+
+slot:
+  radius: 5
+  height: 6
+  spacing: 0.7
+  material: 0.315
+  magneticGap: 2
+
+pole:
+  radius: 6
+  height: 20
+  material: N42
+
+output:
+  folder_path: "data/tubular"
+  file_name: "tubular"

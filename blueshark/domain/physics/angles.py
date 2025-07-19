@@ -12,7 +12,7 @@ Functions:
 """
 
 from math import pi
-from blueshark.configs import constants
+from configs import constants
 
 
 def mechanical_angle(

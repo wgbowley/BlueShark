@@ -7,18 +7,18 @@ Description:
     Circuit analysis utilities for FEMM post-processing.
 
 Functions:
-- circuit_voltage(circuit_name) -> float
-- circuit_current(circuit_name) -> float
-- circuit_inductance(circuit_name) -> float
-- circuit_flux_linkage(circuit_name) -> float
-- circuit_power(circuit_name) -> float
+- phase_voltage(circuit_name) -> float
+- phase_current(circuit_name) -> float
+- phase_inductance(circuit_name) -> float
+- phase_flux_linkage(circuit_name) -> float
+- phase_power(circuit_name) -> float
 """
 
 import femm
-from blueshark.configs import constants
+from configs import constants
 
 
-def circuit_voltage(circuit_name: str) -> float:
+def phase_voltage(circuit_name: str) -> float:
     """
     Get the voltage drop across the specified circuit.
 
@@ -33,7 +33,7 @@ def circuit_voltage(circuit_name: str) -> float:
     return round(voltage, constants.PRECISION)
 
 
-def circuit_current(circuit_name: str) -> float:
+def phase_current(circuit_name: str) -> float:
     """
     Get the instantaneous current of the specified circuit.
 
@@ -48,7 +48,7 @@ def circuit_current(circuit_name: str) -> float:
     return round(current, constants.PRECISION)
 
 
-def circuit_inductance(circuit_name: str) -> float:
+def phase_inductance(circuit_name: str) -> float:
     """
     Calculate the inductance of the specified circuit.
 
@@ -70,7 +70,7 @@ def circuit_inductance(circuit_name: str) -> float:
     return round(abs(inductance), constants.PRECISION)
 
 
-def circuit_flux_linkage(circuit_name: str) -> float:
+def phase_flux_linkage(circuit_name: str) -> float:
     """
     Get the flux linkage of the specified circuit.
 
@@ -85,7 +85,7 @@ def circuit_flux_linkage(circuit_name: str) -> float:
     return round(flux_linkage, constants.PRECISION)
 
 
-def circuit_power(circuit_name: str) -> float:
+def phase_power(circuit_name: str) -> float:
     """
     Calculate the instantaneous power of the specified circuit.
 

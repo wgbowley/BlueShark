@@ -7,16 +7,16 @@ Description:
     Torque calculation utilities for FEMM post-processing.
 
 Functions:
-- lorentz_torque(group) -> float
-- weighted_stress_tensor_torque(group) -> float
+- lorentz(group) -> float
+- weighted_stress_tensor(group) -> float
 """
 
 
 import femm
-from blueshark.configs import constants
+from configs import constants
 
 
-def lorentz_torque(group: int) -> float:
+def lorentz(group: int) -> float:
     """
     Calculates the Lorentz torque on a given FEMM group.
 
@@ -36,7 +36,7 @@ def lorentz_torque(group: int) -> float:
     return round(torque, constants.PRECISION)
 
 
-def weighted_stress_tensor_torque(group: int) -> float:
+def weighted_stress_tensor(group: int) -> float:
     """
     Calculates the weighted stress tensor torque on a given FEMM group.
 

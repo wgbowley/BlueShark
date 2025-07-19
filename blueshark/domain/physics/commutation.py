@@ -12,8 +12,8 @@ Functions:
 
 import math
 
-from blueshark.domain.physics.transforms import inverse_clarke_transform, inverse_park_transform
-from blueshark.domain.physics.angles import mechanical_angle, electrical_angle
+from domain.physics.transforms import inverse_clarke_transform, inverse_park_transform
+from domain.physics.angles import mechanical_angle, electrical_angle
 
 def rotational_commutation(
         circumference: float,

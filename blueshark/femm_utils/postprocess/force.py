@@ -7,17 +7,17 @@ Description:
     Force calculation utilities for FEMM post-processing.
 
 Functions:
-- lorentz_force(group) -> tuple[float, float]
-- weighted_stress_tensor_force(group) -> tuple[float, float]
+- lorentz(group) -> tuple[float, float]
+- weighted_stress_tensor(group) -> tuple[float, float]
 """
 
 
 import femm
 import math
-from blueshark.configs import constants
+from configs import constants
 
 
-def lorentz_force(group: int) -> tuple[float, float]:
+def lorentz(group: int) -> tuple[float, float]:
     """ Calculates the Lorentz force on a given FEMM group.
 
     Parameters:
@@ -40,7 +40,7 @@ def lorentz_force(group: int) -> tuple[float, float]:
     return round(magnitude, constants.PRECISION), round(angle, constants.PRECISION)
 
 
-def weighted_stress_tensor_force(group: int) -> tuple[float, float]:
+def weighted_stress_tensor(group: int) -> tuple[float, float]:
     """ Calculates the weighted stress tensor force on a given FEMM group.
 
     Parameters:

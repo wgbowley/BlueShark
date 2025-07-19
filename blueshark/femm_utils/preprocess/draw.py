@@ -12,7 +12,7 @@ Functions:
 
 
 import femm
-from blueshark.femm.preprocess.geometry import get_centroid_point
+from femm_utils.preprocess.geometry import get_centroid_point
 
 def draw_and_set_properties(
         origin: tuple[float, float], 
@@ -47,14 +47,6 @@ def draw_and_set_properties(
     Raises:
         RuntimeError: If FEMM is not running or not connected.
     """
-    # Check FEMM connection
-    try:
-        femm.mi_showgrid(True)  
-        femm.mi_showgrid(False)  
-    except Exception as e:
-        raise RuntimeError(
-            "FEMM is not running or not connected. Please open FEMM before calling this function."
-        ) from e
 
     objectLabel = get_centroid_point(origin, length, height)
     bLVertex    = (origin[0], origin[1])

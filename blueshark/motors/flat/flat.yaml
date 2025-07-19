@@ -1,0 +1,20 @@
+model:
+  numSlots: 12
+  numPoles: 8
+  axialLength: 40
+  iForcePeak: 1
+  iFluxPeak: 0
+  wasteFactor: 0.25
+
+coil:
+  length: 3
+  height: 6
+  interSpacing: 3
+  outerSpacing: 4.83
+  material: 0.2
+  magneticGap: 2
+  
+pole:
+  length: 10
+  height: 2
+  material: N52
