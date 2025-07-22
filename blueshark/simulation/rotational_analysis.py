@@ -1,20 +1,3 @@
-"""
-File: rotational_analysis.py
-Author: William Bowley
-Version: 1.1
-Date: 2025-07-19
-
-Description:
-    Performs a full mechanical rotation analysis of a motor.
-
-Functions:
-- rotational_analysis(motor, outputSelector, baseContext, numSamples) -> list[dict]
-    Simulates a single 360° rotation by:
-    - Generating 3-phase commutation profile
-    - Applying FEMM solve/load steps with retry safety
-    - Calling OutputSelector to gather step-wise results
-"""
-
 import os
 import femm
 from typing import Any
@@ -29,6 +12,7 @@ def rotational_analysis(
     output_selector: OutputSelector,
     subjects: dict[str, Any],
     num_samples: int,
+    status: bool = True
 ) -> list[dict]:
     """
     Performs a full rotation analysis for a motor using FEMM.
@@ -46,8 +30,8 @@ def rotational_analysis(
         list[dict]: List of output dictionaries, one per simulation step.
     """
     
-    fem_path = motor.femmdocumentpath + ".fem"
-    ans_path = motor.femmdocumentpath + ".ans"
+    fem_path = motor.path + ".fem"
+    ans_path = motor.path + ".ans"
 
     motor_circumference = motor.motorCircumference
     step_size = motor_circumference / num_samples
@@ -63,6 +47,9 @@ def rotational_analysis(
 
     for step in range(num_samples):
         position = step * step_size
+        
+        if status == True:
+            print(f"Step {step + 1}/{num_samples} | Total displacement: {position:.4f}")
 
         femm.openfemm(1)
         femm.opendocument(fem_path)
@@ -83,5 +70,7 @@ def rotational_analysis(
 
         if os.path.exists(ans_path):
             os.remove(ans_path)
+        
+        femm.closefemm()
 
     return results

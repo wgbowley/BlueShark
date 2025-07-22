@@ -18,3 +18,7 @@ pole:
   length: 10
   height: 2
   material: N52
+
+output:
+  folder_path: "data/flat"
+  file_name: "flat"

@@ -10,8 +10,6 @@ Functions:
 - rotational_commutation(circumference, num_pairs, currents_peak, number_samples) -> list of (pa, pb, pc)
 """
 
-import math
-
 from domain.physics.transforms import inverse_clarke_transform, inverse_park_transform
 from domain.physics.angles import mechanical_angle, electrical_angle
 

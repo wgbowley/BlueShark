@@ -9,7 +9,6 @@ Description:
     in a tubular linear motor using the modular FEMM simulation framework.
 
     Demonstrates a basic optimization strategy without external dependencies.
-    Serves as a starting example before moving to more advanced optimization methods.
 """
 
 # --- Imports and setup ---
@@ -17,13 +16,9 @@ import random
 import os
 import sys
 
-# Add project root to sys.path for importing framework modules
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 from outputs.output_selector import OutputSelector
 from simulation.rotational_analysis import rotational_analysis
+from domain.physics.ripple import ripple_peak_to_peak
 from motors import TubularMotor
 
 # --- Helper functions ---
@@ -48,21 +43,21 @@ def generate_geometry(step_size: float, coil_height: float, coil_radius: float) 
 
 
 # --- Optimization parameters ---
-simulation_num = 100         # Max number of random samples
-step_size = 10               # Initial perturbation step
+simulation_num = 1000        # Max number of random samples
+step_size = 20               # Initial perturbation step
 min_step_size = 0.315        # Stop if step falls below this
-stall_max = 10               # Max iterations with no improvement
+stall_max = 30               # Max iterations with no improvement
 stall = 0                    # Consecutive non-improvements
 power_limit = 200            # Reject candidates above this power
-
+max_ripple_force = 2         # Reject candidates above this ripple amount      
 # Track best result
 best_force = 0
 best_height = 0
 best_radius = 0
 
 # Motor config and outputs
-motor_config_path = "data/tublar/tubular.yaml"
-requested_outputs = ["lorentz_force", "circuit_power"]
+MOTOR_CONFIG_PATH = "data/tubular/tubular.yaml"
+requested_outputs = ["force_lorentz", "phase_power"]
 num_samples = 10
 
 # Store results (for optional plotting later)
@@ -70,7 +65,7 @@ optimization_results = []
 
 # --- Optimization loop ---
 for index in range(simulation_num):
-    motor = TubularMotor(motor_config_path)
+    motor = TubularMotor(MOTOR_CONFIG_PATH)
 
     # Perturb current geometry
     coil_height = motor.slot_height
@@ -82,14 +77,18 @@ for index in range(simulation_num):
     motor.generate()
 
     output_selector = OutputSelector(requested_outputs)
-    subjects = {"group": motor.movingGroup, "circuitName": motor.phases}
-    results = rotational_analysis(motor, output_selector, subjects, num_samples)
+    subjects = {"group": motor.movingGroup, "phaseName": motor.phases}
+    results = rotational_analysis(motor, output_selector, subjects, num_samples, False)
 
     # Compute average force and power
-    total_force = sum(step["lorentz_force"][0] for step in results)
-    total_power = sum(sum(step["circuit_power"]) for step in results)
+    total_force = sum(step["force_lorentz"][0] for step in results)
+    total_power = sum(sum(step["phase_power"]) for step in results)
     count = len(results)
-
+    
+    # Computes the different in force between peak and trough of the wave
+    force_series = [result.get("force_lorentz", 0)[0] for result in results]
+    ripple = ripple_peak_to_peak(force_series)
+    
     avg_force = total_force / count
     avg_power = total_power / count
 
@@ -98,6 +97,10 @@ for index in range(simulation_num):
         print(f"Iteration {index}: Rejected (Power = {avg_power:.2f} W > limit {power_limit} W)")
         stall += 1
 
+    elif ripple > max_ripple_force:
+        print(f"Iteration {index}: Rejected (Ripple Force = {ripple:.2f} N > limit {max_ripple_force} N)")
+        stall += 1
+        
     # Accept if better
     elif avg_force > best_force:
         best_force = avg_force

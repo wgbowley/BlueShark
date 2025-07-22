@@ -5,8 +5,7 @@ Version: 1.1
 Date: 2025-07-19
 
 Description:
-    Base model of a tubular linear motor for use in the motor simulation
-    and optimization framework.
+    Base model of a tubular linear motor for use in the motor simulation framework.
 
     This class implements the MotorBase interface and provides core
     functionality such as:
@@ -82,6 +81,7 @@ class TubularMotor(MotorBase):
             self._add_boundary()
 
             femm.mi_saveas(os.path.join(self.folder_path, self.file_name + ".fem"))
+            femm.closefemm()
         except Exception as e:
             raise RuntimeError(f"FEMM simulation setup failed: {e}")
 
@@ -103,8 +103,8 @@ class TubularMotor(MotorBase):
             raise RuntimeError(f"Failed to move motor in FEMM: {e}")
 
     @property
-    def femmdocumentpath(self) -> str:
-        """Path to the FEMM document used in the simulation."""
+    def path(self) -> str:
+        """Path for files under the motor."""
         return os.path.join(self.folder_path, self.file_name)
 
     @property
@@ -188,7 +188,12 @@ class TubularMotor(MotorBase):
         )
 
         self.slot_pitch = self.slot_height + self.slot_spacing
-        self.pole_pitch = self.pole_height
+        
+        # Scales magnet length to make sure that the ratio of pairs to slot matches
+        motor_length = self.slot_pitch*self.numberSlots
+        self.pole_height = motor_length / self.numberPoles
+        
+        self.pole_pitch  = self.pole_height
 
         self.slot_origins = geometry.origin_points(
             object_num=self.number_slots,

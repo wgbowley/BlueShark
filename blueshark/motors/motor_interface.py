@@ -17,7 +17,7 @@ class MotorBase(ABC):
     Abstract base class for motor simulation models.
 
     Subclasses must implement:
-    - femmdocumentpath: str
+    - path: str
     - movingGroup: int
     - motorCircumference: float
     - numberPoles: int
@@ -27,8 +27,8 @@ class MotorBase(ABC):
 
     @property
     @abstractmethod
-    def femmdocumentpath(self) -> str:
-        """Path to the FEMM document used in the simulation."""
+    def path(self) -> str:
+        """Path for files under the motor."""
         pass
 
     @property
