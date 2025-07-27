@@ -1,19 +1,17 @@
 """
 File: angles.py
 Author: William Bowley
-Version: 1.1
-Date: 2025-06-10
+Version: 1.2
+Date: 2025-07-27
 Description:
-    Functions to convert linear displacement to mechanical and electrical angles.
+- Functions to convert linear displacement to mechanical and electrical angles.
 
 Functions:
 - mechanical_angle(circumference, displacement) -> float
 - electrical_angle(num_pole_pairs, mech_angle) -> float
 """
 
-from math import pi
-from configs import constants
-
+from configs import PRECISION, TWO_PI
 
 def mechanical_angle(
     circumference: float,
@@ -29,9 +27,13 @@ def mechanical_angle(
     Returns:
         float: Mechanical angle in radians, normalized to [0, 2π).
     """
-    angle = (2 * pi * displacement) / circumference
-    angle %= 2 * pi  # Normalize to [0, 2pi)
-    return round(angle, constants.PRECISION)
+    
+    if circumference <= 0:
+        raise ValueError(f"Circumference must be > 0, got {circumference}")
+    
+    angle = (TWO_PI * displacement) / circumference
+    angle %= TWO_PI 
+    return round(angle, PRECISION)
 
 
 def electrical_angle(
@@ -46,7 +48,12 @@ def electrical_angle(
         mech_angle (float): Mechanical angle in radians.
 
     Returns:
-        float: Electrical angle in radians.
+        float: Electrical angle in radians, normalized to [0, 2π).
     """
+    
+    if num_pole_pairs <= 0:
+        raise ValueError(f"Number of pole pairs must be > 0, got {num_pole_pairs}")
+    
     angle = mech_angle * num_pole_pairs
-    return round(angle, constants.PRECISION)
+    angle %= TWO_PI
+    return round(angle, PRECISION)
