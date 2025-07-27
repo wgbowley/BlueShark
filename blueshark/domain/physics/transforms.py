@@ -1,8 +1,8 @@
 """
 File: transforms.py
 Author: William Bowley
-Version: 1.1
-Date: 2025-06-10
+Version: 1.2
+Date: 2025-07-27
 Description:
     Coordinate transformation functions for motor reference frames.
 
@@ -12,7 +12,7 @@ Functions:
 """
 
 from math import cos, sin, sqrt
-from configs import constants
+from configs import PRECISION
 
 
 def inverse_park_transform(
@@ -25,17 +25,19 @@ def inverse_park_transform(
     Applicable for 3-phase motors only.
 
     Args:
-        d_current (float): Current in the d-axis (flux axis).
-        q_current (float): Current in the q-axis (torque axis).
-        elec_angle (float): Electrical angle in radians.
+        d_current (float): Current in the d-axis.
+        q_current (float): Current in the q-axis.
+        elec_angle (float): Electrical angle in radians. 
 
     Returns:
         tuple[float, float]: Currents in alpha and beta stationary reference frame,
                              rounded to configured PRECISION.
     """
+    
     alpha = d_current * cos(elec_angle) - q_current * sin(elec_angle)
     beta = d_current * sin(elec_angle) + q_current * cos(elec_angle)
-    return round(alpha, constants.PRECISION), round(beta, constants.PRECISION)
+
+    return round(alpha, PRECISION), round(beta, PRECISION)
 
 
 def inverse_clarke_transform(
@@ -54,7 +56,8 @@ def inverse_clarke_transform(
         tuple[float, float, float]: Three-phase currents (a, b, c),
                                    rounded to configured PRECISION.
     """
-    phase_a = round(alpha, constants.PRECISION)
-    phase_b = round(0.5 * (sqrt(3) * beta - alpha), constants.PRECISION)
-    phase_c = round(0.5 * (-sqrt(3) * beta - alpha), constants.PRECISION)
+    
+    phase_a = round(alpha, PRECISION)
+    phase_b = round(0.5 * (sqrt(3) * beta - alpha), PRECISION)
+    phase_c = round(0.5 * (-sqrt(3) * beta - alpha), PRECISION)
     return phase_a, phase_b, phase_c

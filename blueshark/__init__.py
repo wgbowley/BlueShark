@@ -1,6 +1,3 @@
-import addons
-import motors
-import outputs
-import simulation
+# blueshark/__init__.py
 import domain
-import femm
+import configs
