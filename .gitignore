@@ -1,1 +1,3 @@
 *.pyc
+*.txt
+blueshark/blueshark.egg-info/PKG-INFO

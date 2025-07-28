@@ -4,11 +4,12 @@ from math import pi
 from domain.physics.angles import electrical_angle, mechanical_angle
 from domain.physics.transforms import inverse_park_transform, inverse_clarke_transform
 from domain.physics.ripple import ripple_peak_to_peak, ripple_rms, ripple_percent  
+from domain.physics.commutation import displacement_commutation
 from configs import PRECISION
 
 
-""" angles -> Mechanical Angle & Electrical Angle """
-class testMechanical(unittest.TestCase):
+""" Angles -> Mechanical """
+class TestMechanical(unittest.TestCase):
     def test_zero_displacement(self):
         self.assertEqual(mechanical_angle(10, 0), 0.0)
 
@@ -32,7 +33,8 @@ class testMechanical(unittest.TestCase):
         self.assertEqual(mechanical_angle(circumference, displacement), expected)
         
         
-class testElectrical(unittest.TestCase):
+""" Angles -> Electrical """        
+class TestElectrical(unittest.TestCase):
     def test_zero_mechanical_angle(self):
         self.assertEqual(electrical_angle(10, 0), 0)
     
@@ -127,3 +129,39 @@ class TestRippleFunctions(unittest.TestCase):
         self.assertEqual(ripple_peak_to_peak(values), 0.0)
         self.assertEqual(ripple_rms(values), 0.0)
         self.assertEqual(ripple_percent(values), 0.0)
+        
+class TestDisplacementCommutation(unittest.TestCase):
+    def test_vaild_output(self):
+        step_size, profile = displacement_commutation(
+            displacement= 1.0,
+            circumference= 1.0,
+            pole_pairs= 1,
+            currents_peak= (1.0, 0.0),
+            num_samples= 2
+        )
+        self.assertEqual(len(profile), 3)
+        self.assertAlmostEqual(step_size, 0.5)
+        
+    def test_zero_displacement(self):
+        with self.assertRaises(ValueError):
+            displacement_commutation(0.0, 1.0, 1, (1.0, 0.0), 10)
+
+    def test_invalid_samples(self):
+        with self.assertRaises(ValueError):
+            displacement_commutation(1.0, 1.0, 1, (1.0, 0.0), 0)
+
+    def test_invalid_circumference(self):
+        with self.assertRaises(ValueError):
+            displacement_commutation(1.0, 0.0, 1, (1.0, 0.0), 10)
+
+    def test_invalid_currents_peak_type(self):
+        with self.assertRaises(TypeError):
+            displacement_commutation(1.0, 1.0, 1, [1.0, 0.0], 10)  # list not tuple
+
+    def test_invalid_currents_peak_length(self):
+        with self.assertRaises(TypeError):
+            displacement_commutation(1.0, 1.0, 1, (1.0,), 10)
+
+    def test_invalid_currents_peak_elements(self):
+        with self.assertRaises(TypeError):
+            displacement_commutation(1.0, 1.0, 1, ('a', 0.0), 10)
