@@ -1,15 +1,16 @@
 """
 File: geometry.py
 Author: William Bowley
-Version: 1.0
-Date: 2025-07-01
+Version: 1.2
+Date: 2025-07-28
 Description:
-    Helper functions for geometric calculations
+    Helper functions for geometric calculations.
 
 Functions:
-- get_centroid_point(origin, object_length, object_height) -> tuple[float, float]
-
+- get_centroid_point(origin: tuple[float, float], object_length: float, object_height: float) -> tuple[float, float]
+- origin_points(object_number: int, x_pitch: float, y_pitch: float, x_offset, y_offset) -> list[tuple[float, float]]
 """
+
 
 def get_centroid_point(
     origin: tuple[float, float],
@@ -38,3 +39,40 @@ def get_centroid_point(
     x = origin[0] + object_length / 2
     y = origin[1] + object_height / 2
     return x, y
+
+
+def origin_points(
+    object_number: int,
+    x_pitch: float,
+    y_pitch: float,
+    x_offset: float = 0.0,
+    y_offset: float = 0.0
+) -> list[tuple[float, float]]:
+    """
+    Generate origin points for a linear sequence of objects.
+
+    Args:
+        object_number (int): Number of objects; must be > 0.
+        x_pitch (float): Distance between objects on the x-axis.
+        y_pitch (float): Distance between objects on the y-axis.
+        x_offset (float): Starting x-coordinate offset. Default is 0.0.
+        y_offset (float): Starting y-coordinate offset. Default is 0.0.
+
+    Returns:
+        List[Tuple[float, float]]: List of (x, y) coordinates.
+
+    Raises:
+        ValueError: If object_number <= 0 or both pitches are zero.
+    """
+    if object_number <= 0:
+        raise ValueError(f"object_number must be positive; got {object_number}")
+    if x_pitch == 0 and y_pitch == 0:
+        raise ValueError("x_pitch and y_pitch cannot both be zero.")
+
+    points = []
+    for i in range(object_number):
+        x = x_offset + i * x_pitch
+        y = y_offset + i * y_pitch
+        points.append((x, y))
+
+    return points

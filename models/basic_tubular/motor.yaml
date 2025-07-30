@@ -1,0 +1,25 @@
+model:
+  number_slots: 6
+  number_poles: 2
+  d_currents: 0
+  q_currents: 5
+  fill_factor: 0.25
+  extra_pairs: 5
+  boundary_material: Air
+
+slot:
+  radius: 5.25
+  height: 6.35
+  spacing: 0.45
+  material: 0.315mm
+  wire_diameter: 0.315
+  armuture_stator_gap: 1.12
+
+pole:
+  radius: 6
+  height: 20
+  material: N42
+
+output:
+  folder_path: models/basic_tubular
+  file_name: motor

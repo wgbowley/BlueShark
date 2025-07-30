@@ -20,7 +20,7 @@ from configs import PRECISION
 def lorentz(group: int) -> tuple[float, float]:
     """ Calculates the Lorentz force on a given FEMM group.
 
-    Parameters:
+    Args:
         group (int): FEMM group number.
 
     Returns:
@@ -40,7 +40,7 @@ def lorentz(group: int) -> tuple[float, float]:
 def weighted_stress_tensor(group: int) -> tuple[float, float]:
     """ Calculates the weighted stress tensor force on a given FEMM group.
 
-    Parameters:
+    Args:
         group (int): FEMM group number.
 
     Returns:

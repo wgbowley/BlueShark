@@ -5,14 +5,13 @@ setup(
     version='1.2.0',
     description='Modular FEMM-based linear and tubular motor simulation framework',
     author='William Bowley',
-    author_email='wgrantbowley@gmail.com', 
-    packages=find_packages(where="blueshark"),
-    package_dir={'': 'blueshark'},
+    author_email='wgrantbowley@gmail.com',
+    packages=find_packages(),
     install_requires=[
         'PyYAML',
         'pyfemm',
         'matplotlib',
-        'deap'
+        'deap',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

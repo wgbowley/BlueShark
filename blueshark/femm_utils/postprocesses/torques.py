@@ -18,7 +18,7 @@ def lorentz(group: int) -> float:
     """
     Calculates the Lorentz torque on a given FEMM group.
 
-    Parameters:
+    Args:
         group (int): FEMM group number.
 
     Returns:
@@ -35,7 +35,7 @@ def weighted_stress_tensor(group: int) -> float:
     """
     Calculates the weighted stress tensor torque on a given FEMM group.
 
-    Parameters:
+    Args:
         group (int): FEMM group number.
 
     Returns:

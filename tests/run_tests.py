@@ -15,7 +15,7 @@ suite.addTest(loader.loadTestsFromTestCase(unit_physics.TestDisplacementCommutat
 # Domain/Generation Tests
 suite.addTest(loader.loadTestsFromTestCase(unit_generation.NumberTurns))
 suite.addTest(loader.loadTestsFromTestCase(unit_generation.GetCenteroid))
-
+suite.addTest(loader.loadTestsFromTestCase(unit_generation.TestOriginPoints))
 
 runner = unittest.TextTestRunner(verbosity=2)
 

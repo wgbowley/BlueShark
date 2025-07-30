@@ -90,7 +90,18 @@ class LinearBase(ABC):
             currents (Tuple[float, float, float]): Phase A, B, C current values.
         """
         pass
+    
+    @abstractmethod
+    def get_parameters(self) -> dict:
+        """
+        Return all motor configuration parameters as a dictionary.
+        Useful for debugging, logging, or saving snapshots.
 
+        Returns:
+            dict: A dictionary of motor parameters.
+        """
+        pass
+    
     @property
     @abstractmethod
     def path(self) -> Path:

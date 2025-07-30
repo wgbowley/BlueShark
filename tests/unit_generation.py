@@ -3,6 +3,7 @@ from math import ceil
 
 from domain.generation.number_turns import estimate_turns
 from domain.generation.geometry import get_centroid_point
+from domain.generation.geometry import origin_points
 
 class NumberTurns(unittest.TestCase):
     """Unit tests for the estimate_turns function."""
@@ -58,3 +59,27 @@ class GetCenteroid(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_centroid_point((0,0), 5, -1) # Negative Height 
             
+            
+class TestOriginPoints(unittest.TestCase):
+    def test_basic_linear_points(self):
+        result = origin_points(3, 1.0, 2.0)
+        expected = [(0.0, 0.0), (1.0, 2.0), (2.0, 4.0)]
+        self.assertEqual(result, expected)
+
+    def test_with_offsets(self):
+        result = origin_points(3, 1.0, 2.0, x_offset=5.0, y_offset=10.0)
+        expected = [(5.0, 10.0), (6.0, 12.0), (7.0, 14.0)]
+        self.assertEqual(result, expected)
+
+    def test_single_object(self):
+        result = origin_points(1, 5.0, 5.0)
+        expected = [(0.0, 0.0)]
+        self.assertEqual(result, expected)
+
+    def test_zero_object_number_raises(self):
+        with self.assertRaises(ValueError):
+            origin_points(0, 1.0, 1.0)
+
+    def test_zero_pitches_raises(self):
+        with self.assertRaises(ValueError):
+            origin_points(3, 0.0, 0.0)
