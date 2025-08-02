@@ -11,7 +11,7 @@ Functions:
 - electrical_angle(num_pole_pairs, mech_angle) -> float
 """
 
-from configs import PRECISION, TWO_PI
+from blueshark.configs import PRECISION, TWO_PI
 
 def mechanical_angle(
     circumference: float,

@@ -16,14 +16,7 @@ from typing import Union, List
 class LinearBase(ABC):
     """
     Abstract base class for all linear motor models.
-
-    Subclasses must implement all abstract methods and properties defined here:
-    - path: Path
-    - moving_group: int or List[int]
-    - motor_circumference: float 
-    - number_poles: int
-    - number_slots: int
-    - peak_currents: Tuple[float, float]
+    
     """
 
     @abstractmethod
@@ -104,36 +97,36 @@ class LinearBase(ABC):
     
     @property
     @abstractmethod
-    def path(self) -> Path:
+    def get_path(self) -> Path:
         """Path for files under the motor."""
         pass
 
     @property
     @abstractmethod
-    def moving_group(self) -> Union[int, List[int]]:
+    def get_moving_group(self) -> Union[int, List[int]]:
         """Group identifier(s) for the moving parts of the motor in FEMM."""
         pass
 
     @property
     @abstractmethod
-    def motor_circumference(self) -> float:
+    def get_circumference(self) -> float:
         """'Circumference' of the motor (used for positioning)."""
         pass
 
     @property
     @abstractmethod
-    def number_poles(self) -> int:
+    def get_number_poles(self) -> int:
         """Number of magnetic poles in the motor."""
         pass
 
     @property
     @abstractmethod
-    def number_slots(self) -> int:
+    def get_number_slots(self) -> int:
         """Number of slots in the motor."""
         pass
 
     @property
     @abstractmethod
-    def peak_currents(self) -> tuple[float, float]:
+    def get_peak_currents(self) -> tuple[float, float]:
         """Current values as (flux_current_peak, force_current_peak)."""
         pass

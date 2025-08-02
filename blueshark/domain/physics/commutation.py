@@ -12,8 +12,8 @@ Functions:
 """
 
 from typing import Tuple, List
-from domain.physics.angles import electrical_angle, mechanical_angle
-from domain.physics.transforms import inverse_clarke_transform, inverse_park_transform
+from blueshark.domain.physics.angles import electrical_angle, mechanical_angle
+from blueshark.domain.physics.transforms import inverse_clarke_transform, inverse_park_transform
 
 
 def displacement_commutation(

@@ -15,7 +15,7 @@ Functions:
 
 from math import sqrt
 from typing import Sequence
-from configs import PRECISION, EPSILON
+from blueshark.configs import PRECISION, EPSILON
 
 
 def _validate_values(values: Sequence[int | float]) -> None:

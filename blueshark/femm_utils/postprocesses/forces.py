@@ -14,7 +14,7 @@ Functions:
 
 import femm
 import math
-from configs import PRECISION
+from blueshark.configs import PRECISION
 
 
 def lorentz(group: int) -> tuple[float, float]:

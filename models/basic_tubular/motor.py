@@ -18,14 +18,15 @@ Description:
 import yaml
 import femm
 import pathlib
+import typing
 import os
 
-from motor.linear_interface import LinearBase
-from femm_utils.preprocesses.draw import draw_and_set_properties
-from femm_utils.preprocesses.boundary import add_bounds
-from domain.generation.geometry import get_centroid_point, origin_points
-from domain.generation.number_turns import estimate_turns
-from motor.utils import require
+from blueshark.motor.linear_interface import LinearBase
+from blueshark.femm_utils.preprocesses.draw import draw_and_set_properties
+from blueshark.femm_utils.preprocesses.boundary import add_bounds
+from blueshark.domain.generation.geometry import origin_points
+from blueshark.domain.generation.number_turns import estimate_turns
+from blueshark.motor.utils import require
 
 class BasicTubular(LinearBase):
 
@@ -81,9 +82,9 @@ class BasicTubular(LinearBase):
         """
         try:
             moving_groups = (
-                [self.moving_group]
-                if isinstance(self.moving_group, int)
-                else self.moving_group
+                [self.get_moving_group()]
+                if isinstance(self.get_moving_group(), int)
+                else self.get_moving_group()
             )
 
             for group in moving_groups:
@@ -112,7 +113,7 @@ class BasicTubular(LinearBase):
             
             # Alternate turns positive and negative slot index parity
             turns = self.number_turns if slot_index % 2 == 0 else -self.number_turns
-            
+
             draw_and_set_properties(
                 origin=self.slot_origins[slot_index],
                 length=self.slot_radius,
@@ -161,10 +162,10 @@ class BasicTubular(LinearBase):
         self.slot_pitch = self.slot_height + self.slot_spacing
 
         # Calculate the motor circumference based on slot pitch and number of slots
-        self.motor_circumference = self.slot_pitch * self.number_slots
+        self.circumference = self.slot_pitch * self.number_slots
 
         # Calculate pole pitch based on motor circumference and number of poles
-        self.pole_pitch = self.motor_circumference / self.number_poles
+        self.pole_pitch = self.circumference / self.number_poles
 
         # Calculate total number of poles in simulation space
         # Extra pairs add poles symmetrically on both sides
@@ -181,7 +182,7 @@ class BasicTubular(LinearBase):
         self.slot_origins = origin_points(
             self.number_slots,
             x_pitch=0,
-            y_pitch=self.pole_pitch,
+            y_pitch=self.slot_pitch,
             x_offset=self.pole_radius + self.armature_stator_gap,
         )
 
@@ -254,3 +255,46 @@ class BasicTubular(LinearBase):
         # Assign output
         self.folder_path = require("folder_path", output)
         self.file_name = require("file_name", output)
+
+
+    def get_path(self) -> pathlib.Path:
+        """
+        Returns the full file path of the motor simulation file.
+        """
+        path = os.path.join(self.folder_path, f"{self.file_name}")
+        return path
+
+
+    def get_moving_group(self) -> typing.Union[int, typing.List[int]]:
+        """
+        Returns the moving group(s) within the FEMM simulation domain.
+        """
+        return self.group_slot
+
+
+    def get_circumference(self) -> float:
+        """
+        Returns the mechanical circumference of the stator path.
+        """
+        return self.circumference
+
+
+    def get_number_poles(self) -> int:
+        """
+        Returns the total number of magnetic poles in the motor.
+        """
+        return self.number_poles
+
+
+    def get_number_slots(self) -> int:
+        """
+        Returns the total number of stator slots in the motor.
+        """
+        return self.number_slots
+
+
+    def get_peak_currents(self) -> tuple[float, float]:
+        """
+        Returns the peak d-axis and q-axis currents for simulation.
+        """
+        return (self.d_currents, self.q_currents)

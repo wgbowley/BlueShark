@@ -2,18 +2,18 @@ model:
   number_slots: 6
   number_poles: 2
   d_currents: 0
-  q_currents: 5
-  fill_factor: 0.25
+  q_currents: 6
+  fill_factor: 0.85
   extra_pairs: 5
   boundary_material: Air
 
 slot:
-  radius: 5.25
-  height: 6.35
-  spacing: 0.45
-  material: 0.315mm
-  wire_diameter: 0.315
-  armuture_stator_gap: 1.12
+  radius: 6.25
+  height: 6.3
+  spacing: 0.5
+  material: 0.5mm
+  wire_diameter: 0.5
+  armature_stator_gap: 1.75
 
 pole:
   radius: 6

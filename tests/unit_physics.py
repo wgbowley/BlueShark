@@ -1,11 +1,11 @@
 import unittest
 from math import pi
 
-from domain.physics.angles import electrical_angle, mechanical_angle
-from domain.physics.transforms import inverse_park_transform, inverse_clarke_transform
-from domain.physics.ripple import ripple_peak_to_peak, ripple_rms, ripple_percent  
-from domain.physics.commutation import displacement_commutation
-from configs import PRECISION
+from blueshark.domain.physics.angles import electrical_angle, mechanical_angle
+from blueshark.domain.physics.transforms import inverse_clarke_transform, inverse_park_transform
+from blueshark.domain.physics.ripple import ripple_peak_to_peak, ripple_rms, ripple_percent  
+from blueshark.domain.physics.commutation import displacement_commutation
+from blueshark.configs import PRECISION
 
 
 """ Angles -> Mechanical """

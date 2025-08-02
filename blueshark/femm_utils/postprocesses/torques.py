@@ -12,7 +12,7 @@ Functions:
 """
 
 import femm
-from configs import PRECISION
+from blueshark.configs import PRECISION
 
 def lorentz(group: int) -> float:
     """

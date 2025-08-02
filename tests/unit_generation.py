@@ -1,9 +1,9 @@
 import unittest
 from math import ceil
 
-from domain.generation.number_turns import estimate_turns
-from domain.generation.geometry import get_centroid_point
-from domain.generation.geometry import origin_points
+from blueshark.domain.generation.number_turns import estimate_turns
+from blueshark.domain.generation.geometry import get_centroid_point
+from blueshark.domain.generation.geometry import origin_points
 
 class NumberTurns(unittest.TestCase):
     """Unit tests for the estimate_turns function."""

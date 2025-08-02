@@ -12,7 +12,7 @@ Functions:
 """
 
 from math import cos, sin, sqrt
-from configs import PRECISION
+from blueshark.configs import PRECISION
 
 
 def inverse_park_transform(

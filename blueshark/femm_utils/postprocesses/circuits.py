@@ -15,7 +15,7 @@ Functions:
 """
 
 import femm
-from configs import PRECISION, EPSILON
+from blueshark.configs import PRECISION, EPSILON
 
 def phase_voltage(circuit_name: str) -> float:
     """

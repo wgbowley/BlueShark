@@ -11,7 +11,7 @@ Functions:
 """
 
 import femm
-from domain.generation.geometry import get_centroid_point
+from blueshark.domain.generation.geometry import get_centroid_point
 
 
 def draw_and_set_properties(

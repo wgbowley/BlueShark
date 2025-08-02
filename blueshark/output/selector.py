@@ -20,9 +20,9 @@ Description:
     - phase_flux_linkage
 """
 
-from femm_utils.postprocesses import forces as force
-from femm_utils.postprocesses import circuits as phases
-from femm_utils.postprocesses import torques
+from blueshark.femm_utils.postprocesses import forces as force
+from blueshark.femm_utils.postprocesses import circuits as phases
+from blueshark.femm_utils.postprocesses import torques
 from typing import Any, Callable, Union
 
 

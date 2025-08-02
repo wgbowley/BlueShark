@@ -13,19 +13,15 @@ Description:
     - Running FEMM analysis with retry on failure.
     - Computing requested post-processing outputs.
     - Cleaning up FEMM session and temporary files.
-
-Usage:
-    Import and call `frame()` with appropriate motor,
-    output selector, subjects, step, and currents.
 """
 
 import femm
 import os
 
 from typing import Any
-from configs import MAXIMUM_FAILS
-from output.selector import OutputSelector 
-from motor.linear_interface import LinearBase
+from blueshark.configs import MAXIMUM_FAILS
+from blueshark.output.selector import OutputSelector 
+from blueshark.motor.linear_interface import LinearBase
 
 
 def simulate_frame(
@@ -52,8 +48,8 @@ def simulate_frame(
         FileNotFoundError: If the FEMM .fem file cannot be opened.
         RuntimeError: If FEMM cannot be started.
     """
-    fem_path = motor.path + ".fem"
-    ans_path = motor.path + ".ans"
+    fem_path = motor.get_path() + ".fem"
+    ans_path = motor.get_path() + ".ans"
 
     try:
         femm.openfemm(1)
