@@ -22,25 +22,29 @@ import matplotlib.pyplot as plt
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Framework imports
+from blueshark.simulations.alignment import phase_alignment
 from blueshark.simulations.rotational_analysis import rotational_analysis
 from blueshark.output.selector import OutputSelector
-from models.basic_tubular.motor import BasicTubular
+from blueshark.output.writer import write_output_json
+from models.cmore839.motor import CmoreTubular
 
 # --- Configuration ---
-numSamples = 10
-phase_offset = 2.073451 
-motorConfigPath = "models/basic_tubular/motor.yaml"
+numSamples = 100
+motorConfigPath = "models/cmore839/motor.yaml"
 outputPath = "rotational_analysis_results"
-requestedOutputs = ["force_lorentz", "phase_voltage"]
+requestedOutputs = ["force_lorentz", "phase_current"]
 
 # --- Initialize and simulate ---
-motor = BasicTubular(motorConfigPath)
+motor = CmoreTubular(motorConfigPath)
 motor.setup()
+
+phase_offset = phase_alignment(motor, 20)
 
 outputSelector = OutputSelector(requestedOutputs)
 subjects = {"group": motor.get_moving_group(), "phaseName": motor.phases}
 
 results = rotational_analysis(motor, outputSelector, subjects, numSamples, phase_offset)
+write_output_json(results, "models/cmore839/results.json")
 
 # --- Plotting ---
 positions = [result["displacement"] for result in results]

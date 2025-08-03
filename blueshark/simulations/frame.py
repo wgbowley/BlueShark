@@ -16,6 +16,7 @@ Description:
 """
 
 import femm
+from pathlib import Path
 import os
 
 from typing import Any
@@ -30,42 +31,39 @@ def simulate_frame(
     subjects: dict[str, Any],
     step: float,
     currents: tuple[float, float, float]
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     """
     Simulates one frame of the motor in FEMM and extracts the requested outputs.
 
-    Args:
-        motor: The LinearBase motor instance.
-        output_selector: OutputSelector object for post-processing.
-        subjects: Context for output functions (e.g., phase or group names).
-        step: Linear displacement step to apply before simulation.
-        currents: Phase current values (pa, pb, pc) to apply.
-
     Returns:
-        Dictionary of output results.
-
-    Raises:
-        FileNotFoundError: If the FEMM .fem file cannot be opened.
-        RuntimeError: If FEMM cannot be started.
+        Dictionary of output results, or None if simulation fails.
     """
-    fem_path = motor.get_path() + ".fem"
-    ans_path = motor.get_path() + ".ans"
+
+    base_path = Path(motor.get_path())
+    fem_path = base_path.with_suffix(".fem")
+    ans_path = base_path.with_suffix(".ans")
 
     try:
         femm.openfemm(1)
     except Exception as e:
-        raise RuntimeError("Failed to start FEMM instance.") from e
+        print(f"[ERROR] Failed to start FEMM instance: {e}")
+        return None
 
     try:
-        femm.opendocument(fem_path)
+        femm.opendocument(str(fem_path))
     except Exception as e:
+        print(f"[ERROR] Failed to open FEMM document: {fem_path} — {e}")
         femm.closefemm()
-        raise FileNotFoundError(f"Failed to open FEMM document: {fem_path}") from e
+        return None
 
-    if step != 0:
-        motor.step(step)
-
-    motor.set_currents(currents)
+    try:
+        if step != 0:
+            motor.step(step)
+        motor.set_currents(currents)
+    except Exception as e:
+        print(f"[ERROR] Failed to step motor or set currents: {e}")
+        femm.closefemm()
+        return None
 
     fail_count = 0
     while fail_count < MAXIMUM_FAILS:
@@ -76,8 +74,9 @@ def simulate_frame(
         except Exception as e:
             fail_count += 1
             if fail_count >= MAXIMUM_FAILS:
+                print(f"[ERROR] FEMM analysis failed after {fail_count} attempts: {e}")
                 femm.closefemm()
-                raise RuntimeError(f"FEMM analysis failed after {fail_count} attempts.") from e
+                return None
 
     frame_result = output_selector.compute(subjects)
 

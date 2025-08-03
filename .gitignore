@@ -3,3 +3,6 @@
 /blueshark.egg-info
 /build
 *.fem
+*.ans
+*.json
+*.edge

@@ -66,12 +66,12 @@ def phase_alignment(
         result = simulate_frame(
             motor=motor,
             output_selector=selector,
-            groups={"group": motor.get_moving_group()},
-            time=0,
-            phases=(pa, pb, pc),
+            subjects={"group": motor.get_moving_group()},
+            currents=(pa, pb, pc),
+            step=0
         )
 
-        force = result["force_lorentz"]
+        force = result["force_lorentz"][0]
 
         if status:
             print(f"Offset: {offset:.4f} rad | Phases: {pa:.4f}, {pb:.4f}, {pc:.4f} | Force: {force:.4f}")

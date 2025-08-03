@@ -46,10 +46,10 @@ def generate_geometry(step_size: float, slot_height: float, slot_radius: float) 
 
 
 # --- Optimization parameters ---
-SIMULATION_NUM = 100          # Max number of random samples to evaluate
-STEP_SIZE = 10                # Initial step size for parameter perturbation
-MIN_STEP_SIZE = 0.315         # Minimum step size (convergence criterion)
-STALL_MAX = 10                # Max iterations without improvement before reducing step size
+SIMULATION_NUM = 10000         # Max number of random samples to evaluate
+STEP_SIZE = 20                 # Initial step size for parameter perturbation
+MIN_STEP_SIZE = 0.315          # Minimum step size (convergence criterion)
+STALL_MAX = 300                # Max iterations without improvement before reducing step size
 
 POWER_LIMIT = 200             # Max allowable power to filter invalid designs
 
@@ -63,7 +63,7 @@ stall = 0  # Counter for iterations without improvement
 motor_config_path = "models/basic_tubular/motor.yaml"
 requested_outputs = ["force_lorentz", "phase_power"]
 samples = 10                  # Number of simulation steps per evaluation
-phase_offset = 2.073451       
+phase_offset = 2.073451       # Phase offset for the specific basic tubular
 
 # Store all evaluated results for analysis or plotting
 optimization_results = []
@@ -90,13 +90,30 @@ for index in range(SIMULATION_NUM):
     count = 0
 
     for step in results:
-        outputs = step["outputs"]  
-        total_force += outputs["force_lorentz"][0]  
-        total_power += sum(outputs["phase_power"])
+        outputs = step["outputs"]
+
+        if outputs is None:
+            print("Warning: Missing outputs for a simulation step, skipping")
+            continue  
+        
+        force_vals = outputs.get("force_lorentz")
+        power_vals = outputs.get("phase_power")
+
+        if force_vals is None or power_vals is None:
+            print("Warning: Missing required output keys, skipping step")
+            continue
+
+        total_force += force_vals[0]
+        total_power += sum(power_vals)
         count += 1
 
-    avg_force = total_force / count
-    avg_power = total_power / count
+    if count > 0:
+        avg_force = total_force / count
+        avg_power = total_power / count
+    else:
+        avg_force = 0
+        avg_power = 0
+        print("Warning: No valid simulation steps found")
 
     if avg_power > POWER_LIMIT:
         print(
