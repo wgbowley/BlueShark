@@ -10,8 +10,8 @@ Description:
     postprocessing of FEMM-based motor simulation results.
 
 Functions:
-    - write_output_json(data: List[Dict], filename: str = "output.json") -> None
-    - write_output_csv(data: List[Dict], filename: str = "output.csv") -> None
+    - write_output_json(data: List[Dict], filename: str = "output.json", status: bool = true) -> None
+    - write_output_csv(data: List[Dict], filename: str = "output.csv",  status: bool = true) -> None
 """
 
 import os
@@ -19,7 +19,7 @@ import json
 import csv
 from typing import List, Dict, Union
 
-def write_output_json(data: List[Dict], filename: str = "output.json") -> None:
+def write_output_json(data: List[Dict], filename: str = "output.json", status: bool = True) -> None:
     """
     Write a list of dictionaries to a JSON file.
 
@@ -33,10 +33,12 @@ def write_output_json(data: List[Dict], filename: str = "output.json") -> None:
 
     with open(filename, "w") as f:
         json.dump(data, f, indent=4)
-    print(f"Saved output to {filename}")
+
+    if status == True:
+        print(f"Saved output to {filename}")
 
 
-def write_output_csv(data: List[Dict], filename: str = "output.csv") -> None:
+def write_output_csv(data: List[Dict], filename: str = "output.csv", status: bool = True) -> None:
     """
     Write a list of dictionaries to a CSV file.
     Tuple or list values are flattened with '|' separator.
@@ -74,4 +76,5 @@ def write_output_csv(data: List[Dict], filename: str = "output.csv") -> None:
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"Saved CSV output to {filename}")
+    if status == True:
+        print(f"Saved CSV output to {filename}")

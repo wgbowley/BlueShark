@@ -1,5 +1,5 @@
 """
-File: tubular_motor.py
+File: motor.py
 Author: William Bowley
 Version: 1.2
 Date: 2025-07-23

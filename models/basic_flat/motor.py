@@ -1,29 +1,24 @@
 """
-File: motor.py
+File: tubular_motor.py
 Author: William Bowley
-Version: 1.1
-Date: 2025-07-19
+Version: 1.0
+Date: 2025-08-05
 
 Description:
-    Framework model for cmore839 tubular linear motor design 
-
-    Adapted from the "DIY-Linear-Motor" project by cmore839:
-    https://github.com/cmore839/DIY-Linear-Motor
-
-    FEMM simulation structure partially based on contributions by JuPrgn:
-    https://github.com/JuPrgn/FEMM_linear_motor_simulations
+    Basic model of a ironless flat linear motor for use in the motor simulation framework.
+    Parameters are defined within the motor.yaml file.
 
 Units and Conventions:
     - All dimensions are in millimeters (mm).
     - Angular measurements (e.g., magnetization direction) are in degrees.
     - Coordinate system:
-        * The simulation uses an axial (axi) 2D FEMM model.
-        * The r-axis corresponds to the radial direction (outward from center).
-        * The z-axis corresponds to the linear/axial direction of motor movement.
+        * The simulation uses a planar 2D FEMM model.
+        * The x-axis corresponds to the linear motion direction (motor travel axis).
+        * The y-axis corresponds to the motor's vertical cross-section (thickness direction).
     - Currents are in Amperes (A).
-    - The motor geometry is defined in the z-direction with origins spaced accordingly.
-    - Time-dependent stepping is represented as linear displacement along the z-axis.
+    - Time-dependent stepping is represented as linear displacement along the x-axis.
 """
+
 
 import yaml
 import femm
@@ -37,15 +32,15 @@ from blueshark.domain.generation.geometry import origin_points
 from blueshark.domain.generation.number_turns import estimate_turns
 from blueshark.motor.utils import require
 
-class CmoreTubular(LinearBase):
-    def __init__(self, parameter_file):
+class BasicFlat(LinearBase):
+
+    def __init__(self, parameter_file: str) -> None:
         self._unpack(parameter_file)
 
         # FEMM groups
         self.group_boundary: int = 0
         self.group_slot: int = 1
         self.group_pole: int = 2
-        self.group_tube: int = 3
 
         # Phases
         self.phases = ['pa', 'pb', 'pc']
@@ -56,7 +51,7 @@ class CmoreTubular(LinearBase):
         try:
             femm.openfemm(1)
             femm.newdocument(0)
-            femm.mi_probdef(0, "millimeters", "axi", 1e-8)
+            femm.mi_probdef(0, "millimeters", "planar", 1e-8)
             
             for phase in self.phases:
                 femm.mi_addcircprop(phase, 0, 1)
@@ -64,11 +59,7 @@ class CmoreTubular(LinearBase):
             femm.mi_getmaterial(self.pole_material)
             femm.mi_getmaterial(self.slot_material)
             femm.mi_getmaterial(self.boundary_material)
-            # femm.mi_getmaterial(self.tube_material)
-            # femm.mi_addmaterial('CarbonFiberWrap',1,1,0,0,2,0,0,1,0,0,0,1,1)
-            femm.mi_addmaterial('AluminumTube',1,1,0,0,37,0,0,1,0,0,0,1,1)
             
-            # femm.mi_getmaterial(self.tube_material)
             self._compute_geometry()
             self._add_armature()
             self._add_stator()
@@ -80,7 +71,7 @@ class CmoreTubular(LinearBase):
             raise RuntimeError(f"Femm setup failed: {e}") from e
         finally:
             femm.closefemm() 
-
+    
 
     def set_currents(self, currents: tuple[float, float, float]) -> None:
         """Set 3-phase currents for the simulation step."""
@@ -105,59 +96,55 @@ class CmoreTubular(LinearBase):
             for group in moving_groups:
                 femm.mi_selectgroup(group)
 
-            femm.mi_movetranslate(0, step)
+            femm.mi_movetranslate(step, 0)
             femm.mi_clearselected()
 
         except Exception as e:
             raise RuntimeError(f"Failed to move motor in FEMM: {e}") from e
        
-
+        
     def _add_armature(self) -> None:
         """
         Adds the armature to the simulation space
         """
         
         self.number_turns = estimate_turns(
-            length = self.slot_radius,
+            length = self.slot_width,
             height = self.slot_height,
             wire_diameter = self.slot_wire_diameter, 
             fill_factor = self.fill_factor
         )
-        
-        for slot_index in range(len(self.slot_origins)):
-            slot_phase = self.phases[slot_index % len(self.phases)]
+
+        for slot_idx in range(len(self.slot_origins)):
+            # Repeat each phase twice before switching
+            phase = self.phases[(slot_idx // 2) % len(self.phases)]
             
-            # Alternate turns positive and negative slot index parity
-            turns = self.number_turns if slot_index % 2 == 0 else -self.number_turns
+            # Alternate turn direction every slot
+            turn = self.number_turns if slot_idx % 2 == 0 else -self.number_turns
 
             draw_and_set_properties(
-                origin=self.slot_origins[slot_index],
-                length=self.slot_radius,
-                height=self.slot_height,
-                material=self.slot_material,
-                direction=0,
-                incircuit=slot_phase,
-                group=self.group_slot,
-                turns=turns
+                origin      = self.slot_origins[slot_idx],
+                length      = self.slot_width,
+                height      = self.slot_height,
+                material    = self.slot_material,
+                direction   = 0,
+                incircuit   = phase,
+                group       = self.group_slot,
+                turns       = turn
             )
+
+
     
-
-
     def _add_stator(self) -> None:
         """
-        Adds the stator to the simulation space.
-        This includes alternating magnetized poles and the outer structural tube.
+        Adds the stator to the simulation space
         """
-
-        # Loop through all stator poles and place them with alternating magnetization
         for pole in range(self.total_number_poles):
-            # Alternate magnetization direction every pole (e.g., N-S-N-S)
             pole_magnetization = 90 if pole % 2 == 0 else -90
 
-            # Draw the magnetic pole and assign its physical/material properties
             draw_and_set_properties(
-                origin=self.pole_origins[pole],  
-                length=self.pole_radius,
+                origin=self.pole_origins[pole],
+                length=self.pole_width,
                 height=self.pole_height,
                 group=self.group_pole,
                 direction=pole_magnetization,
@@ -166,35 +153,19 @@ class CmoreTubular(LinearBase):
                 turns=0,
             )
 
-        # Compute the tube height and origin based on all poles combined
-        tube_height = self.pole_height * self.total_number_poles
-        tube_origin = (self.pole_radius, -0.5 * tube_height + 1/2*(self.pole_height*self.number_poles))
-
-        # Draw the outer tube encasing all poles, unmagnetized
-        draw_and_set_properties(
-            origin=tube_origin,
-            length=self.tube_radius,
-            height=tube_height,
-            group=self.group_tube,
-            direction=0,  # No magnetization
-            incircuit="<none>",
-            material=self.tube_material,
-            turns=0,
-        )
-        
 
     def _add_boundary(self) -> None:
         """
         Adds the Neumann outer boundary with a safety margin to enclose all geometry.
         """
         # Center boundary midway along poles
-        boundary_center = (0, self.pole_height * self.number_poles * 0.5)
+        boundary_center = (0, 0)
 
         # Radial extent based on stator poles and pitch
         stator_radius = 0.5 * (self.total_number_poles + 1) * self.pole_pitch
 
         # Radial extent including armature and slot height
-        armature_radius = self.pole_height + self.tube_radius + self.armature_stator_gap + self.slot_height
+        armature_radius = self.pole_height + self.armature_stator_gap + self.slot_height
 
         # Use larger radius and add 10% margin for safety
         boundary_radius = max(stator_radius, armature_radius) * 1.1
@@ -209,10 +180,10 @@ class CmoreTubular(LinearBase):
         """
 
         # Calculate the pitch of each slot (height + spacing)
-        self.slot_pitch = self.slot_height + self.slot_spacing
+        self.slot_pitch = self.slot_width + self.slot_spacing
 
-        # Calculate the motor circumference based on pole height and number of slots
-        self.circumference = self.pole_height * self.number_poles
+        # Calculate the motor circumference based on slot pitch and number of slots
+        self.circumference = self.slot_pitch * self.number_slots
 
         # Calculate pole pitch based on motor circumference and number of poles
         self.pole_pitch = self.circumference / self.number_poles
@@ -220,35 +191,39 @@ class CmoreTubular(LinearBase):
         # Calculate total number of poles in simulation space
         # Extra pairs add poles symmetrically on both sides
         self.total_number_poles = (4 * self.extra_pairs) + self.number_poles
-        
-        # Add spacing between slots except every third one (for coil grouping pattern)
-        y = 0 
-        self.slot_origins = []
-        for slot in range(self.number_slots):
-            if slot % 3 != 0:
-                y += self.slot_height + self.slot_spacing
-            else:
-                y += self.slot_height
 
-            x = self.pole_radius + self.tube_radius + self.armature_stator_gap
-            self.slot_origins.append((x, y))
+        # Ensure pole height fits within pole pitch, scale down if necessary
+        if self.pole_pitch < self.pole_width:
+            self.pole_width = self.pole_pitch
+            print(
+                f"Warning: Pole width scaled down to fit pole pitch: new width = {self.pole_width}"
+            )
 
-        # Generate pole origin points, shifted vertically by extra pairs
+        # Generate slot origin points along y-axis, shifted by width + gap on y-axis
+        self.slot_origins = origin_points(
+            self.number_slots,
+            x_pitch=self.slot_pitch,
+            y_pitch=0,
+            y_offset=self.armature_stator_gap,
+            x_offset=-1/2*(self.circumference)
+        )
+
+        # Generate pole origin points, shifted horizontally by extra pairs
         self.pole_origins = origin_points(
             self.total_number_poles,
-            x_pitch=0,
-            y_pitch=self.pole_pitch,
-            x_offset=0,
-            y_offset=-2 * (self.extra_pairs * self.pole_pitch),
+            x_pitch=self.pole_pitch,
+            y_pitch=0,
+            y_offset=-self.pole_height,
+            x_offset=-1/2*(self.total_number_poles * self.pole_pitch)
         )
 
 
-    def _unpack(self, parameter_file):
+    def _unpack(self, parameter_file) -> None:
 
         """ Loads parameters from .YAML file into variables within this class"""
-        
-        param_file = pathlib.Path(parameter_file)
 
+        param_file = pathlib.Path(parameter_file)
+ 
         if not param_file.exists():
             raise FileNotFoundError(f"Parameter file '{parameter_file}' was not found.")
 
@@ -258,15 +233,14 @@ class CmoreTubular(LinearBase):
         except yaml.YAMLError as e:
             raise ValueError(f"Failed to parse YAML file '{param_file}': {e}")
 
-        for section in ["model", "slot", "pole", "tube", "output"]:
+        for section in ["model", "slot", "pole", "output"]:
             if section not in params:
                 raise KeyError(f"Missing required section '{section}' in parameter file.")
 
-        model = params["model"]
-        slot  = params["slot"]
-        pole  = params["pole"]
-        tube  = params["tube"]
-        output  = params["output"]
+        model = params['model']
+        slot = params['slot']
+        pole = params['pole']
+        output = params['output']
 
         # Assign model parameters
         self.number_slots = require("number_slots", model)
@@ -276,23 +250,20 @@ class CmoreTubular(LinearBase):
         self.fill_factor = require("fill_factor", model)
         self.extra_pairs = require("extra_pairs", model)
         self.boundary_material = require("boundary_material", model)
-
+        
         # Assign slot geometry
-        self.slot_radius = require("radius", slot)
+        self.slot_width = require("width", slot)
         self.slot_height = require("height", slot)
         self.slot_spacing = require("spacing", slot)
-        self.armature_stator_gap = require("armature_stator_gap", slot)
         self.slot_material = require("material", slot)
         self.slot_wire_diameter = require("wire_diameter", slot)
+        self.armature_stator_gap = require("armature_stator_gap", slot)
 
         # Assign pole geometry
-        self.pole_radius = require("radius", pole)
+        self.pole_width = require("width", pole)
         self.pole_height = require("height", pole)
         self.pole_material = require("material", pole)
-        
-        # Assign tube geometry
-        self.tube_radius = require("radius", tube)
-        self.tube_material = require("material", tube)
+
         # Assign output
         self.folder_path = require("folder_path", output)
         self.file_name = require("file_name", output)
@@ -305,7 +276,7 @@ class CmoreTubular(LinearBase):
         return {
             **{k: v for k, v in self.__dict__.items() if not k.startswith("_")},
             "motor_class": self.__class__.__name__,
-    }
+        }
 
 
     def get_path(self) -> pathlib.Path:

@@ -1,0 +1,25 @@
+model:
+  number_slots: 12
+  number_poles: 8
+  d_currents: 0
+  q_currents: 1
+  fill_factor: 0.5
+  extra_pairs: 5
+  boundary_material: Air
+
+slot:
+  width: 3
+  height: 6
+  spacing: 3.9
+  material: 0.2mm
+  wire_diameter: 0.2
+  armature_stator_gap: 1
+
+pole:
+  width: 10
+  height: 2
+  material: N52
+
+output:
+  folder_path: models/basic_flat
+  file_name: motor

@@ -3,7 +3,7 @@ model:
   number_poles: 2
   d_currents: 0
   q_currents: 5
-  fill_factor: 0.25
+  fill_factor: 0.70
   extra_pairs: 5
   boundary_material: Air
 
