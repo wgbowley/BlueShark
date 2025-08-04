@@ -49,7 +49,7 @@ best_radius = 0.0
 stall = 0
 
 motor_config_path = "models/cmore839/motor.yaml" 
-results_output = "models/basic_tubular/force_random_search_results.json"
+results_output = "models/cmore839/force_random_search_results.json"
 requested_outputs = ["force_lorentz", "phase_power"]
 ALIGN_SAMPLES = 10
 TEST_SAMPLES  = 10
