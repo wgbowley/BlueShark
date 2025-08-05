@@ -26,16 +26,16 @@ from blueshark.simulations.alignment import phase_alignment
 from blueshark.simulations.rotational_analysis import rotational_analysis
 from blueshark.output.selector import OutputSelector
 from blueshark.output.writer import write_output_json
-from models.cmore839.motor import CmoreTubular
+from models.basic_flat.motor import BasicFlat
 
 # --- Configuration ---
 numSamples = 100
-motorConfigPath = "models/cmore839/motor.yaml"
+motorConfigPath = "models/basic_flat/motor.yaml"
 outputPath = "rotational_analysis_results"
 requestedOutputs = ["force_lorentz"]
 
 # --- Initialize and simulate ---
-motor = CmoreTubular(motorConfigPath)
+motor = BasicFlat(motorConfigPath)
 motor.setup()
 
 # Only required for some models
@@ -48,7 +48,7 @@ subjects = {"group": motor.get_moving_group(), "phaseName": motor.phases}
 results = rotational_analysis(motor, outputSelector, subjects, numSamples, phase_offset)
 
 # Save results to JSON file
-write_output_json(results, os.path.join(outputPath, "results.json"))
+write_output_json(results, "rotational_analysis_results.json")
 
 # --- Plotting ---
 positions = [result["displacement"] for result in results]

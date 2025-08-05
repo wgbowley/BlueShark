@@ -72,7 +72,7 @@ optimization_results = []
 # --- Main optimization loop ---
 for index in range(SIMULATION_NUM):
     motor = CmoreTubular(motor_config_path)
-    slot_height = motor.slot_height
+    slot_height = motor.slot_outer_radius
     slot_radius = motor.slot_radius
 
     height, radius = generate_geometry(STEP_SIZE, slot_height, slot_radius)

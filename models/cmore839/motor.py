@@ -22,7 +22,7 @@ Units and Conventions:
         * The z-axis corresponds to the linear/axial direction of motor movement.
     - Currents are in Amperes (A).
     - The motor geometry is defined in the z-direction with origins spaced accordingly.
-    - Time-dependent stepping is represented as linear displacement along the z-axis.
+    - Stepping is represented as linear displacement along the z-axis.
 """
 
 import yaml
@@ -114,9 +114,10 @@ class CmoreTubular(LinearBase):
         Adds the armature to the simulation space
         """
 
-        number_turns = estimate_turns(
-            length=self.slot_radius,
-            height=self.slot_height,
+        relative_radius = self.slot_outer_radius - self.slot_inner_radius
+        self.number_turns = estimate_turns(
+            length=relative_radius,
+            height=self.slot_axial_length,
             wire_diameter=self.slot_wire_diameter, 
             fill_factor=self.fill_factor
         )
@@ -125,12 +126,12 @@ class CmoreTubular(LinearBase):
             slot_phase = self.phases[slot_index % len(self.phases)]
             
             # Alternate turns positive and negative slot index parity
-            turns = number_turns if slot_index % 2 == 0 else -number_turns
+            turns = self.number_turns if slot_index % 2 == 0 else -self.number_turns
 
             draw_and_set_properties(
                 origin=self.slot_origins[slot_index],
-                length=self.slot_radius,
-                height=self.slot_height,
+                length=relative_radius,
+                height=self.slot_axial_length,
                 material=self.slot_material,
                 direction=0,
                 incircuit=slot_phase,
@@ -144,6 +145,7 @@ class CmoreTubular(LinearBase):
         This includes alternating magnetized poles and the outer structural tube.
         """
 
+        pole_relative_radius = self.pole_outer_radius
         # Loop through all stator poles and place them with alternating magnetization
         for pole in range(self.total_number_poles):
             # Alternate magnetization direction every pole (e.g., N-S-N-S)
@@ -152,8 +154,8 @@ class CmoreTubular(LinearBase):
             # Draw the magnetic pole and assign its physical/material properties
             draw_and_set_properties(
                 origin=self.pole_origins[pole], 
-                length=self.pole_radius,
-                height=self.pole_height,
+                length=pole_relative_radius,
+                height=self.pole_axial_length,
                 group=self.group_pole,
                 direction=pole_magnetization,
                 incircuit="<none>",
@@ -162,14 +164,15 @@ class CmoreTubular(LinearBase):
             )
 
         # Compute the tube height and origin based on all poles combined
-        tube_height = self.pole_height * self.total_number_poles
-        tube_origin = (self.pole_radius, -0.5 * tube_height + 1/2*(self.pole_height*self.number_poles))
+        tube_axial_length = self.pole_axial_length * self.total_number_poles
+        tube_origin = (self.pole_outer_radius, -0.5 * tube_axial_length + 1/2*(self.pole_axial_length*self.number_poles))
 
         # Draw the outer tube encasing all poles, unmagnetized
+        tube_relative_radius = self.tube_outer_radius - self.tube_inner_radius
         draw_and_set_properties(
             origin=tube_origin,
-            length=self.tube_radius,
-            height=tube_height,
+            length=tube_relative_radius,
+            height=tube_axial_length,
             group=self.group_tube,
             direction=0,  # No magnetization
             incircuit="<none>",
@@ -182,13 +185,13 @@ class CmoreTubular(LinearBase):
         Adds the Neumann outer boundary with a safety margin to enclose all geometry.
         """
         # Center boundary midway along poles
-        boundary_center = (0, self.pole_height * self.number_poles * 0.5)
+        boundary_center = (0, self.pole_axial_length * self.number_poles * 0.5)
 
         # Radial extent based on stator poles and pitch
         stator_radius = 0.5 * (self.total_number_poles + 1) * self.pole_pitch
 
         # Radial extent including armature and slot height
-        armature_radius = self.pole_height + self.tube_radius + self.armature_stator_gap + self.slot_height
+        armature_radius = self.slot_outer_radius
 
         # Use larger radius and add 10% margin for safety
         boundary_radius = max(stator_radius, armature_radius) * 1.1
@@ -202,10 +205,10 @@ class CmoreTubular(LinearBase):
         """
 
         # Calculate the pitch of each slot (height + spacing)
-        self.slot_pitch = self.slot_height + self.slot_spacing
+        self.slot_pitch = self.slot_axial_length + self.slot_axial_spacing
 
         # Calculate the motor circumference based on pole height and number of slots
-        self.circumference = self.pole_height * self.number_poles
+        self.circumference = self.pole_axial_length * self.number_poles
 
         # Calculate pole pitch based on motor circumference and number of poles
         self.pole_pitch = self.circumference / self.number_poles
@@ -214,19 +217,25 @@ class CmoreTubular(LinearBase):
         # Extra pairs add poles symmetrically on both sides
         self.total_number_poles = (4 * self.extra_pairs) + self.number_poles
         
+        if self.pole_pitch < self.pole_axial_length:
+            self.pole_axial_length = self.pole_pitch
+            print(
+                f"Warning: Pole height scaled down to fit pole pitch: new axial length = {self.slot_axial_length}"
+            )
+
         # Add spacing between slots except every third one (for coil grouping pattern)
         y = 0
         self.slot_origins = []
         for slot in range(self.number_slots):
             if slot % 3 != 0:
-                y += self.slot_height + self.slot_spacing
+                y += self.slot_pitch
             else:
-                y += self.slot_height
+                y += self.slot_axial_length
 
-            x = self.pole_radius + self.tube_radius + self.armature_stator_gap
+            x = self.slot_inner_radius
             self.slot_origins.append((x, y))
 
-        # Generate pole origin points, shifted vertically by extra pairs
+        # Generate pole origin points, shifted axially by extra pairs
         self.pole_origins = origin_points(
             self.total_number_poles,
             x_pitch=0,
@@ -268,23 +277,25 @@ class CmoreTubular(LinearBase):
         self.fill_factor = require("fill_factor", model)
         self.extra_pairs = require("extra_pairs", model)
         self.boundary_material = require("boundary_material", model)
-
+        
         # Assign slot geometry
-        self.slot_radius = require("radius", slot)
-        self.slot_height = require("height", slot)
-        self.slot_spacing = require("spacing", slot)
-        self.armature_stator_gap = require("armature_stator_gap", slot)
+        self.slot_inner_radius = require("inner_radius", slot)
+        self.slot_outer_radius = require("outer_radius", slot)
+        self.slot_axial_length = require("axial_length", slot)
+        self.slot_axial_spacing = require("axial_spacing", slot)
         self.slot_material = require("material", slot)
         self.slot_wire_diameter = require("wire_diameter", slot)
 
         # Assign pole geometry
-        self.pole_radius = require("radius", pole)
-        self.pole_height = require("height", pole)
+        self.pole_outer_radius = require("outer_radius", pole)
+        self.pole_axial_length = require("axial_length", pole)
         self.pole_material = require("material", pole)
-        
+
         # Assign tube geometry
-        self.tube_radius = require("radius", tube)
+        self.tube_inner_radius = require("inner_radius", tube)
+        self.tube_outer_radius = require("outer_radius", tube)
         self.tube_material = require("material", tube)
+
         # Assign output
         self.folder_path = require("folder_path", output)
         self.file_name = require("file_name", output)
@@ -333,3 +344,4 @@ class CmoreTubular(LinearBase):
         Returns the peak d-axis and q-axis currents for simulation.
         """
         return (self.d_currents, self.q_currents)
+    

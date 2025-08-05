@@ -68,7 +68,7 @@ def rotational_analysis(
         displacement = step * step_size
 
         if status:
-            print(f"[{step}/{number_samples}] dx={displacement:.2f}")
+            print(f"[{step-1}/{number_samples}] dx={displacement:.2f}")
 
         frame_results = simulate_frame(
             motor,

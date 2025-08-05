@@ -6,3 +6,4 @@
 *.ans
 *.json
 *.edge
+examples/force_random_search.py

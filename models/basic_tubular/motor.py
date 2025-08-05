@@ -17,7 +17,7 @@ Units and Conventions:
         * The z-axis corresponds to the linear/axial direction of motor movement.
     - Currents are in Amperes (A).
     - The motor geometry is defined in the z-direction with origins spaced accordingly.
-    - Time-dependent stepping is represented as linear displacement along the z-axis.
+    - Stepping is represented as linear displacement along the z-axis.
 """
 
 import pathlib
@@ -107,9 +107,11 @@ class BasicTubular(LinearBase):
         Adds the armature to the simulation space
         """
         
-        number_turns = estimate_turns(
-            length=self.slot_radius,
-            height=self.slot_height,
+        relative_radius = self.slot_outer_radius - self.slot_inner_radius
+
+        self.number_turns = estimate_turns(
+            length=relative_radius,
+            height=self.slot_axial_length,
             wire_diameter=self.slot_wire_diameter,
             fill_factor=self.fill_factor
         )
@@ -118,12 +120,12 @@ class BasicTubular(LinearBase):
             slot_phase = self.phases[slot_index % len(self.phases)]
             
             # Alternate turns positive and negative slot index parity
-            turns = number_turns if slot_index % 2 == 0 else -number_turns
+            turns = self.number_turns if slot_index % 2 == 0 else -self.number_turns
 
             draw_and_set_properties(
                 origin=self.slot_origins[slot_index],
-                length=self.slot_radius,
-                height=self.slot_height,
+                length=relative_radius,
+                height=self.slot_axial_length,
                 material=self.slot_material,
                 direction=0,
                 incircuit=slot_phase,
@@ -140,8 +142,8 @@ class BasicTubular(LinearBase):
 
             draw_and_set_properties(
                 origin=self.pole_origins[pole],
-                length=self.pole_radius,
-                height=self.pole_height,
+                length=self.pole_outer_radius,
+                height=self.pole_axial_length,
                 group=self.group_pole,
                 direction=pole_magnetization,
                 incircuit="<none>",
@@ -154,13 +156,13 @@ class BasicTubular(LinearBase):
         Adds the Neumann outer boundary with a safety margin to enclose all geometry.
         """
         # Center boundary midway along poles
-        boundary_center = (0, self.pole_height * self.number_poles * 0.5)
+        boundary_center = (0, self.pole_axial_length * self.number_poles * 0.5)
 
         # Radial extent based on stator poles and pitch
         stator_radius = 0.5 * (self.total_number_poles + 1) * self.pole_pitch
 
         # Radial extent including armature and slot height
-        armature_radius = self.pole_height + self.armature_stator_gap + self.slot_height
+        armature_radius = self.slot_outer_radius
 
         # Use larger radius and add 10% margin for safety
         boundary_radius = max(stator_radius, armature_radius) * 1.1
@@ -174,7 +176,7 @@ class BasicTubular(LinearBase):
         """
 
         # Calculate the pitch of each slot (height + spacing)
-        self.slot_pitch = self.slot_height + self.slot_spacing
+        self.slot_pitch = self.slot_axial_length + self.slot_axial_spacing
 
         # Calculate the motor circumference based on slot pitch and number of slots
         self.circumference = self.slot_pitch * self.number_slots
@@ -187,10 +189,10 @@ class BasicTubular(LinearBase):
         self.total_number_poles = (4 * self.extra_pairs) + self.number_poles
 
         # Ensure pole height fits within pole pitch, scale down if necessary
-        if self.pole_pitch < self.pole_height:
-            self.pole_height = self.pole_pitch
+        if self.pole_pitch < self.pole_axial_length:
+            self.pole_axial_length = self.pole_pitch
             print(
-                f"Warning: Pole height scaled down to fit pole pitch: new height = {self.pole_height}"
+                f"Warning: Pole height scaled down to fit pole pitch: new axial length = {self.slot_axial_length}"
             )
 
         # Generate slot origin points along y-axis, shifted by radius + gap on x-axis
@@ -198,7 +200,7 @@ class BasicTubular(LinearBase):
             self.number_slots,
             x_pitch=0,
             y_pitch=self.slot_pitch,
-            x_offset=self.pole_radius + self.armature_stator_gap,
+            x_offset=self.slot_inner_radius,
         )
 
         # Generate pole origin points, shifted vertically by extra pairs
@@ -244,16 +246,16 @@ class BasicTubular(LinearBase):
         self.boundary_material = require("boundary_material", model)
         
         # Assign slot geometry
-        self.slot_radius = require("radius", slot)
-        self.slot_height = require("height", slot)
-        self.slot_spacing = require("spacing", slot)
+        self.slot_inner_radius = require("inner_radius", slot)
+        self.slot_outer_radius = require("outer_radius", slot)
+        self.slot_axial_length = require("axial_length", slot)
+        self.slot_axial_spacing = require("axial_spacing", slot)
         self.slot_material = require("material", slot)
         self.slot_wire_diameter = require("wire_diameter", slot)
-        self.armature_stator_gap = require("armature_stator_gap", slot)
 
         # Assign pole geometry
-        self.pole_radius = require("radius", pole)
-        self.pole_height = require("height", pole)
+        self.pole_outer_radius = require("outer_radius", pole)
+        self.pole_axial_length = require("axial_length", pole)
         self.pole_material = require("material", pole)
 
         # Assign output

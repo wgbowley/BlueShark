@@ -1,5 +1,5 @@
 """
-File: tubular_motor.py
+File: basic_flat.py
 Author: William Bowley
 Version: 1.0
 Date: 2025-08-05
@@ -16,7 +16,7 @@ Units and Conventions:
         * The x-axis corresponds to the linear motion direction (motor travel axis).
         * The y-axis corresponds to the motor's vertical cross-section (thickness direction).
     - Currents are in Amperes (A).
-    - Time-dependent stepping is represented as linear displacement along the x-axis.
+    - Stepping is represented as linear displacement along the x-axis.
 """
 
 
@@ -52,7 +52,7 @@ class BasicFlat(LinearBase):
         try:
             femm.openfemm(1)
             femm.newdocument(0)
-            femm.mi_probdef(0, "millimeters", "planar", 1e-8)
+            femm.mi_probdef(0, "millimeters", "planar", 1e-8, self.axial_length)
             
             for phase in self.phases:
                 femm.mi_addcircprop(phase, 0, 1)
@@ -243,6 +243,7 @@ class BasicFlat(LinearBase):
         self.fill_factor = require("fill_factor", model)
         self.extra_pairs = require("extra_pairs", model)
         self.boundary_material = require("boundary_material", model)
+        self.axial_length = require("axial_length", model)
         
         # Assign slot geometry
         self.slot_width = require("width", slot)
