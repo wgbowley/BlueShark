@@ -33,7 +33,9 @@ from blueshark.domain.generation.number_turns import estimate_turns
 from blueshark.motor.utils import require
 
 class BasicFlat(LinearBase):
-
+    """
+    Basic model of a ironless flat linear motor for use in the motor simulation framework
+    """
     def __init__(self, parameter_file: str) -> None:
         self._unpack(parameter_file)
 
@@ -44,7 +46,6 @@ class BasicFlat(LinearBase):
 
         # Phases
         self.phases = ['pa', 'pb', 'pc']
-
 
     def setup(self):
         """ Setup femm file and draws motor geometry to simulation space"""
@@ -71,7 +72,6 @@ class BasicFlat(LinearBase):
             raise RuntimeError(f"Femm setup failed: {e}") from e
         finally:
             femm.closefemm() 
-    
 
     def set_currents(self, currents: tuple[float, float, float]) -> None:
         """Set 3-phase currents for the simulation step."""
@@ -81,7 +81,6 @@ class BasicFlat(LinearBase):
         except Exception as e:
             raise RuntimeError(f"Failed to set currents in FEMM: {e}") from e
     
-
     def step(self, step: float) -> None:
         """
         Move the motor by a specified linear step.
@@ -101,18 +100,17 @@ class BasicFlat(LinearBase):
 
         except Exception as e:
             raise RuntimeError(f"Failed to move motor in FEMM: {e}") from e
-       
-        
+         
     def _add_armature(self) -> None:
         """
         Adds the armature to the simulation space
         """
         
         self.number_turns = estimate_turns(
-            length = self.slot_width,
-            height = self.slot_height,
-            wire_diameter = self.slot_wire_diameter, 
-            fill_factor = self.fill_factor
+            length=self.slot_width,
+            height=self.slot_height,
+            wire_diameter=self.slot_wire_diameter, 
+            fill_factor=self.fill_factor
         )
 
         for slot_idx in range(len(self.slot_origins)):
@@ -123,18 +121,16 @@ class BasicFlat(LinearBase):
             turn = self.number_turns if slot_idx % 2 == 0 else -self.number_turns
 
             draw_and_set_properties(
-                origin      = self.slot_origins[slot_idx],
-                length      = self.slot_width,
-                height      = self.slot_height,
-                material    = self.slot_material,
-                direction   = 0,
-                incircuit   = phase,
-                group       = self.group_slot,
-                turns       = turn
+                origin=self.slot_origins[slot_idx],
+                length=self.slot_width,
+                height=self.slot_height,
+                material=self.slot_material,
+                direction=0,
+                incircuit=phase,
+                group=self.group_slot,
+                turns=turn
             )
 
-
-    
     def _add_stator(self) -> None:
         """
         Adds the stator to the simulation space
@@ -153,7 +149,6 @@ class BasicFlat(LinearBase):
                 turns=0,
             )
 
-
     def _add_boundary(self) -> None:
         """
         Adds the Neumann outer boundary with a safety margin to enclose all geometry.
@@ -171,7 +166,6 @@ class BasicFlat(LinearBase):
         boundary_radius = max(stator_radius, armature_radius) * 1.1
 
         add_bounds(boundary_center, boundary_radius, material=self.boundary_material)
-
 
     def _compute_geometry(self) -> None:
         """
@@ -216,7 +210,6 @@ class BasicFlat(LinearBase):
             y_offset=-self.pole_height,
             x_offset=-1/2*(self.total_number_poles * self.pole_pitch)
         )
-
 
     def _unpack(self, parameter_file) -> None:
 
@@ -268,7 +261,6 @@ class BasicFlat(LinearBase):
         self.folder_path = require("folder_path", output)
         self.file_name = require("file_name", output)
 
-
     def get_parameters(self) -> dict:
         """
         Return a dictionary of all public instance variables for this motor object.
@@ -278,13 +270,11 @@ class BasicFlat(LinearBase):
             "motor_class": self.__class__.__name__,
         }
 
-
     def get_path(self) -> pathlib.Path:
         """
         Returns the full file path of the motor simulation file.
         """
         return pathlib.Path(self.folder_path) / self.file_name
-
 
     def get_moving_group(self) -> typing.Union[int, typing.List[int]]:
         """
@@ -292,13 +282,11 @@ class BasicFlat(LinearBase):
         """
         return self.group_slot
 
-
     def get_circumference(self) -> float:
         """
         Returns the mechanical circumference of the stator path.
         """
         return self.circumference
-
 
     def get_number_poles(self) -> int:
         """
@@ -306,13 +294,11 @@ class BasicFlat(LinearBase):
         """
         return self.number_poles
 
-
     def get_number_slots(self) -> int:
         """
         Returns the total number of stator slots in the motor.
         """
         return self.number_slots
-
 
     def get_peak_currents(self) -> tuple[float, float]:
         """

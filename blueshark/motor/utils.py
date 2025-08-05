@@ -5,26 +5,28 @@ Version: 1.2
 Date: 2025-07-29
 
 Description:
-    Utility functions for motor configuration and validation.
-    
-    Functions:
-        - require(key, group): Ensure required parameters exist in a configuration section.
+    Utility functions for motor configuration parsing and validation.
+
+Functions:
+- require(key, group):
+    Retrieves a required parameter from a configuration section.
 """
 
-def require(key: str, group: dict) -> object:
+from collections.abc import Mapping
+
+
+def require(key: str, group: Mapping) -> object:
     """
-    Retrieve a required key from a dictionary-like section.
+    Retrieve a required key from a mapping-like section.
 
     Args:
         key (str): The name of the required parameter.
-        group (dict): The dictionary (e.g., a section from a config file) to search in.
+        group (Mapping): The dictionary-like section to search.
 
     Returns:
         object: The value associated with the given key.
-
-    Raises:
-        KeyError: If the key is not found in the dictionary.
     """
+
     if key not in group:
         raise KeyError(f"Missing required key '{key}' in section {group}")
     return group[key]

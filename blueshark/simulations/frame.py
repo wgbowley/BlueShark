@@ -5,23 +5,23 @@ Version: 1.2
 Date: 2025-07-29
 
 Description:
-    Function to run a single FEMM simulation frame for a given motor setup.
+    Executes a single FEMM simulation frame for a configured motor instance.
 
-    Responsibilities include:
-    - Opening FEMM and loading the motor's FEMM file.
-    - Applying position steps and phase currents.
-    - Running FEMM analysis with retry on failure.
-    - Computing requested post-processing outputs.
-    - Cleaning up FEMM session and temporary files.
+    Responsibilities:
+    - Opens FEMM and loads the motor's `.fem` file
+    - Steps the motor and applies appropriate phase currents
+    - Runs FEMM analysis, with retry logic on failure
+    - Computes post-processing outputs as requested
+    - Closes FEMM and deletes the temporary `.ans` file
 """
 
-import femm
-from pathlib import Path
 import os
-
 from typing import Any
+from pathlib import Path
+
+import femm
 from blueshark.configs import MAXIMUM_FAILS
-from blueshark.output.selector import OutputSelector 
+from blueshark.output.selector import OutputSelector
 from blueshark.motor.linear_interface import LinearBase
 
 
@@ -33,10 +33,17 @@ def simulate_frame(
     currents: tuple[float, float, float]
 ) -> dict[str, Any] | None:
     """
-    Simulates one frame of the motor in FEMM and extracts the requested outputs.
+    Run a single FEMM frame and extract selected outputs.
+
+    Args:
+        motor (LinearBase): Motor instance to simulate.
+        output_selector (OutputSelector): Defines which outputs to extract.
+        subjects (dict[str, Any]): Extra metadata/context for the run.
+        step (float): Displacement to move the motor to.
+        currents (tuple[float, float, float]): Phase currents in amps.
 
     Returns:
-        Dictionary of output results, or None if simulation fails.
+        dict[str, Any] | None: Extracted results, or None if simulation fails.
     """
 
     base_path = Path(motor.get_path())
@@ -74,15 +81,16 @@ def simulate_frame(
         except Exception as e:
             fail_count += 1
             if fail_count >= MAXIMUM_FAILS:
-                print(f"[ERROR] FEMM analysis failed after {fail_count} attempts: {e}")
+                print(f"[ERROR] FEMM solution failed to load ({fail_count} attempts): {e}")
                 femm.closefemm()
                 return None
 
     frame_result = output_selector.compute(subjects)
-
-    femm.closefemm()
-
-    if os.path.exists(ans_path):
-        os.remove(ans_path)
+    try:
+        femm.closefemm()
+        if os.path.exists(ans_path):
+            os.remove(ans_path)
+    except Exception as e:
+        print(f"[WARN] Could not delete .ans file: {e}")
 
     return frame_result

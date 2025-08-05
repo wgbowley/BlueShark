@@ -7,13 +7,16 @@ Description:
     Force calculation utilities for FEMM post-processing.
 
 Functions:
-- lorentz(group) -> tuple[float, float]
-- weighted_stress_tensor(group) -> tuple[float, float]
+- lorentz(group):
+    Returns the direction and force acting on a group using the Lorentz method.
+
+- weighted_stress_tensor(group):
+    Returns the direction and force acting on a group using the weighted stress tensor method.
 """
 
-
-import femm
 import math
+import femm
+
 from blueshark.configs import PRECISION
 
 
@@ -24,14 +27,15 @@ def lorentz(group: int) -> tuple[float, float]:
         group (int): FEMM group number.
 
     Returns:
-        magnitude (float): Resultant Lorentz force magnitude, rounded to configured precision.
-        angle (float): Resultant Lorentz force angle in degrees [0, 360), rounded to configured precision.
+        magnitude (float): Resultant Lorentz force magnitude.
+        angle (float): Resultant Lorentz force angle in degrees [0, 360).
+        (rounded to configured precision)
     """
     femm.mo_groupselectblock(group)
     fx = femm.mo_blockintegral(11)
     fy = femm.mo_blockintegral(12)
     femm.mo_clearblock()
-    
+
     magnitude = math.hypot(fx, fy)
     angle = (math.degrees(math.atan2(fy, fx)) + 360) % 360
     return round(magnitude, PRECISION), round(angle, PRECISION)
@@ -44,15 +48,16 @@ def weighted_stress_tensor(group: int) -> tuple[float, float]:
         group (int): FEMM group number.
 
     Returns:
-        magnitude (float): Resultant weighted stress tensor force magnitude, rounded to configured precision.
-        angle (float): Resultant force angle in degrees [0, 360), rounded to configured precision.
+        magnitude (float): Resultant weighted stress tensor force magnitude.
+        angle (float): Resultant force angle in degrees [0, 360).
+        (rounded to configured precision)
     """
-    
+
     femm.mo_groupselectblock(group)
     fx = femm.mo_blockintegral(18)
     fy = femm.mo_blockintegral(19)
     femm.mo_clearblock()
-    
+
     magnitude = math.hypot(fx, fy)
     angle = (math.degrees(math.atan2(fy, fx)) + 360) % 360
     return round(magnitude, PRECISION), round(angle, PRECISION)

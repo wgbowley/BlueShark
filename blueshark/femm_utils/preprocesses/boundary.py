@@ -5,13 +5,19 @@ Version: 1.2
 Date: 2025-07-28
 
 Description:
-    Boundary condition and domain setup functions for FEMM pre-processor.
+    Boundary condition and domain setup functions for FEMM pre-processing.
 
     Provides utility to add concentric boundary shells emulating an unbounded domain
     for FEMM magnetic simulations.
+
+Functions:
+- add_bounds(origin, radius, num_shells=7, bound_type=1, material="Air"):
+    Adds concentric boundary shells with specified conditions; returns None.
+
 """
 
 import femm
+
 
 def add_bounds(
     origin: tuple[float, float],
@@ -28,19 +34,20 @@ def add_bounds(
 
     Args:
         origin (tuple[float, float]): Center coordinates (x, y) for the shells.
-        radius (float): Radius of the outermost shell; must be positive.
-        num_shells (int): Number of concentric shells to create; must be positive.
+        radius (float): Radius of the inter most shell (solution domain)
+        num_shells (int): Number of concentric shells to create.
         bound_type (int): Boundary condition type.
                           0 = Dirichlet (fixed potential),
                           1 = Neumann (zero normal derivative).
         material (str): Name of the material assigned to the shells.
     """
+
     if radius <= 0:
-        raise ValueError("Radius must be positive.")
-    if num_shells <= 0:
-        raise ValueError("num_shells must be a positive integer.")
+        raise ValueError(f"Radius must be > 0, got {radius}")
+    if not isinstance(num_shells, int) or num_shells <= 0:
+        raise ValueError(f"Number of shells must be a positive integer, got {num_shells}")
     if bound_type not in (0, 1):
-        raise ValueError("bound_type must be 0 (Dirichlet) or 1 (Neumann).")
+        raise ValueError(f"bound_type must be 0 (Dirichlet) or 1 (Neumann), got {bound_type}")
     if not isinstance(material, str) or not material.strip():
         raise ValueError("Material name must be a non-empty string.")
 

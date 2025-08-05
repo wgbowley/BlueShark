@@ -9,7 +9,7 @@ Description:
     output functions based on user requests.
 
     Supported outputs:
-    - force_lorentz           
+    - force_lorentz  
     - torque_lorentz
     - force_via_stress_tensor
     - torque_via_stress_tensor
@@ -20,13 +20,17 @@ Description:
     - phase_flux_linkage
 """
 
+from typing import Any, Callable, Union
 from blueshark.femm_utils.postprocesses import forces as force
 from blueshark.femm_utils.postprocesses import circuits as phases
 from blueshark.femm_utils.postprocesses import torques
-from typing import Any, Callable, Union
 
 
 class OutputSelector:
+    """
+    Outputselector dymically selects and executes FEMM post-processing
+    output functions.
+    """
     def __init__(self, requested_outputs: list[str]) -> None:
         """
         Initialize the OutputSelector with requested output names.
@@ -41,8 +45,8 @@ class OutputSelector:
         self.available_outputs = {
             "force_lorentz": (force.lorentz, self._run_group),
             "torque_lorentz": (torques.lorentz, self._run_group),
-            "force_via_stress_tensor": (force.weighted_stress_tensor, self._run_group),
-            "torque_via_stress_tensor": (torques.weighted_stress_tensor, self._run_group),
+            "force_stress_tensor": (force.weighted_stress_tensor, self._run_group),
+            "torque_stress_tensor": (torques.weighted_stress_tensor, self._run_group),
             "phase_power": (phases.phase_power, self._run_phase),
             "phase_voltage": (phases.phase_voltage, self._run_phase),
             "phase_current": (phases.phase_current, self._run_phase),
@@ -59,8 +63,7 @@ class OutputSelector:
 
         self.outputs = requested_outputs
 
-
-    def compute(self, subjects: dict)  -> dict[str, Any]:
+    def compute(self, subjects: dict) -> dict[str, Any]:
         """
         Compute all requested outputs using provided subjects.
 
@@ -75,11 +78,10 @@ class OutputSelector:
             func, runner = self.available_outputs[name]
             results[name] = runner(func, subjects)
         return results
-    
-    
+
     def _run_group(
-        self, 
-        function: Callable[[int], Any], 
+        self,
+        function: Callable[[int], Any],
         subjects: dict
     ) -> Union[Any, list[Any]]:
         """
@@ -94,16 +96,15 @@ class OutputSelector:
         """
         groups = subjects.get("group")
         if groups is None:
-            raise ValueError(f"'group' key missing in subjects: keys={list(subjects.keys())}")
+            raise ValueError(f"Missing 'group' key; keys={list(subjects.keys())}")
 
         if isinstance(groups, (list, tuple)):
             return [function(group) for group in groups]
 
         return function(groups)
 
-
     def _run_phase(
-        self, 
+        self,
         function: Callable[[str], Any], 
         subjects: dict
     ) -> Union[Any, list[Any]]:
@@ -119,7 +120,7 @@ class OutputSelector:
         """
         names = subjects.get("phaseName")
         if names is None:
-            raise ValueError(f"'phaseName' key missing in subjects: keys={list(subjects.keys())}")
+            raise ValueError(f"Missing 'phaseName' key; keys={list(subjects.keys())}")
 
         if isinstance(names, (list, tuple)):
             return [function(name) for name in names]

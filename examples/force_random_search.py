@@ -15,11 +15,9 @@ Description:
 import os
 import random
 import sys
-import json
-from pathlib import Path
 
-# Applies project root directory dynamically 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Applies project root directory dynamically
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from blueshark.output.selector import OutputSelector
 from blueshark.output.writer import write_output_json
@@ -27,20 +25,34 @@ from blueshark.simulations.rotational_analysis import rotational_analysis
 from blueshark.simulations.alignment import phase_alignment
 from models.cmore839.motor import CmoreTubular
 
+
 # --- Helper functions ---
 def random_value():
+    """
+    Generates random value between [-1,1]
+    """
     return random.random() * 2 - 1
 
-def generate_geometry(step_size: float, slot_height: float, slot_radius: float) -> tuple[float, float]:
-    height = abs(slot_height + step_size * random_value())
-    radius = abs(slot_radius + step_size * random_value())
-    return height, radius
+
+def generate_geometry(
+    step_size: float, 
+    slot_height: float, 
+    slot_radius: float
+) -> tuple[float, float]:
+    """
+    Uses random_value to get value between [-1,1] and uses step_size to
+    increase it afterwhich its added to the paramet
+    """
+    gen_height = abs(slot_height + step_size * random_value())
+    gen_radius = abs(slot_radius + step_size * random_value())
+    return gen_height, gen_radius
+
 
 # --- Optimization parameters ---
 SIMULATION_NUM = 1000
 STEP_SIZE = 20
 MIN_STEP_SIZE = 0.315
-STALL_MAX = 50 # Num of stalls to finish is 50/(2^n) = min_step_size
+STALL_MAX = 50  # Num of stalls to finish is 50/(2^n) = min_step_size
 POWER_LIMIT = 200
 
 best_force = 0.0
@@ -48,18 +60,18 @@ best_height = 0.0
 best_radius = 0.0
 stall = 0
 
-motor_config_path = "models/cmore839/motor.yaml" 
+motor_config_path = "models/cmore839/motor.yaml"
 results_output = "models/cmore839/force_random_search_results.json"
 requested_outputs = ["force_lorentz", "phase_power"]
 ALIGN_SAMPLES = 10
-TEST_SAMPLES  = 10
+TEST_SAMPLES = 10
 
 optimization_results = []
 
 
 # --- Main optimization loop ---
 for index in range(SIMULATION_NUM):
-    motor = CmoreTubular(motor_config_path) 
+    motor = CmoreTubular(motor_config_path)
     slot_height = motor.slot_height
     slot_radius = motor.slot_radius
 
@@ -70,7 +82,7 @@ for index in range(SIMULATION_NUM):
         "iteration": index,
         "slot_height": height,
         "slot_radius": radius,
-        "status": "started"
+        "status": "started",
     }
 
     optimization_results.append(test_log)
@@ -84,7 +96,9 @@ for index in range(SIMULATION_NUM):
         output_selector = OutputSelector(requested_outputs)
         subjects = {"group": motor.get_moving_group(), "phaseName": motor.phases}
         phase_offset = phase_alignment(motor, ALIGN_SAMPLES, False)
-        results = rotational_analysis(motor, output_selector, subjects, TEST_SAMPLES, phase_offset, False)
+        results = rotational_analysis(
+            motor, output_selector, subjects, TEST_SAMPLES, phase_offset, False
+        )
 
         total_force = 0.0
         total_power = 0.0
@@ -106,12 +120,14 @@ for index in range(SIMULATION_NUM):
         avg_power = total_power / count if count else 0.0
 
         # Update test log
-        optimization_results[-1].update({
-            "avg_force": avg_force,
-            "avg_power": avg_power,
-            "accepted": avg_power <= POWER_LIMIT,
-            "status": "completed"
-        })
+        optimization_results[-1].update(
+            {
+                "avg_force": avg_force,
+                "avg_power": avg_power,
+                "accepted": avg_power <= POWER_LIMIT,
+                "status": "completed",
+            }
+        )
 
         write_output_json(optimization_results, results_output, False)
 
@@ -123,7 +139,9 @@ for index in range(SIMULATION_NUM):
             best_height = height
             best_radius = radius
             stall = 0
-            print(f"Iteration {index}: New best! Force={best_force:.3f} N, Power={avg_power:.2f} W")
+            print(
+                f"Iteration {index}: New best! Force={best_force:.3f} N, Power={avg_power:.2f} W"
+            )
         else:
             stall += 1
             print(f"Iteration {index}: No improvement. Stall count: {stall}")
@@ -138,10 +156,7 @@ for index in range(SIMULATION_NUM):
             break
 
     except Exception as e:
-        optimization_results[-1].update({
-            "status": "crashed",
-            "error": str(e)
-        })
+        optimization_results[-1].update({"status": "crashed", "error": str(e)})
         write_output_json(optimization_results, results_output, False)
         print(f"Iteration {index}: Crashed with error: {e}")
         break

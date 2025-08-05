@@ -7,8 +7,11 @@ Description:
     Coordinate transformation functions for motor reference frames.
 
 Functions:
-- inverse_park_transform(d_current, q_current, elec_angle) -> (alpha, beta)
-- inverse_clarke_transform(alpha, beta) -> (phase_a, phase_b, phase_c)
+- inverse_park_transform(d_current, q_current, elec_angle):
+    Returns alpha and beta stationary reference frame currents.
+
+- inverse_clarke_transform(alpha, beta):
+    Returns phase a, b, and c current waveforms.
 """
 
 from math import cos, sin, sqrt
@@ -27,13 +30,13 @@ def inverse_park_transform(
     Args:
         d_current (float): Current in the d-axis.
         q_current (float): Current in the q-axis.
-        elec_angle (float): Electrical angle in radians. 
+        elec_angle (float): Electrical angle in radians.
 
     Returns:
         tuple[float, float]: Currents in alpha and beta stationary reference frame,
                              rounded to configured PRECISION.
     """
-    
+
     alpha = d_current * cos(elec_angle) - q_current * sin(elec_angle)
     beta = d_current * sin(elec_angle) + q_current * cos(elec_angle)
 
@@ -56,7 +59,7 @@ def inverse_clarke_transform(
         tuple[float, float, float]: Three-phase currents (a, b, c),
                                    rounded to configured PRECISION.
     """
-    
+
     phase_a = round(alpha, PRECISION)
     phase_b = round(0.5 * (sqrt(3) * beta - alpha), PRECISION)
     phase_c = round(0.5 * (-sqrt(3) * beta - alpha), PRECISION)

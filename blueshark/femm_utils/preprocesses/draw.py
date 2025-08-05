@@ -4,10 +4,12 @@ Author: William Bowley
 Version: 1.2
 Date: 2025-07-28
 Description:
-    Functions for drawing axis-aligned rectangular geometry in FEMM and assigning block properties.
+    Functions for drawing axis-aligned rectangular geometry in FEMM
+    and assigning block properties.
 
 Functions:
-- draw_and_set_properties(origin, length, height, material, direction, incircuit, group, turns) -> None
+- draw_and_set_properties(origin, length, height, material, direction, incircuit, group, turns)
+    Adds a square or rectangular object with specified properties; returns None.
 """
 
 import femm
@@ -44,13 +46,15 @@ def draw_and_set_properties(
     Note:
         This does not support angled, curved, or irregular geometries.
     """
+
     if not isinstance(origin, tuple) or len(origin) != 2:
         raise TypeError("Origin must be a tuple of length 2")
     if length <= 0:
         raise ValueError(f"Region length must be > 0, got {length}")
     if height <= 0:
         raise ValueError(f"Region height must be > 0, got {height}")
-    if type(group) is not int or type(turns) is not int:
+
+    if not isinstance(group, int) or not isinstance(turns, int):
         raise TypeError("Group and Turns must be integer values")
     if not isinstance(incircuit, str):
         raise TypeError("Circuit name & material must be a string")

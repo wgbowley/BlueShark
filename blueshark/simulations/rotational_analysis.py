@@ -8,17 +8,17 @@ Description:
     Provides the rotational_analysis function to perform detailed
     rotational simulation of linear motors using FEMM.
 
-    This module uses displacement_commutation to generate phase
-    current profiles over a full mechanical rotation and simulates
-    each step via simulate_frame. It aggregates the results with
-    displacement data for analysis.
+    Simulation flow:
+    - Retrieves the motor circumference and number of pole pairs.
+    - Generates step size and three-phase current profiles.
+    - Simulates frames to produce results with respect to dispalcement.
 """
 
+from typing import Any
 from blueshark.domain.physics.commutation import displacement_commutation
 from blueshark.simulations.frame import simulate_frame
 from blueshark.motor.linear_interface import LinearBase
 from blueshark.output.selector import OutputSelector
-from typing import Any
 
 
 def rotational_analysis(
@@ -26,44 +26,49 @@ def rotational_analysis(
     output_selector: OutputSelector,
     subjects: dict[str, Any],
     number_samples: int,
-    phase_offset: float = 0,    
+    phase_offset: float = 0,
     status: bool = True,
-):
+) -> list[dict[str, Any]]:
     """
     Perform rotational analysis by simulating frames over displacement steps
-    with current profiles from displacement_commutation.
+    using current profiles from displacement_commutation.
 
     Args:
-        motor: LinearBase motor instance.
-        output_selector: OutputSelector instance to compute outputs.
-        subjects: Context dict for output selector.
-        number_samples: Number of samples (simulation steps).
-        phase_offset: Aligns magnetic fields of stator & armuture
-        status: Whether to print progress.
+        motor (LinearBase): Motor instance to simulate.
+        output_selector (OutputSelector): Defines which outputs to extract.
+        subjects (dict[str, Any]): Metadata or context for the simulation.
+        number_samples (int): Number of simulation steps.
+        phase_offset (float): Electrical shift to align flux.
+        status (bool): Whether to print progress messages.
 
     Returns:
-        List of dicts containing displacement and simulation outputs per step.
+        List[dict]: Simulation outputs for each displacement step.
     """
+
     if number_samples <= 0:
-        raise ValueError(f"Number samples must be a positive integer, got {number_samples}")
-    
+        raise ValueError("Number of samples must be a positive integer.")
+    if not isinstance(status, bool):
+        raise ValueError("Status must be a boolean value.")
+
     motor_circumference = motor.get_circumference()
-    
+    motor_pole_pairs = motor.get_number_poles() // 2
+
     step_size, profile = displacement_commutation(
         motor_circumference,
         motor_circumference,
-        motor.get_number_poles() / 2,
+        motor_pole_pairs,
         motor.get_peak_currents(),
         number_samples,
         phase_offset
     )
 
     results = []
-    displacement = 0.0
 
     for step, currents in enumerate(profile, start=1):
+        displacement = step * step_size
+
         if status:
-            print(f"Step {step-1}/{number_samples} | Total displacement: {displacement:.4f}")
+            print(f"[{step}/{number_samples}] dx={displacement:.2f}")
 
         frame_results = simulate_frame(
             motor,
@@ -73,7 +78,7 @@ def rotational_analysis(
             currents,
         )
 
-        results.append({"displacement": displacement, "outputs": frame_results})
-        displacement += step_size
+        formatted = {"displacement": displacement, "outputs": frame_results}
+        results.append(formatted)
 
     return results

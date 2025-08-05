@@ -1,21 +1,34 @@
+"""
+File: unit_physics.py
+Author: William Bowley
+Version: 1.0
+Date: 2025-08-05
+
+Description:
+    Tests functions within domain/physics
+"""
+
 import unittest
 from math import pi
 
-from blueshark.domain.physics.angles import electrical_angle, mechanical_angle
-from blueshark.domain.physics.transforms import inverse_clarke_transform, inverse_park_transform
-from blueshark.domain.physics.ripple import ripple_peak_to_peak, ripple_rms, ripple_percent  
 from blueshark.domain.physics.commutation import displacement_commutation
+from blueshark.domain.physics.angles import electrical_angle, mechanical_angle
+from blueshark.domain.physics.transforms import inverse_clarke_transform
+from blueshark.domain.physics.transforms import inverse_park_transform
+from blueshark.domain.physics.ripple import ripple_peak_to_peak
+from blueshark.domain.physics.ripple import ripple_percent
+from blueshark.domain.physics.ripple import ripple_rms
 from blueshark.configs import PRECISION
 
 
-""" Angles -> Mechanical """
 class TestMechanical(unittest.TestCase):
+    """ Tests domain/physics/angles -> mechanical_angle"""
     def test_zero_displacement(self):
         self.assertEqual(mechanical_angle(10, 0), 0.0)
 
     def test_full_circumference(self):
         # Full circle -> 0 radians
-        self.assertEqual(mechanical_angle(10, 10), 0.0)  
+        self.assertEqual(mechanical_angle(10, 10), 0.0)
 
     def test_half_circumference(self):
         expected = round(pi, PRECISION)
@@ -30,27 +43,27 @@ class TestMechanical(unittest.TestCase):
         circumference = 20
         displacement = 2.5
         expected = round(pi/4, PRECISION)
-        self.assertEqual(mechanical_angle(circumference, displacement), expected)
-        
-        
-""" Angles -> Electrical """        
+        actual = mechanical_angle(circumference, displacement)
+        self.assertEqual(actual, expected)
+
+
 class TestElectrical(unittest.TestCase):
+    """ Tests domain/physics/angles -> electrical_angle"""
     def test_zero_mechanical_angle(self):
         self.assertEqual(electrical_angle(10, 0), 0)
-    
+
     def test_zero_poles(self):
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(ValueError) as e:
             electrical_angle(-1, 2 * pi)
-        
-        self.assertIn("Number of pole pairs must be > 0", str(context.exception))
-        
+
+        self.assertIn("Number of pole pairs must be > 0", str(e.exception))
+
     def test_half_mechanical_angle(self):
         self.assertEqual(electrical_angle(2, pi), 0)
-        
-        
-""" transforms -> inverse park & clarke"""       
-class TestTransforms(unittest.TestCase):
 
+
+class TestTransforms(unittest.TestCase):
+    """ Tests domain/physics/transforms -> inverse_park_transform"""
     def test_inverse_park_transform_basic(self):
         # d=1, q=0, angle=0 => alpha=1, beta=0
         alpha, beta = inverse_park_transform(1.0, 0.0, 0.0)
@@ -62,18 +75,17 @@ class TestTransforms(unittest.TestCase):
         alpha, beta = inverse_park_transform(0.0, 1.0, pi / 2)
         self.assertAlmostEqual(alpha, -1.0, places=PRECISION)
         self.assertAlmostEqual(beta, 0.0, places=PRECISION)
-        
+
     def test_inverse_clarke_transform_basic(self):
         # alpha=1, beta=0 => phase_a=1, phase_b=-0.5, phase_c=-0.5
         a, b, c = inverse_clarke_transform(1.0, 0.0)
         self.assertAlmostEqual(a, 1.0, places=PRECISION)
         self.assertAlmostEqual(b, -0.5, places=PRECISION)
         self.assertAlmostEqual(c, -0.5, places=PRECISION)
-        
-        
-""" Ripple -> peakToPeak, rms, percent"""
-class TestRippleFunctions(unittest.TestCase):
 
+
+class TestRippleFunctions(unittest.TestCase):
+    """ Tests domain/physics/ripple -> peak-peak, rms, precent"""
     def test_peak_to_peak_basic(self):
         values = [1, 2, 3, 4, 5]
         expected = 4.0  # max-min ignoring mean shift
@@ -123,25 +135,27 @@ class TestRippleFunctions(unittest.TestCase):
         values = [1e-15, -1e-15, 2e-15]
         result = ripple_percent(values)
         self.assertEqual(result, 0.0)
-        
+
     def test_constant_values(self):
         values = [5, 5, 5, 5]
         self.assertEqual(ripple_peak_to_peak(values), 0.0)
         self.assertEqual(ripple_rms(values), 0.0)
         self.assertEqual(ripple_percent(values), 0.0)
-        
-class TestDisplacementCommutation(unittest.TestCase):
+
+
+class TestCommutation(unittest.TestCase):
+    """ Tests domain/physics/commutation -> displacement_commutation"""
     def test_vaild_output(self):
         step_size, profile = displacement_commutation(
-            displacement= 1.0,
-            circumference= 1.0,
-            pole_pairs= 1,
-            currents_peak= (1.0, 0.0),
-            num_samples= 2
+            displacement=1.0,
+            circumference=1.0,
+            pole_pairs=1,
+            currents_peak=(1.0, 0.0),
+            num_samples=2
         )
         self.assertEqual(len(profile), 3)
         self.assertAlmostEqual(step_size, 0.5)
-        
+
     def test_zero_displacement(self):
         with self.assertRaises(ValueError):
             displacement_commutation(0.0, 1.0, 1, (1.0, 0.0), 10)
@@ -156,7 +170,8 @@ class TestDisplacementCommutation(unittest.TestCase):
 
     def test_invalid_currents_peak_type(self):
         with self.assertRaises(TypeError):
-            displacement_commutation(1.0, 1.0, 1, [1.0, 0.0], 10)  # list not tuple
+            # list not tuple
+            displacement_commutation(1.0, 1.0, 1, [1.0, 0.0], 10)
 
     def test_invalid_currents_peak_length(self):
         with self.assertRaises(TypeError):

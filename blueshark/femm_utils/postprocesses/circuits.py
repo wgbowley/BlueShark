@@ -7,15 +7,25 @@ Description:
     Circuit analysis utilities for FEMM post-processing.
 
 Functions:
-- phase_voltage(circuit_name) -> float
-- phase_current(circuit_name) -> float
-- phase_inductance(circuit_name) -> float
-- phase_flux_linkage(circuit_name) -> float
-- phase_power(circuit_name) -> float
+- phase_voltage(circuit_name):
+    Returns the voltage across a single phase.
+
+- phase_current(circuit_name):
+    Returns the current through a single phase.
+
+- phase_inductance(circuit_name):
+    Returns the inductance of a single phase.
+
+- phase_flux_linkage(circuit_name):
+    Returns the flux linkage of a single phase.
+
+- phase_power(circuit_name):
+    Returns the power through a single phase.
 """
 
 import femm
 from blueshark.configs import PRECISION, EPSILON
+
 
 def phase_voltage(circuit_name: str) -> float:
     """
@@ -27,9 +37,11 @@ def phase_voltage(circuit_name: str) -> float:
     Returns:
         float: Voltage drop in volts, rounded to configured PRECISION.
     """
+
     circuit_props = femm.mo_getcircuitproperties(circuit_name)
     voltage = circuit_props[1]
     return round(voltage, PRECISION)
+
 
 def phase_current(circuit_name: str) -> float:
     """
@@ -41,6 +53,7 @@ def phase_current(circuit_name: str) -> float:
     Returns:
         float: Current in amperes, rounded to configured PRECISION.
     """
+
     circuit_props = femm.mo_getcircuitproperties(circuit_name)
     current = circuit_props[0]
     return round(current, PRECISION)
@@ -56,6 +69,7 @@ def phase_inductance(circuit_name: str) -> float:
     Returns:
         float: Inductance in henrys (always positive), rounded to configured PRECISION.
     """
+
     circuit_props = femm.mo_getcircuitproperties(circuit_name)
     current = circuit_props[0]
     flux_linkage = circuit_props[2]
@@ -78,6 +92,7 @@ def phase_flux_linkage(circuit_name: str) -> float:
     Returns:
         float: Flux linkage in webers-turns, rounded to configured PRECISION.
     """
+
     circuit_props = femm.mo_getcircuitproperties(circuit_name)
     flux_linkage = circuit_props[2]
     return round(flux_linkage, PRECISION)
@@ -93,6 +108,7 @@ def phase_power(circuit_name: str) -> float:
     Returns:
         float: Power in watts, rounded to configured PRECISION.
     """
+
     circuit_props = femm.mo_getcircuitproperties(circuit_name)
     current = circuit_props[0]
     voltage = circuit_props[1]

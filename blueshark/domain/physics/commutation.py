@@ -7,13 +7,14 @@ Description:
     Functions to generate commutation current profiles for 3-phase motors.
 
 Functions:
-- displacement_commutation(displacement, circumference, pole_pairs, 
-                           currents_peak, num_samples, phase_offset=0.0) -> Tuple[float, List[Tuple[float, float, float]]]
+- displacement_commutation(displacement, circumference, pole_pairs, currents_peak, num_samples, phase_offset=0.0)
+    Generates commutation current profiles based on rotor displacement and motor parameters.
 """
 
 from typing import Tuple, List
 from blueshark.domain.physics.angles import electrical_angle, mechanical_angle
-from blueshark.domain.physics.transforms import inverse_clarke_transform, inverse_park_transform
+from blueshark.domain.physics.transforms import inverse_clarke_transform
+from blueshark.domain.physics.transforms import inverse_park_transform
 
 
 def displacement_commutation(
@@ -47,6 +48,9 @@ def displacement_commutation(
         raise ValueError(f"Number of samples must be > 0, got {num_samples}")
     if circumference <= 0:
         raise ValueError(f"Motor circumference must be > 0, got {circumference}")
+    if pole_pairs <= 0:
+        raise ValueError(f"Number of pole pairs must be > 0, got {pole_pairs}")
+
     if not isinstance(currents_peak, tuple) or len(currents_peak) != 2:
         raise TypeError("Current peaks must be a tuple of length 2.")
     if any(not isinstance(i, (int, float)) for i in currents_peak):

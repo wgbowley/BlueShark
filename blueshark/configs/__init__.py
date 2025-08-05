@@ -1,5 +1,5 @@
 # blueshark/configs/__init__.py
-from blueshark.configs.constant import PRECISION
-from blueshark.configs.constant import TWO_PI
-from blueshark.configs.constant import MAXIMUM_FAILS
-from blueshark.configs.constant import EPSILON
+from blueshark.configs.constants import PRECISION
+from blueshark.configs.constants import TWO_PI
+from blueshark.configs.constants import MAXIMUM_FAILS
+from blueshark.configs.constants import EPSILON

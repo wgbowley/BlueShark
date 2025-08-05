@@ -8,11 +8,15 @@ Description:
 
 Functions:
 - lorentz(group) -> float
+    Calculates torque on a group using the Lorentz force method.
+
 - weighted_stress_tensor(group) -> float
+    Calculates torque on a group using the weighted stress tensor method.
 """
 
 import femm
 from blueshark.configs import PRECISION
+
 
 def lorentz(group: int) -> float:
     """
@@ -44,5 +48,5 @@ def weighted_stress_tensor(group: int) -> float:
     femm.mo_groupselectblock(group)
     torque = femm.mo_blockintegral(22)
     femm.mo_clearblock()
-    
+
     return round(torque, PRECISION)

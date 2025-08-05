@@ -38,6 +38,9 @@ from blueshark.domain.generation.number_turns import estimate_turns
 from blueshark.motor.utils import require
 
 class CmoreTubular(LinearBase):
+    """
+    Framework model for cmore839 tubular linear motor design 
+    """
     def __init__(self, parameter_file):
         self._unpack(parameter_file)
 
@@ -49,7 +52,6 @@ class CmoreTubular(LinearBase):
 
         # Phases
         self.phases = ['pa', 'pb', 'pc']
-
 
     def setup(self):
         """ Setup femm file and draws motor geometry to simulation space"""
@@ -64,11 +66,9 @@ class CmoreTubular(LinearBase):
             femm.mi_getmaterial(self.pole_material)
             femm.mi_getmaterial(self.slot_material)
             femm.mi_getmaterial(self.boundary_material)
+            femm.mi_addmaterial('AluminumTube', 1, 1, 0, 0, 37, 0, 0, 1, 0, 0, 0, 1, 1)
             # femm.mi_getmaterial(self.tube_material)
-            # femm.mi_addmaterial('CarbonFiberWrap',1,1,0,0,2,0,0,1,0,0,0,1,1)
-            femm.mi_addmaterial('AluminumTube',1,1,0,0,37,0,0,1,0,0,0,1,1)
-            
-            # femm.mi_getmaterial(self.tube_material)
+
             self._compute_geometry()
             self._add_armature()
             self._add_stator()
@@ -81,7 +81,6 @@ class CmoreTubular(LinearBase):
         finally:
             femm.closefemm() 
 
-
     def set_currents(self, currents: tuple[float, float, float]) -> None:
         """Set 3-phase currents for the simulation step."""
         try:
@@ -89,7 +88,6 @@ class CmoreTubular(LinearBase):
                 femm.mi_setcurrent(phase, float(current))
         except Exception as e:
             raise RuntimeError(f"Failed to set currents in FEMM: {e}") from e
-    
 
     def step(self, step: float) -> None:
         """
@@ -110,25 +108,24 @@ class CmoreTubular(LinearBase):
 
         except Exception as e:
             raise RuntimeError(f"Failed to move motor in FEMM: {e}") from e
-       
 
     def _add_armature(self) -> None:
         """
         Adds the armature to the simulation space
         """
-        
-        self.number_turns = estimate_turns(
-            length = self.slot_radius,
-            height = self.slot_height,
-            wire_diameter = self.slot_wire_diameter, 
-            fill_factor = self.fill_factor
+
+        number_turns = estimate_turns(
+            length=self.slot_radius,
+            height=self.slot_height,
+            wire_diameter=self.slot_wire_diameter, 
+            fill_factor=self.fill_factor
         )
         
         for slot_index in range(len(self.slot_origins)):
             slot_phase = self.phases[slot_index % len(self.phases)]
             
             # Alternate turns positive and negative slot index parity
-            turns = self.number_turns if slot_index % 2 == 0 else -self.number_turns
+            turns = number_turns if slot_index % 2 == 0 else -number_turns
 
             draw_and_set_properties(
                 origin=self.slot_origins[slot_index],
@@ -141,8 +138,6 @@ class CmoreTubular(LinearBase):
                 turns=turns
             )
     
-
-
     def _add_stator(self) -> None:
         """
         Adds the stator to the simulation space.
@@ -156,7 +151,7 @@ class CmoreTubular(LinearBase):
 
             # Draw the magnetic pole and assign its physical/material properties
             draw_and_set_properties(
-                origin=self.pole_origins[pole],  
+                origin=self.pole_origins[pole], 
                 length=self.pole_radius,
                 height=self.pole_height,
                 group=self.group_pole,
@@ -182,7 +177,6 @@ class CmoreTubular(LinearBase):
             turns=0,
         )
         
-
     def _add_boundary(self) -> None:
         """
         Adds the Neumann outer boundary with a safety margin to enclose all geometry.
@@ -200,7 +194,6 @@ class CmoreTubular(LinearBase):
         boundary_radius = max(stator_radius, armature_radius) * 1.1
 
         add_bounds(boundary_center, boundary_radius, material=self.boundary_material)
-
 
     def _compute_geometry(self) -> None:
         """
@@ -222,7 +215,7 @@ class CmoreTubular(LinearBase):
         self.total_number_poles = (4 * self.extra_pairs) + self.number_poles
         
         # Add spacing between slots except every third one (for coil grouping pattern)
-        y = 0 
+        y = 0
         self.slot_origins = []
         for slot in range(self.number_slots):
             if slot % 3 != 0:
@@ -241,7 +234,6 @@ class CmoreTubular(LinearBase):
             x_offset=0,
             y_offset=-2 * (self.extra_pairs * self.pole_pitch),
         )
-
 
     def _unpack(self, parameter_file):
 
@@ -297,7 +289,6 @@ class CmoreTubular(LinearBase):
         self.folder_path = require("folder_path", output)
         self.file_name = require("file_name", output)
 
-
     def get_parameters(self) -> dict:
         """
         Return a dictionary of all public instance variables for this motor object.
@@ -305,8 +296,7 @@ class CmoreTubular(LinearBase):
         return {
             **{k: v for k, v in self.__dict__.items() if not k.startswith("_")},
             "motor_class": self.__class__.__name__,
-    }
-
+        }
 
     def get_path(self) -> pathlib.Path:
         """
@@ -314,13 +304,11 @@ class CmoreTubular(LinearBase):
         """
         return pathlib.Path(self.folder_path) / self.file_name
 
-
     def get_moving_group(self) -> typing.Union[int, typing.List[int]]:
         """
         Returns the moving group(s) within the FEMM simulation domain.
         """
         return self.group_slot
-
 
     def get_circumference(self) -> float:
         """
@@ -328,20 +316,17 @@ class CmoreTubular(LinearBase):
         """
         return self.circumference
 
-
     def get_number_poles(self) -> int:
         """
         Returns the total number of magnetic poles in the motor.
         """
         return self.number_poles
 
-
     def get_number_slots(self) -> int:
         """
         Returns the total number of stator slots in the motor.
         """
         return self.number_slots
-
 
     def get_peak_currents(self) -> tuple[float, float]:
         """

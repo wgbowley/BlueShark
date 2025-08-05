@@ -13,7 +13,7 @@ slot:
   spacing: 0.45
   material: 0.315mm
   wire_diameter: 0.315
-  armature_stator_gap: 0.12
+  armature_stator_gap: 1
 
 pole:
   radius: 6

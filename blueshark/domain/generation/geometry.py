@@ -4,11 +4,15 @@ Author: William Bowley
 Version: 1.2
 Date: 2025-07-28
 Description:
-    Helper functions for geometric calculations.
+    Functions to calculate the centroid of a rectangular object
+    and generate placement patterns.
 
 Functions:
-- get_centroid_point(origin: tuple[float, float], object_length: float, object_height: float) -> tuple[float, float]
-- origin_points(object_number: int, x_pitch: float, y_pitch: float, x_offset, y_offset) -> list[tuple[float, float]]
+- get_centroid_point(origin, object_length, object_height):
+    Returns the centroid point as (x, y).
+
+- origin_points(object_number, x_pitch, y_pitch, x_offset, y_offset):
+    Returns a list of origin points [(x, y), ..., (xn, yn)].
 """
 
 
@@ -28,14 +32,14 @@ def get_centroid_point(
     Returns:
         Tuple[float, float]: (x, y) coordinates of the centroid.
     """
-    
-    if not isinstance(origin, tuple) or len(origin) !=2:
+
+    if not isinstance(origin, tuple) or len(origin) != 2:
         raise TypeError("Origin must be a tuple of length 2")
     if object_length <= 0:
         raise ValueError(f"Object length must be > 0, got {object_length}")
     if object_height <= 0:
         raise ValueError(f"Object height must be > 0, got {object_height}")
-    
+
     x = origin[0] + object_length / 2
     y = origin[1] + object_height / 2
     return x, y
@@ -60,10 +64,8 @@ def origin_points(
 
     Returns:
         List[Tuple[float, float]]: List of (x, y) coordinates.
-
-    Raises:
-        ValueError: If object_number <= 0 or both pitches are zero.
     """
+
     if object_number <= 0:
         raise ValueError(f"object_number must be positive; got {object_number}")
     if x_pitch == 0 and y_pitch == 0:

@@ -20,10 +20,10 @@ Units and Conventions:
     - Time-dependent stepping is represented as linear displacement along the z-axis.
 """
 
-import yaml
-import femm
 import pathlib
 import typing
+import yaml
+import femm
 
 from blueshark.motor.linear_interface import LinearBase
 from blueshark.femm_utils.preprocesses.draw import draw_and_set_properties
@@ -32,8 +32,11 @@ from blueshark.domain.generation.geometry import origin_points
 from blueshark.domain.generation.number_turns import estimate_turns
 from blueshark.motor.utils import require
 
-class BasicTubular(LinearBase):
 
+class BasicTubular(LinearBase):
+    """
+    Basic model of a tubular linear motor for use in the motor simulation framework
+    """
     def __init__(self, parameter_file: str) -> None:
         self._unpack(parameter_file)
 
@@ -44,7 +47,6 @@ class BasicTubular(LinearBase):
 
         # Phases
         self.phases = ['pa', 'pb', 'pc']
-
 
     def setup(self):
         """ Setup femm file and draws motor geometry to simulation space"""
@@ -72,7 +74,6 @@ class BasicTubular(LinearBase):
         finally:
             femm.closefemm() 
     
-
     def set_currents(self, currents: tuple[float, float, float]) -> None:
         """Set 3-phase currents for the simulation step."""
         try:
@@ -81,7 +82,6 @@ class BasicTubular(LinearBase):
         except Exception as e:
             raise RuntimeError(f"Failed to set currents in FEMM: {e}") from e
     
-
     def step(self, step: float) -> None:
         """
         Move the motor by a specified linear step.
@@ -102,24 +102,23 @@ class BasicTubular(LinearBase):
         except Exception as e:
             raise RuntimeError(f"Failed to move motor in FEMM: {e}") from e
        
-        
     def _add_armature(self) -> None:
         """
         Adds the armature to the simulation space
         """
         
-        self.number_turns = estimate_turns(
-            length = self.slot_radius,
-            height = self.slot_height,
-            wire_diameter = self.slot_wire_diameter, 
-            fill_factor = self.fill_factor
+        number_turns = estimate_turns(
+            length=self.slot_radius,
+            height=self.slot_height,
+            wire_diameter=self.slot_wire_diameter,
+            fill_factor=self.fill_factor
         )
         
         for slot_index in range(len(self.slot_origins)):
             slot_phase = self.phases[slot_index % len(self.phases)]
             
             # Alternate turns positive and negative slot index parity
-            turns = self.number_turns if slot_index % 2 == 0 else -self.number_turns
+            turns = number_turns if slot_index % 2 == 0 else -number_turns
 
             draw_and_set_properties(
                 origin=self.slot_origins[slot_index],
@@ -131,7 +130,6 @@ class BasicTubular(LinearBase):
                 group=self.group_slot,
                 turns=turns
             )
-    
     
     def _add_stator(self) -> None:
         """
@@ -151,7 +149,6 @@ class BasicTubular(LinearBase):
                 turns=0,
             )
     
-
     def _add_boundary(self) -> None:
         """
         Adds the Neumann outer boundary with a safety margin to enclose all geometry.
@@ -169,8 +166,7 @@ class BasicTubular(LinearBase):
         boundary_radius = max(stator_radius, armature_radius) * 1.1
 
         add_bounds(boundary_center, boundary_radius, material=self.boundary_material)
-
-        
+      
     def _compute_geometry(self) -> None:
         """
         Compute and set key geometric parameters for the tubular motor,
@@ -213,7 +209,6 @@ class BasicTubular(LinearBase):
             x_offset=0,
             y_offset=-2 * (self.extra_pairs * self.pole_pitch),
         )
-
 
     def _unpack(self, parameter_file: str) -> None:
 
@@ -265,7 +260,6 @@ class BasicTubular(LinearBase):
         self.folder_path = require("folder_path", output)
         self.file_name = require("file_name", output)
 
-
     def get_parameters(self) -> dict:
         """
         Return a dictionary of all public instance variables for this motor object.
@@ -273,8 +267,7 @@ class BasicTubular(LinearBase):
         return {
             **{k: v for k, v in self.__dict__.items() if not k.startswith("_")},
             "motor_class": self.__class__.__name__,
-    }
-
+        }
 
     def get_path(self) -> pathlib.Path:
         """
@@ -282,13 +275,11 @@ class BasicTubular(LinearBase):
         """
         return pathlib.Path(self.folder_path) / self.file_name
 
-
     def get_moving_group(self) -> typing.Union[int, typing.List[int]]:
         """
         Returns the moving group(s) within the FEMM simulation domain.
         """
         return self.group_slot
-
 
     def get_circumference(self) -> float:
         """
@@ -296,20 +287,17 @@ class BasicTubular(LinearBase):
         """
         return self.circumference
 
-
     def get_number_poles(self) -> int:
         """
         Returns the total number of magnetic poles in the motor.
         """
         return self.number_poles
 
-
     def get_number_slots(self) -> int:
         """
         Returns the total number of stator slots in the motor.
         """
         return self.number_slots
-
 
     def get_peak_currents(self) -> tuple[float, float]:
         """
