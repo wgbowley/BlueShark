@@ -5,61 +5,57 @@ Version: 1.1
 Date: 2025-07-14
 
 Description:
-    Runs a rotational analysis on a tubular motor using a configuration file.
-    Outputs selected results to JSON and plots Lorentz forces versus displacement.
-
-Usage:
-    Ensure FEMM and dependencies are installed. Modify requested outputs or
-    motor configuration as needed: 
-    (models/basic_tubular/tubular.yaml & models/basic_tubular/tubular_motor.py)
+    Runs a rotational analysis on a tubular motor to find the
+    mechanical position that optimizes force output in sync with
+    the electrical cycle. Outputs results and plots Lorentz force vs displacement.
 """
 
 import os
 import sys
 import matplotlib.pyplot as plt
 
-# Applies project root directory dynamically
+# Dynamically apply project root directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Framework imports
 from blueshark.simulations.alignment import phase_alignment
 from blueshark.simulations.rotational_analysis import rotational_analysis
 from blueshark.output.selector import OutputSelector
 from blueshark.output.writer import write_output_json
 from models.basic_flat.motor import BasicFlat
 
-# --- Configuration ---
-numSamples = 100
-motorConfigPath = "models/basic_flat/motor.yaml"
-outputPath = "rotational_analysis_results"
-requestedOutputs = ["force_lorentz"]
+# Simulation Parameters
+alignment_samples = 20
+rotational_samples = 100
+motor_config = "models/basic_flat/motor.yaml"
+output_file = "rotational_analysis_results.json"
+requested_outputs = ["force_lorentz"]
 
-# --- Initialize and simulate ---
-motor = BasicFlat(motorConfigPath)
+motor = BasicFlat(motor_config)
 motor.setup()
 
-# Only required for some models
-# Makes sure flux of the stator & armature are aligned
-phase_offset = phase_alignment(motor, 20)
+# Find phase offset to align magnetic flux for maximum force
+phase_offset = phase_alignment(motor, alignment_samples)
 
-outputSelector = OutputSelector(requestedOutputs)
+# Processes the required outputs from user and the target for them 
+output_selector = OutputSelector(requested_outputs)
 subjects = {"group": motor.get_moving_group(), "phaseName": motor.phases}
 
-results = rotational_analysis(motor, outputSelector, subjects, numSamples, phase_offset)
+# Simulate one mechanical cycle
+results = rotational_analysis(motor, output_selector, subjects, rotational_samples, phase_offset)
 
-# Save results to JSON file
-write_output_json(results, "rotational_analysis_results.json")
+# Logs simulation data
+write_output_json(results, output_file)
 
-# --- Plotting ---
-positions = [result["displacement"] for result in results]
-lorentzForces = [result["outputs"]["force_lorentz"][0] for result in results]
+# Splits raw results into displacement for x-axis and force for y-axis
+positions = [res["displacement"] for res in results]
+forces = [res["outputs"]["force_lorentz"][0] for res in results]
 
 plt.figure(figsize=(8, 5))
-plt.ylim(0, 1.1 * max(lorentzForces))
-plt.plot(positions, lorentzForces, label="Lorentz Force", color='blue')
+plt.ylim(0, 1.1 * max(forces))
+plt.plot(positions, forces, label="Lorentz Force")
 plt.xlabel("Displacement (mm)")
-plt.ylabel("Force via Lorentz (N)")
-plt.title("Tubular Motor Force vs Displacement")
+plt.ylabel("Lorentz Force (N)")
+plt.title("Force vs Displacement at Optimal Mechanical-Electrical Alignment")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()

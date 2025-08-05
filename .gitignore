@@ -6,4 +6,6 @@
 *.ans
 *.json
 *.edge
-examples/force_random_search.py
+docs/placeholder.aux
+docs/placeholder.synctex.gz
+docs/placeholder.log

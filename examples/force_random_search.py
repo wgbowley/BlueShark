@@ -8,6 +8,9 @@ Description:
     Performs a simple random search optimization to maximize average Lorentz force
     in a tubular linear motor using the simulation framework.
 
+    This script only supports motors that expose `slot_thickness` and `slot_axial_length`
+    attributes directly—such as 'basic_tubular' or the 'CmoreTubular' model.
+
     Demonstrates a basic optimization strategy without external dependencies.
     Serves as a starting example before moving to more advanced optimization methods.
 """
@@ -16,7 +19,7 @@ import os
 import random
 import sys
 
-# Applies project root directory dynamically
+# Dynamically apply project root directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from blueshark.output.selector import OutputSelector
@@ -26,78 +29,89 @@ from blueshark.simulations.alignment import phase_alignment
 from models.cmore839.motor import CmoreTubular
 
 
-# --- Helper functions ---
-def random_value():
-    """
-    Generates random value between [-1,1]
-    """
+def random_value() -> None:
+    """Generates a random value in the range [-1, 1]."""
     return random.random() * 2 - 1
 
 
-def generate_geometry(
-    step_size: float, 
-    slot_height: float, 
-    slot_radius: float
-) -> tuple[float, float]:
+def generate_geometry(step: float, length: float, thickness: float) -> tuple[float, float]:
     """
-    Uses random_value to get value between [-1,1] and uses step_size to
-    increase it afterwhich its added to the paramet
+    Applies a small random step variation to the length and thickness,
+    ensuring both remain positive.
+
+    Args:
+        step: The maximum variation to apply.
+        length: Original slot axial length.
+        thickness: Original slot thickness.
+
+    Returns:
+        Tuple of (new_length, new_thickness)
     """
-    gen_height = abs(slot_height + step_size * random_value())
-    gen_radius = abs(slot_radius + step_size * random_value())
-    return gen_height, gen_radius
+    gen_length = abs(length + step * random_value())
+    gen_thickness = abs(thickness + step * random_value())
+    return gen_length, gen_thickness
 
 
-# --- Optimization parameters ---
-SIMULATION_NUM = 1000
-STEP_SIZE = 20
-MIN_STEP_SIZE = 0.315
-STALL_MAX = 50  # Num of stalls to finish is 50/(2^n) = min_step_size
-POWER_LIMIT = 200
+# --- Optimization Constants ---
+ITERATION_NUMBER = 1000
+STEP_SIZE = 20             # +/- range for slot dimension mutation
+MIN_STEP_SIZE = 0.315      # Minimum step size before stopping
+STALL_MAX = 50             # Max iterations with no improvement before halving step
 
-best_force = 0.0
-best_height = 0.0
-best_radius = 0.0
+POWER_MAX = 250            # Max average power (W)
+
+# --- Optimization State ---
 stall = 0
+best_force = 0.0
+best_axial_length = 0.0
+best_thickness = 0.0
 
-motor_config_path = "models/cmore839/motor.yaml"
-results_output = "models/cmore839/force_random_search_results.json"
+# --- Simulation Parameters ---
+ALIGNMENT_SAMPLES = 10
+ROTATIONAL_SAMPLES = 10
+
+motor_parameter_path = "models/cmore839/motor.yaml"
 requested_outputs = ["force_lorentz", "phase_power"]
-ALIGN_SAMPLES = 10
-TEST_SAMPLES = 10
+output_path = "models/cmore839/force_random_search_results.json"
 
 optimization_results = []
 
+# --- Main Optimization Loop ---
+for index in range(ITERATION_NUMBER):
+    motor = CmoreTubular(motor_parameter_path)
 
-# --- Main optimization loop ---
-for index in range(SIMULATION_NUM):
-    motor = CmoreTubular(motor_config_path)
-    slot_height = motor.slot_outer_radius
-    slot_radius = motor.slot_radius
+    # Retrieve current parameters
+    thickness = motor.slot_thickness
+    axial_length = motor.slot_axial_length
 
-    height, radius = generate_geometry(STEP_SIZE, slot_height, slot_radius)
+    # Mutate slot dimensions
+    axial_length, thickness = generate_geometry(STEP_SIZE, axial_length, thickness)
 
-    # Log test start
+    # Initialize run log
     test_log = {
         "iteration": index,
-        "slot_height": height,
-        "slot_radius": radius,
+        "slot_thickness": thickness,
+        "slot_axial_length": axial_length,
         "status": "started",
     }
 
     optimization_results.append(test_log)
-    write_output_json(optimization_results, results_output, False)
+    write_output_json(optimization_results, output_path, False)
 
     try:
-        motor.slot_height = height
-        motor.slot_radius = radius
+        motor.slot_thickness = thickness
+        motor.slot_axial_length = axial_length
         motor.setup()
 
         output_selector = OutputSelector(requested_outputs)
         subjects = {"group": motor.get_moving_group(), "phaseName": motor.phases}
-        phase_offset = phase_alignment(motor, ALIGN_SAMPLES, False)
+
+        # Aligns stator and armature to maximize force output
+        phase_offset = phase_alignment(motor, ALIGNMENT_SAMPLES, False)
+
+        # Simulate one mechanical cycle
         results = rotational_analysis(
-            motor, output_selector, subjects, TEST_SAMPLES, phase_offset, False
+            motor, output_selector, subjects, ROTATIONAL_SAMPLES, phase_offset, False
         )
 
         total_force = 0.0
@@ -119,29 +133,25 @@ for index in range(SIMULATION_NUM):
         avg_force = total_force / count if count else 0.0
         avg_power = total_power / count if count else 0.0
 
-        # Update test log
-        optimization_results[-1].update(
-            {
-                "avg_force": avg_force,
-                "avg_power": avg_power,
-                "accepted": avg_power <= POWER_LIMIT,
-                "status": "completed",
-            }
-        )
+        # Update and log results
+        optimization_results[-1].update({
+            "avg_force": avg_force,
+            "avg_power": avg_power,
+            "accepted": avg_power <= POWER_MAX,
+            "status": "completed",
+        })
+        write_output_json(optimization_results, output_path, False)
 
-        write_output_json(optimization_results, results_output, False)
-
-        if avg_power > POWER_LIMIT:
+        # Decision logic
+        if avg_power > POWER_MAX:
             print(f"Iteration {index}: Rejected (power {avg_power:.2f} W > limit)")
             stall += 1
         elif avg_force > best_force:
             best_force = avg_force
-            best_height = height
-            best_radius = radius
+            best_thickness = thickness
+            best_axial_length = axial_length
             stall = 0
-            print(
-                f"Iteration {index}: New best! Force={best_force:.3f} N, Power={avg_power:.2f} W"
-            )
+            print(f"Iteration {index}: New best! Force={best_force:.3f} N, Power={avg_power:.2f} W")
         else:
             stall += 1
             print(f"Iteration {index}: No improvement. Stall count: {stall}")
@@ -157,11 +167,12 @@ for index in range(SIMULATION_NUM):
 
     except Exception as e:
         optimization_results[-1].update({"status": "crashed", "error": str(e)})
-        write_output_json(optimization_results, results_output, False)
+        write_output_json(optimization_results, output_path, False)
         print(f"Iteration {index}: Crashed with error: {e}")
         break
 
+# --- Final Report ---
 print(f"Best geometry found after {index + 1} iterations:")
-print(f"Slot radius: {best_radius}")
-print(f"Slot height: {best_height}")
+print(f"Slot thickness: {best_thickness}")
+print(f"Slot axial length: {best_axial_length}")
 print(f"Average force: {best_force}")

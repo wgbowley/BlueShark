@@ -45,15 +45,17 @@ class BasicTubular(LinearBase):
         self.group_slot: int = 1
         self.group_pole: int = 2
 
-        # Phases
+        # Motor phase labels
         self.phases = ['pa', 'pb', 'pc']
 
     def setup(self):
         """ Setup femm file and draws motor geometry to simulation space"""
         try:
-            femm.openfemm(1)
-            femm.newdocument(0)
-            femm.mi_probdef(0, "millimeters", "axi", 1e-8)
+            femm.openfemm(1) # Opens femm in hide window
+            femm.newdocument(0) # Magnetic problem
+
+            # Problem Defined as a Magnetostatic simulation
+            femm.mi_probdef(0, "millimeters", "axi", 1e-8) 
             
             for phase in self.phases:
                 femm.mi_addcircprop(phase, 0, 1)
@@ -62,6 +64,7 @@ class BasicTubular(LinearBase):
             femm.mi_getmaterial(self.slot_material)
             femm.mi_getmaterial(self.boundary_material)
             
+            # Computes geometry and than adds components
             self._compute_geometry()
             self._add_armature()
             self._add_stator()
@@ -87,12 +90,14 @@ class BasicTubular(LinearBase):
         Move the motor by a specified linear step.
         """
         try:
-            moving_groups = (
-                [self.get_moving_group()]
-                if isinstance(self.get_moving_group(), int)
-                else self.get_moving_group()
-            )
+            # Get the moving group(s)
+            group_data = self.get_moving_group()
+            if isinstance(group_data, int):
+                moving_groups = [group_data]
+            else:
+                moving_groups = group_data
 
+            # Select and move each group
             for group in moving_groups:
                 femm.mi_selectgroup(group)
 
@@ -107,24 +112,25 @@ class BasicTubular(LinearBase):
         Adds the armature to the simulation space
         """
         
-        relative_radius = self.slot_outer_radius - self.slot_inner_radius
-
+        # Calculates the number of turns with the slot cross section
         self.number_turns = estimate_turns(
-            length=relative_radius,
+            length=self.slot_thickness,
             height=self.slot_axial_length,
             wire_diameter=self.slot_wire_diameter,
             fill_factor=self.fill_factor
         )
         
         for slot_index in range(len(self.slot_origins)):
+            # Sets slots phases in this pattern [pa, pb, pc]
             slot_phase = self.phases[slot_index % len(self.phases)]
             
             # Alternate turns positive and negative slot index parity
             turns = self.number_turns if slot_index % 2 == 0 else -self.number_turns
 
+            # Draw the slot and assign its physical/material properties
             draw_and_set_properties(
                 origin=self.slot_origins[slot_index],
-                length=relative_radius,
+                length=self.slot_thickness,
                 height=self.slot_axial_length,
                 material=self.slot_material,
                 direction=0,
@@ -137,12 +143,16 @@ class BasicTubular(LinearBase):
         """
         Adds the stator to the simulation space
         """
+
+         # Loop through all stator poles and place them with alternating magnetization
         for pole in range(self.total_number_poles):
+            # Alternate magnetization direction every pole (e.g., N-S-N-S)
             pole_magnetization = 90 if pole % 2 == 0 else -90
 
+            # Draw the magnetic pole and assign its physical/material properties
             draw_and_set_properties(
                 origin=self.pole_origins[pole],
-                length=self.pole_outer_radius,
+                length=self.pole_thickness,
                 height=self.pole_axial_length,
                 group=self.group_pole,
                 direction=pole_magnetization,
@@ -231,6 +241,7 @@ class BasicTubular(LinearBase):
             if section not in params:
                 raise KeyError(f"Missing required section '{section}' in parameter file.")
 
+        # YAML Fields
         model = params['model']
         slot = params['slot']
         pole = params['pole']
@@ -261,6 +272,10 @@ class BasicTubular(LinearBase):
         # Assign output
         self.folder_path = require("folder_path", output)
         self.file_name = require("file_name", output)
+
+        # Optimization Parameters
+        self.slot_thickness = self.slot_outer_radius - self.slot_inner_radius
+        self.pole_thickness = self.pole_outer_radius
 
     def get_parameters(self) -> dict:
         """

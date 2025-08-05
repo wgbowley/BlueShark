@@ -50,25 +50,28 @@ class CmoreTubular(LinearBase):
         self.group_pole: int = 2
         self.group_tube: int = 3
 
-        # Phases
+        # Motor phase labels
         self.phases = ['pa', 'pb', 'pc']
 
     def setup(self):
         """ Setup femm file and draws motor geometry to simulation space"""
-        try:
-            femm.openfemm(1)
-            femm.newdocument(0)
+        try:    
+            femm.openfemm(1) # Opens femm in hide window
+            femm.newdocument(0) # Magnetic problem
+
+            # Problem Defined as a Magnetostatic simulation
             femm.mi_probdef(0, "millimeters", "axi", 1e-8)
             
             for phase in self.phases:
                 femm.mi_addcircprop(phase, 0, 1)
-        
+
             femm.mi_getmaterial(self.pole_material)
             femm.mi_getmaterial(self.slot_material)
             femm.mi_getmaterial(self.boundary_material)
             femm.mi_addmaterial('AluminumTube', 1, 1, 0, 0, 37, 0, 0, 1, 0, 0, 0, 1, 1)
             # femm.mi_getmaterial(self.tube_material)
 
+            # Computes geometry and than adds components
             self._compute_geometry()
             self._add_armature()
             self._add_stator()
@@ -94,12 +97,14 @@ class CmoreTubular(LinearBase):
         Move the motor by a specified linear step.
         """
         try:
-            moving_groups = (
-                [self.get_moving_group()]
-                if isinstance(self.get_moving_group(), int)
-                else self.get_moving_group()
-            )
+            # Get the moving group(s)
+            group_data = self.get_moving_group()
+            if isinstance(group_data, int):
+                moving_groups = [group_data]
+            else:
+                moving_groups = group_data
 
+            # Select and move each group
             for group in moving_groups:
                 femm.mi_selectgroup(group)
 
@@ -109,28 +114,75 @@ class CmoreTubular(LinearBase):
         except Exception as e:
             raise RuntimeError(f"Failed to move motor in FEMM: {e}") from e
 
+    def get_parameters(self) -> dict:
+        """
+        Return a dictionary of all public instance variables for this motor object.
+        """
+        return {
+            **{k: v for k, v in self.__dict__.items() if not k.startswith("_")},
+            "motor_class": self.__class__.__name__,
+        }
+
+    def get_path(self) -> pathlib.Path:
+        """
+        Returns the full file path of the motor simulation file.
+        """
+        return pathlib.Path(self.folder_path) / self.file_name
+
+    def get_moving_group(self) -> typing.Union[int, typing.List[int]]:
+        """
+        Returns the moving group(s) within the FEMM simulation domain.
+        """
+        return self.group_slot
+
+    def get_circumference(self) -> float:
+        """
+        Returns the mechanical circumference of the stator path.
+        """
+        return self.circumference
+
+    def get_number_poles(self) -> int:
+        """
+        Returns the total number of magnetic poles in the motor.
+        """
+        return self.number_poles
+
+    def get_number_slots(self) -> int:
+        """
+        Returns the total number of stator slots in the motor.
+        """
+        return self.number_slots
+
+    def get_peak_currents(self) -> tuple[float, float]:
+        """
+        Returns the peak d-axis and q-axis currents for simulation.
+        """
+        return (self.d_currents, self.q_currents)
+    
     def _add_armature(self) -> None:
         """
         Adds the armature to the simulation space
         """
-
-        relative_radius = self.slot_outer_radius - self.slot_inner_radius
+        
+        # Calculates the number of turns with the slot cross section
         self.number_turns = estimate_turns(
-            length=relative_radius,
+            length=self.slot_thickness,
             height=self.slot_axial_length,
             wire_diameter=self.slot_wire_diameter, 
             fill_factor=self.fill_factor
         )
         
         for slot_index in range(len(self.slot_origins)):
+            # Sets slots phases in this pattern [pa, pb, pc]
             slot_phase = self.phases[slot_index % len(self.phases)]
             
             # Alternate turns positive and negative slot index parity
             turns = self.number_turns if slot_index % 2 == 0 else -self.number_turns
 
+            # Draw the slot and assign its physical/material properties
             draw_and_set_properties(
                 origin=self.slot_origins[slot_index],
-                length=relative_radius,
+                length=self.slot_thickness,
                 height=self.slot_axial_length,
                 material=self.slot_material,
                 direction=0,
@@ -145,7 +197,6 @@ class CmoreTubular(LinearBase):
         This includes alternating magnetized poles and the outer structural tube.
         """
 
-        pole_relative_radius = self.pole_outer_radius
         # Loop through all stator poles and place them with alternating magnetization
         for pole in range(self.total_number_poles):
             # Alternate magnetization direction every pole (e.g., N-S-N-S)
@@ -154,7 +205,7 @@ class CmoreTubular(LinearBase):
             # Draw the magnetic pole and assign its physical/material properties
             draw_and_set_properties(
                 origin=self.pole_origins[pole], 
-                length=pole_relative_radius,
+                length=self.pole_thickness,
                 height=self.pole_axial_length,
                 group=self.group_pole,
                 direction=pole_magnetization,
@@ -204,7 +255,7 @@ class CmoreTubular(LinearBase):
         including slot pitch, motor circumference, pole pitch, and origin points.
         """
 
-        # Calculate the pitch of each slot (height + spacing)
+        # Calculate the pitch of each slot (length + spacing)
         self.slot_pitch = self.slot_axial_length + self.slot_axial_spacing
 
         # Calculate the motor circumference based on pole height and number of slots
@@ -217,6 +268,7 @@ class CmoreTubular(LinearBase):
         # Extra pairs add poles symmetrically on both sides
         self.total_number_poles = (4 * self.extra_pairs) + self.number_poles
         
+        # Ensures that the program doesn't crash from intersections
         if self.pole_pitch < self.pole_axial_length:
             self.pole_axial_length = self.pole_pitch
             print(
@@ -224,16 +276,16 @@ class CmoreTubular(LinearBase):
             )
 
         # Add spacing between slots except every third one (for coil grouping pattern)
-        y = 0
+        z = 0
         self.slot_origins = []
         for slot in range(self.number_slots):
             if slot % 3 != 0:
-                y += self.slot_pitch
+                z += self.slot_pitch
             else:
-                y += self.slot_axial_length
+                z += self.slot_axial_length
 
-            x = self.slot_inner_radius
-            self.slot_origins.append((x, y))
+            r = self.slot_inner_radius
+            self.slot_origins.append((r, z))
 
         # Generate pole origin points, shifted axially by extra pairs
         self.pole_origins = origin_points(
@@ -263,6 +315,7 @@ class CmoreTubular(LinearBase):
             if section not in params:
                 raise KeyError(f"Missing required section '{section}' in parameter file.")
 
+        # YAML Fields
         model = params["model"]
         slot  = params["slot"]
         pole  = params["pole"]
@@ -300,48 +353,7 @@ class CmoreTubular(LinearBase):
         self.folder_path = require("folder_path", output)
         self.file_name = require("file_name", output)
 
-    def get_parameters(self) -> dict:
-        """
-        Return a dictionary of all public instance variables for this motor object.
-        """
-        return {
-            **{k: v for k, v in self.__dict__.items() if not k.startswith("_")},
-            "motor_class": self.__class__.__name__,
-        }
+        # Optimization Parameters
+        self.slot_thickness = self.slot_outer_radius - self.slot_inner_radius
+        self.pole_thickness = self.pole_outer_radius
 
-    def get_path(self) -> pathlib.Path:
-        """
-        Returns the full file path of the motor simulation file.
-        """
-        return pathlib.Path(self.folder_path) / self.file_name
-
-    def get_moving_group(self) -> typing.Union[int, typing.List[int]]:
-        """
-        Returns the moving group(s) within the FEMM simulation domain.
-        """
-        return self.group_slot
-
-    def get_circumference(self) -> float:
-        """
-        Returns the mechanical circumference of the stator path.
-        """
-        return self.circumference
-
-    def get_number_poles(self) -> int:
-        """
-        Returns the total number of magnetic poles in the motor.
-        """
-        return self.number_poles
-
-    def get_number_slots(self) -> int:
-        """
-        Returns the total number of stator slots in the motor.
-        """
-        return self.number_slots
-
-    def get_peak_currents(self) -> tuple[float, float]:
-        """
-        Returns the peak d-axis and q-axis currents for simulation.
-        """
-        return (self.d_currents, self.q_currents)
-    
