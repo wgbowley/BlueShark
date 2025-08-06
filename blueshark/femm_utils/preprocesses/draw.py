@@ -8,8 +8,10 @@ Description:
     and assigning block properties.
 
 Functions:
-- draw_and_set_properties(origin, length, height, material, direction, incircuit, group, turns)
-    Adds a square or rectangular object with specified properties; returns None.
+- draw_and_set_properties(origin, length, height, material,
+                          direction, incircuit, group, turns)
+    Adds a square or rectangular object with specified properties.
+    Returns None.
 """
 
 import femm
@@ -29,8 +31,8 @@ def draw_and_set_properties(
     """
     Draw and assign FEMM properties to a square or rectangular object.
 
-    This function only supports axis-aligned rectangular or square shapes. It 
-    draws the object based on the provided origin (bottom-left corner), length, 
+    This function only supports axis-aligned rectangular or square shapes. It
+    draws the object based on the provided origin (bottom-left corner), length,
     and height, then sets material and coil-related FEMM properties.
 
     Args:
@@ -60,11 +62,13 @@ def draw_and_set_properties(
         raise TypeError("Circuit name & material must be a string")
 
     object_label = get_centroid_point(origin, length, height)
-    bl_vertex = (origin[0], origin[1])
-    tr_vertex = (origin[0] + length, origin[1] + height)
 
-    femm.mi_drawrectangle(bl_vertex[0], bl_vertex[1], tr_vertex[0], tr_vertex[1])
-    femm.mi_selectrectangle(bl_vertex[0], bl_vertex[1], tr_vertex[0], tr_vertex[1])
+    # Vertexs (bottom left and top right)
+    bl = (origin[0], origin[1])
+    tr = (origin[0] + length, origin[1] + height)
+
+    femm.mi_drawrectangle(bl[0], bl[1], tr[0], tr[1])
+    femm.mi_selectrectangle(bl[0], bl[1], tr[0], tr[1])
     femm.mi_setgroup(group)
     femm.mi_clearselected()
 

@@ -5,14 +5,15 @@ Version: 1.1
 Date: 2025-07-17
 
 Description:
-    Performs a simple random search optimization to maximize average Lorentz force
-    in a tubular linear motor using the simulation framework.
+    Performs a simple random search optimization to maximize average
+    Lorentz force in a tubular linear motor using the simulation framework.
 
-    This script only supports motors that expose `slot_thickness` and `slot_axial_length`
-    attributes directly—such as 'basic_tubular' or the 'CmoreTubular' model.
+    This script only supports motors that expose `slot_thickness` and
+    `slot_axial_length` attributes directly—such as
+    'basic_tubular' or the 'CmoreTubular' model.
 
     Demonstrates a basic optimization strategy without external dependencies.
-    Serves as a starting example before moving to more advanced optimization methods.
+    Serves as a starting example before moving to more advanced methods.
 """
 
 import os
@@ -29,12 +30,18 @@ from blueshark.simulations.alignment import phase_alignment
 from models.cmore839.motor import CmoreTubular
 
 
-def random_value() -> None:
-    """Generates a random value in the range [-1, 1]."""
+def random_value() -> float:
+    """
+    Generates a random value in the range [-1, 1].
+    """
     return random.random() * 2 - 1
 
 
-def generate_geometry(step: float, length: float, thickness: float) -> tuple[float, float]:
+def generate_geometry(
+    step: float,
+    length: float,
+    thickness: float
+) -> tuple[float, float]:
     """
     Applies a small random step variation to the length and thickness,
     ensuring both remain positive.
@@ -52,21 +59,21 @@ def generate_geometry(step: float, length: float, thickness: float) -> tuple[flo
     return gen_length, gen_thickness
 
 
-# --- Optimization Constants ---
+# Optimization Constants
 ITERATION_NUMBER = 1000
 STEP_SIZE = 20             # +/- range for slot dimension mutation
 MIN_STEP_SIZE = 0.315      # Minimum step size before stopping
-STALL_MAX = 50             # Max iterations with no improvement before halving step
+STALL_MAX = 50             # Max iterations with no improvement -> Halving step
 
 POWER_MAX = 250            # Max average power (W)
 
-# --- Optimization State ---
+# Optimization State
 stall = 0
 best_force = 0.0
 best_axial_length = 0.0
 best_thickness = 0.0
 
-# --- Simulation Parameters ---
+# Simulation Parameters
 ALIGNMENT_SAMPLES = 10
 ROTATIONAL_SAMPLES = 10
 
@@ -76,7 +83,7 @@ output_path = "models/cmore839/force_random_search_results.json"
 
 optimization_results = []
 
-# --- Main Optimization Loop ---
+# Main Optimization Loop
 for index in range(ITERATION_NUMBER):
     motor = CmoreTubular(motor_parameter_path)
 
@@ -85,7 +92,11 @@ for index in range(ITERATION_NUMBER):
     axial_length = motor.slot_axial_length
 
     # Mutate slot dimensions
-    axial_length, thickness = generate_geometry(STEP_SIZE, axial_length, thickness)
+    axial_length, thickness = generate_geometry(
+        STEP_SIZE,
+        axial_length,
+        thickness
+    )
 
     # Initialize run log
     test_log = {
@@ -99,19 +110,25 @@ for index in range(ITERATION_NUMBER):
     write_output_json(optimization_results, output_path, False)
 
     try:
+        # Sets parameters to the mutate ones
         motor.slot_thickness = thickness
         motor.slot_axial_length = axial_length
         motor.setup()
 
         output_selector = OutputSelector(requested_outputs)
-        subjects = {"group": motor.get_moving_group(), "phaseName": motor.phases}
+        subjects = {"group": motor.moving_group, "phaseName": motor.phases}
 
         # Aligns stator and armature to maximize force output
         phase_offset = phase_alignment(motor, ALIGNMENT_SAMPLES, False)
 
         # Simulate one mechanical cycle
         results = rotational_analysis(
-            motor, output_selector, subjects, ROTATIONAL_SAMPLES, phase_offset, False
+            motor,
+            output_selector,
+            subjects,
+            ROTATIONAL_SAMPLES,
+            phase_offset,
+            False
         )
 
         total_force = 0.0
@@ -144,14 +161,17 @@ for index in range(ITERATION_NUMBER):
 
         # Decision logic
         if avg_power > POWER_MAX:
-            print(f"Iteration {index}: Rejected (power {avg_power:.2f} W > limit)")
+            print(f"Iter {index}: Power {avg_power:.2f} W exceeds limit")
             stall += 1
         elif avg_force > best_force:
             best_force = avg_force
             best_thickness = thickness
             best_axial_length = axial_length
             stall = 0
-            print(f"Iteration {index}: New best! Force={best_force:.3f} N, Power={avg_power:.2f} W")
+            print(
+                f"Iteration {index}: New best! "
+                f"Force={best_force:.3f} N, Power={avg_power:.2f} W"
+            )
         else:
             stall += 1
             print(f"Iteration {index}: No improvement. Stall count: {stall}")
@@ -171,7 +191,7 @@ for index in range(ITERATION_NUMBER):
         print(f"Iteration {index}: Crashed with error: {e}")
         break
 
-# --- Final Report ---
+# Final Report
 print(f"Best geometry found after {index + 1} iterations:")
 print(f"Slot thickness: {best_thickness}")
 print(f"Slot axial length: {best_axial_length}")

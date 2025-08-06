@@ -25,7 +25,8 @@ def get_centroid_point(
     Calculate the centroid (center point) of a rectangular object.
 
     Args:
-        origin (Tuple[float, float]): (x, y) coordinates of the bottom-left corner.
+        origin (Tuple[float, float]): (x, y) coordinates of the
+                                      bottom-left corner.
         object_length (float): Length of the object along the x-axis.
         object_height (float): Height of the object along the y-axis.
 
@@ -67,7 +68,8 @@ def origin_points(
     """
 
     if object_number <= 0:
-        raise ValueError(f"object_number must be positive; got {object_number}")
+        msg = f"object_number must be positive; got {object_number}"
+        raise ValueError(msg)
     if x_pitch == 0 and y_pitch == 0:
         raise ValueError("x_pitch and y_pitch cannot both be zero.")
 

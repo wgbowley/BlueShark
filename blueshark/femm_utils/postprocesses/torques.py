@@ -26,7 +26,8 @@ def lorentz(group: int) -> float:
         group (int): FEMM group number.
 
     Returns:
-        float: Resultant Lorentz torque magnitude, rounded to configured precision.
+        float: Resultant Lorentz torque magnitude,
+               rounded to configured precision.
     """
     femm.mo_groupselectblock(group)
     torque = femm.mo_blockintegral(15)
@@ -43,7 +44,8 @@ def weighted_stress_tensor(group: int) -> float:
         group (int): FEMM group number.
 
     Returns:
-        float: Resultant weighted stress tensor torque magnitude, rounded to configured precision.
+        float: Resultant weighted stress tensor torque magnitude,
+        rounded to configured precision.
     """
     femm.mo_groupselectblock(group)
     torque = femm.mo_blockintegral(22)

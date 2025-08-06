@@ -7,8 +7,8 @@ Date: 2025-07-28
 Description:
     Boundary condition and domain setup functions for FEMM pre-processing.
 
-    Provides utility to add concentric boundary shells emulating an unbounded domain
-    for FEMM magnetic simulations.
+    Provides utility to add concentric boundary shells emulating
+    an unbounded domain for FEMM magnetic simulations.
 
 Functions:
 - add_bounds(origin, radius, num_shells=7, bound_type=1, material="Air"):
@@ -27,7 +27,8 @@ def add_bounds(
     material: str = "Air"
 ) -> None:
     """
-    Adds a series of concentric circular shells that emulate an unbounded domain in FEMM.
+    Adds a series of concentric circular shells that emulate
+    an unbounded domain in FEMM.
 
     By default, applies Neumann boundary conditions (zero normal derivative).
     Can be set to Dirichlet (fixed potential) by setting `bound_type`.
@@ -45,9 +46,11 @@ def add_bounds(
     if radius <= 0:
         raise ValueError(f"Radius must be > 0, got {radius}")
     if not isinstance(num_shells, int) or num_shells <= 0:
-        raise ValueError(f"Number of shells must be a positive integer, got {num_shells}")
+        msg = f"Number of shells must be a positive integer, got {num_shells}"
+        raise ValueError(msg)
     if bound_type not in (0, 1):
-        raise ValueError(f"bound_type must be 0 (Dirichlet) or 1 (Neumann), got {bound_type}")
+        msg = f"Bound must be 0/1 (Dirichlet/Neumann), got {bound_type}"
+        raise ValueError(msg)
     if not isinstance(material, str) or not material.strip():
         raise ValueError("Material name must be a non-empty string.")
 

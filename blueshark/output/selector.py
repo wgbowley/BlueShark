@@ -9,7 +9,7 @@ Description:
     output functions based on user requests.
 
     Supported outputs:
-    - force_lorentz  
+    - force_lorentz
     - torque_lorentz
     - force_via_stress_tensor
     - torque_via_stress_tensor
@@ -45,8 +45,10 @@ class OutputSelector:
         self.available_outputs = {
             "force_lorentz": (force.lorentz, self._run_group),
             "torque_lorentz": (torques.lorentz, self._run_group),
-            "force_stress_tensor": (force.weighted_stress_tensor, self._run_group),
-            "torque_stress_tensor": (torques.weighted_stress_tensor, self._run_group),
+            "force_stress_tensor": (force.weighted_stress_tensor,
+                                    self._run_group),
+            "torque_stress_tensor": (torques.weighted_stress_tensor,
+                                     self._run_group),
             "phase_power": (phases.phase_power, self._run_phase),
             "phase_voltage": (phases.phase_voltage, self._run_phase),
             "phase_current": (phases.phase_current, self._run_phase),
@@ -96,7 +98,8 @@ class OutputSelector:
         """
         groups = subjects.get("group")
         if groups is None:
-            raise ValueError(f"Missing 'group' key; keys={list(subjects.keys())}")
+            msg = f"Missing 'group' key; keys={list(subjects.keys())}"
+            raise ValueError(msg)
 
         if isinstance(groups, (list, tuple)):
             return [function(group) for group in groups]
@@ -105,7 +108,7 @@ class OutputSelector:
 
     def _run_phase(
         self,
-        function: Callable[[str], Any], 
+        function: Callable[[str], Any],
         subjects: dict
     ) -> Union[Any, list[Any]]:
         """
@@ -120,7 +123,8 @@ class OutputSelector:
         """
         names = subjects.get("phaseName")
         if names is None:
-            raise ValueError(f"Missing 'phaseName' key; keys={list(subjects.keys())}")
+            msg = f"Missing 'phaseName' key; keys={list(subjects.keys())}"
+            raise ValueError(msg)
 
         if isinstance(names, (list, tuple)):
             return [function(name) for name in names]

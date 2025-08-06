@@ -33,8 +33,8 @@ def inverse_park_transform(
         elec_angle (float): Electrical angle in radians.
 
     Returns:
-        tuple[float, float]: Currents in alpha and beta stationary reference frame,
-                             rounded to configured PRECISION.
+        tuple[float, float]: Currents in alpha and beta stationary reference
+                             frame, rounded to configured PRECISION.
     """
 
     alpha = d_current * cos(elec_angle) - q_current * sin(elec_angle)

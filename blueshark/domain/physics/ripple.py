@@ -4,13 +4,13 @@ Author: William Bowley
 Version: 1.2
 Date: 2025-07-27
 Description:
-    General-purpose functions to calculate ripple metrics (peak-to-peak, RMS, percentage)
-    from sequences of numeric values.
+    General-purpose functions to calculate ripple metrics
+    (peak-to-peak, RMS, percentage) from sequences of numeric values.
 
 Functions:
 - ripple_peak_to_peak(values)
-    Returns the magitude of difference between minimum and maximum values  
-    
+    Returns the magitude of difference between minimum and maximum values
+
 - ripple_rms(values) -> float
     Returns the root mean square of the waveform
 

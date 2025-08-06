@@ -3,11 +3,11 @@
 
 model:
   number_slots: 6           # Numnber of coils within armuture
-  number_poles: 2           # Number of poles under the armuture at any instant 
+  number_poles: 2           # Number of poles under the armuture at any instant
+  extra_pairs: 5            # Extra Pairs (N-S) to appox infinite track 
   d_currents: 0
   q_currents: 6   
   fill_factor: 0.70         # Fraction of the slot filled by the slot material 
-  extra_pairs: 5            # Extra Side Pairs (N-S) to appox infinite track
   boundary_material: Air
 
 slot:

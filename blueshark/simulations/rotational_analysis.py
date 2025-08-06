@@ -15,10 +15,11 @@ Description:
 """
 
 from typing import Any
-from blueshark.domain.physics.commutation import displacement_commutation
-from blueshark.simulations.frame import simulate_frame
 from blueshark.motor.linear_interface import LinearBase
 from blueshark.output.selector import OutputSelector
+
+from blueshark.domain.physics.commutation import displacement_commutation
+from blueshark.simulations.frame import simulate_frame
 
 
 def rotational_analysis(
@@ -50,14 +51,14 @@ def rotational_analysis(
     if not isinstance(status, bool):
         raise ValueError("Status must be a boolean value.")
 
-    motor_circumference = motor.get_circumference()
-    motor_pole_pairs = motor.get_number_poles() // 2
+    motor_circumference = motor.circumference
+    motor_pole_pairs = motor.number_poles // 2
 
     step_size, profile = displacement_commutation(
         motor_circumference,
         motor_circumference,
         motor_pole_pairs,
-        motor.get_peak_currents(),
+        motor.peak_currents,
         number_samples,
         phase_offset
     )
@@ -68,7 +69,7 @@ def rotational_analysis(
         displacement = step * step_size
 
         if status:
-            print(f"[{step-1}/{number_samples}] dx={displacement:.2f}")
+            print(f"[{step - 1}/{number_samples}] dx={displacement:.2f}")
 
         frame_results = simulate_frame(
             motor,

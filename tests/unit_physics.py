@@ -42,7 +42,7 @@ class TestMechanical(unittest.TestCase):
     def test_fractional_displacement(self):
         circumference = 20
         displacement = 2.5
-        expected = round(pi/4, PRECISION)
+        expected = round(pi / 4, PRECISION)
         actual = mechanical_angle(circumference, displacement)
         self.assertEqual(actual, expected)
 

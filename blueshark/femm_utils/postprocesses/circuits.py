@@ -67,7 +67,8 @@ def phase_inductance(circuit_name: str) -> float:
         circuit_name (str): Name of the circuit.
 
     Returns:
-        float: Inductance in henrys (always positive), rounded to configured PRECISION.
+        float: Inductance in henrys (always positive),
+               rounded to configured PRECISION.
     """
 
     circuit_props = femm.mo_getcircuitproperties(circuit_name)

@@ -7,11 +7,12 @@ Date: 2025-07-28
 Description:
     Abstract base class defining the interface for linear motor models.
 
-    This interface standardizes how motor models interact with the FEMM simulation,
-    ensuring consistent setup, stepping, and parameter management.
+    This interface standardizes how motor models interact with the FEMM
+    simulation, ensuring consistent setup, stepping, and parameter management.
 """
 
 from abc import ABC, abstractmethod
+
 from pathlib import Path
 from typing import Union, List
 
@@ -29,16 +30,18 @@ class LinearBase(ABC):
         Initialize the motor instance using a parameter file.
 
         Args:
-            parameter_file (Path): Motor configuration parameter file (e.g., .yaml).
+            parameter_file (Path): Motor configuration parameter file
+            (e.g., .yaml).
         """
 
     @abstractmethod
     def _unpack(self, parameter_file: Path) -> None:
         """
-        Internal method to load motor parameters from configuration parameter file.
+        Internal method to load motor parameters from parameter file.
 
         Args:
-            parameter_file (Path): Motor configuration parameter file (e.g., .yaml).
+            parameter_file (Path): Motor configuration parameter file
+            (e.g., .yaml).
         """
 
     @abstractmethod
@@ -76,7 +79,7 @@ class LinearBase(ABC):
         Set the 3-phase currents (IA, IB, IC) for this simulation step.
 
         Args:
-            currents (Tuple[float, float, float]): Phase A, B, C current values.
+            currents (Tuple[float, float, float]): A, B, C current values.
         """
 
     @abstractmethod
@@ -91,36 +94,36 @@ class LinearBase(ABC):
 
     @property
     @abstractmethod
-    def get_path(self) -> Path:
+    def path(self) -> Path:
         """Path for files under the motor."""
         return Path
 
     @property
     @abstractmethod
-    def get_moving_group(self) -> Union[int, List[int]]:
+    def moving_group(self) -> Union[int, List[int]]:
         """Group identifier(s) for the moving parts of the motor in FEMM."""
         return Union[int, list[int]]
 
     @property
     @abstractmethod
-    def get_circumference(self) -> float:
+    def circumference(self) -> float:
         """'Circumference' of the motor (used for positioning)."""
         return float
 
     @property
     @abstractmethod
-    def get_number_poles(self) -> int:
+    def number_poles(self) -> int:
         """Number of magnetic poles in the motor."""
         return int
 
     @property
     @abstractmethod
-    def get_number_slots(self) -> int:
+    def number_slots(self) -> int:
         """Number of slots in the motor."""
         return int
 
     @property
     @abstractmethod
-    def get_peak_currents(self) -> tuple[float, float]:
+    def peak_currents(self) -> tuple[float, float]:
         """Current values as (flux_current_peak, force_current_peak)."""
         return tuple[float, float]

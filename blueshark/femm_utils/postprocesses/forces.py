@@ -11,7 +11,8 @@ Functions:
     Returns the direction and force acting on a group using the Lorentz method.
 
 - weighted_stress_tensor(group):
-    Returns the direction and force acting on a group using the weighted stress tensor method.
+    Returns the direction and force acting on a group using the weighted
+    stress tensor method.
 """
 
 import math

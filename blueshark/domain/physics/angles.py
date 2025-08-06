@@ -4,11 +4,12 @@ Author: William Bowley
 Version: 1.2
 Date: 2025-07-27
 Description:
-    Functions to convert linear displacement to mechanical and electrical angles.
+    Functions to convert linear displacement to
+    mechanical and electrical angles.
 
 Functions:
 - mechanical_angle(circumference, displacement):
-    Returns mechincal angle in radians 
+    Returns mechincal angle in radians
 
 - electrical_angle(num_pole_pairs, mech_angle):
     Returns electrical angle in radians
@@ -56,7 +57,8 @@ def electrical_angle(
     """
 
     if num_pole_pairs <= 0:
-        raise ValueError(f"Number of pole pairs must be > 0, got {num_pole_pairs}")
+        msg = f"Number of pole pairs must be > 0, got {num_pole_pairs}"
+        raise ValueError(msg)
 
     angle = mech_angle * num_pole_pairs
     angle %= TWO_PI

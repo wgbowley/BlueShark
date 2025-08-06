@@ -16,13 +16,15 @@ Description:
 """
 
 import os
+import warnings
 from typing import Any
 from pathlib import Path
 
 import femm
-from blueshark.configs import MAXIMUM_FAILS
 from blueshark.output.selector import OutputSelector
 from blueshark.motor.linear_interface import LinearBase
+
+from blueshark.configs import MAXIMUM_FAILS
 
 
 def simulate_frame(
@@ -46,20 +48,22 @@ def simulate_frame(
         dict[str, Any] | None: Extracted results, or None if simulation fails.
     """
 
-    base_path = Path(motor.get_path())
+    base_path = Path(motor.path)
     fem_path = base_path.with_suffix(".fem")
     ans_path = base_path.with_suffix(".ans")
 
     try:
         femm.openfemm(1)
     except Exception as e:
-        print(f"[ERROR] Failed to start FEMM instance: {e}")
+        msg = f"[ERROR] Failed to start FEMM instance: {e}"
+        warnings.warn(msg)
         return None
 
     try:
         femm.opendocument(str(fem_path))
     except Exception as e:
-        print(f"[ERROR] Failed to open FEMM document: {fem_path} — {e}")
+        msg = f"[ERROR] Failed to open FEMM document: {fem_path} — {e}"
+        warnings.warn(msg)
         femm.closefemm()
         return None
 
@@ -68,7 +72,8 @@ def simulate_frame(
             motor.step(step)
         motor.set_currents(currents)
     except Exception as e:
-        print(f"[ERROR] Failed to step motor or set currents: {e}")
+        msg = f"[ERROR] Failed to step motor or set currents: {e}"
+        warnings.warn(msg)
         femm.closefemm()
         return None
 
@@ -81,7 +86,8 @@ def simulate_frame(
         except Exception as e:
             fail_count += 1
             if fail_count >= MAXIMUM_FAILS:
-                print(f"[ERROR] FEMM solution failed to load ({fail_count} attempts): {e}")
+                msg = f"FEMM load failed ({fail_count} tries): {e}"
+                warnings.warn(msg)
                 femm.closefemm()
                 return None
 
@@ -91,6 +97,7 @@ def simulate_frame(
         if os.path.exists(ans_path):
             os.remove(ans_path)
     except Exception as e:
-        print(f"[WARN] Could not delete .ans file: {e}")
+        msg = f"[WARN] Could not delete .ans file: {e}"
+        warnings.warn(msg)
 
     return frame_result

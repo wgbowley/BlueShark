@@ -14,12 +14,12 @@ Description:
     - Return optimal alignment
 """
 
-
-from blueshark.output.selector import OutputSelector
-from blueshark.simulations.frame import simulate_frame
 from blueshark.motor.linear_interface import LinearBase
+from blueshark.output.selector import OutputSelector
+
 from blueshark.domain.physics.transforms import inverse_clarke_transform
 from blueshark.domain.physics.transforms import inverse_park_transform
+from blueshark.simulations.frame import simulate_frame
 from blueshark.configs import TWO_PI
 
 
@@ -50,8 +50,8 @@ def phase_alignment(
     max_force = float("-inf")
 
     # Geometry
-    circumference = motor.get_circumference()
-    pole_count = motor.get_number_poles()
+    circumference = motor.circumference
+    pole_count = motor.number_poles
 
     if pole_count <= 0 or circumference <= 0:
         raise ValueError("pole_count and circumference must be > 0")
@@ -60,7 +60,7 @@ def phase_alignment(
     shift_size = pole_pitch / number_samples
 
     # Fixed d-q current vector
-    i_d, i_q = motor.get_peak_currents()
+    i_d, i_q = motor.peak_currents
 
     for index in range(number_samples + 1):
         real_angle = (TWO_PI * index * shift_size) / circumference
@@ -74,7 +74,7 @@ def phase_alignment(
         result = simulate_frame(
             motor=motor,
             output_selector=selector,
-            subjects={"group": motor.get_moving_group()},
+            subjects={"group": motor.moving_group},
             currents=(pa, pb, pc),
             step=0
         )
