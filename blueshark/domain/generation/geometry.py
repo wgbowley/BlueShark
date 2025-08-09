@@ -15,6 +15,8 @@ Functions:
     Returns a list of origin points [(x, y), ..., (xn, yn)].
 """
 
+import logging
+
 
 def get_centroid_point(
     origin: tuple[float, float],
@@ -35,11 +37,19 @@ def get_centroid_point(
     """
 
     if not isinstance(origin, tuple) or len(origin) != 2:
-        raise TypeError("Origin must be a tuple of length 2")
+        msg = f"Object Origin must be a tuple of length 2, got {origin}"
+        logging.error(msg)
+        raise TypeError(msg)
+
     if object_length <= 0:
-        raise ValueError(f"Object length must be > 0, got {object_length}")
+        msg = f"Object length must be > 0, got {object_length}"
+        logging.error(msg)
+        raise ValueError(msg)
+
     if object_height <= 0:
-        raise ValueError(f"Object height must be > 0, got {object_height}")
+        msg = f"Object height must be > 0, got {object_height}"
+        logging.error(msg)
+        raise ValueError(msg)
 
     x = origin[0] + object_length / 2
     y = origin[1] + object_height / 2
@@ -69,9 +79,13 @@ def origin_points(
 
     if object_number <= 0:
         msg = f"object_number must be positive; got {object_number}"
+        logging.error(msg)
         raise ValueError(msg)
+
     if x_pitch == 0 and y_pitch == 0:
-        raise ValueError("x_pitch and y_pitch cannot both be zero.")
+        msg = "x_pitch and y_pitch cannot both be zero."
+        logging.error(msg)
+        raise ValueError(msg)
 
     points = []
     for i in range(object_number):

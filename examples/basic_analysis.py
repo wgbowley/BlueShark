@@ -23,16 +23,16 @@ from blueshark.simulations.alignment import phase_alignment
 from blueshark.simulations.rotational_analysis import rotational_analysis
 from blueshark.output.selector import OutputSelector
 from blueshark.output.writer import write_output_json
-from models.basic_tubular.motor import BasicTubular
+from models.tubular.motor import Tubular
 
 # Simulation Parameters
 alignment_samples = 20
-rotational_samples = 100
-motor_config = "models/basic_tubular/motor.yaml"
+rotational_samples = 10
+motor_config = "models/tubular/motor.yaml"
 output_file = "models/basic_tubular/rotational_analysis_results.json"
 requested_outputs = ["force_lorentz"]
 
-motor = BasicTubular(motor_config)
+motor = Tubular(motor_config)
 motor.setup()
 
 # Find phase offset to align magnetic flux for maximum force

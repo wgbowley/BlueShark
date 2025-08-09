@@ -27,7 +27,7 @@ from blueshark.output.selector import OutputSelector
 from blueshark.output.writer import write_output_json
 from blueshark.simulations.rotational_analysis import rotational_analysis
 from blueshark.simulations.alignment import phase_alignment
-from models.cmore839.motor import CmoreTubular
+from models.tubular.motor import Tubular
 
 
 def random_value() -> float:
@@ -85,7 +85,7 @@ optimization_results = []
 
 # Main Optimization Loop
 for index in range(ITERATION_NUMBER):
-    motor = CmoreTubular(motor_parameter_path)
+    motor = Tubular(motor_parameter_path)
 
     # Retrieve current parameters
     thickness = motor.slot_thickness

@@ -1,12 +1,16 @@
 # Tubular motors use Z-R (axial-radial) coordinate system.
 # All dimensions in millimeters (mm), currents in Amperes (A).
 
+output:
+  folder_path: models/tubular
+  file_name: motor
+  
 model:
-  number_slots: 6           # Numnber of coils within armuture
-  number_poles: 2           # Number of poles under the armuture at any instant
-  extra_pairs: 5            # Extra Pairs (N-S) to appox infinite track 
-  d_currents: 0
-  q_currents: 6   
+  number_slots: 6           # Number of coils within armature
+  number_poles: 2           # Number of poles under the armature at any instant
+  extra_pairs: 5            # Extra pairs (N-S) to approximate infinite track 
+  d_currents: 0             # Direct-axis current (A)
+  q_currents: 6             # Quadrature-axis current (A)
   fill_factor: 0.70         # Fraction of the slot filled by the slot material 
   boundary_material: Air
 
@@ -24,10 +28,8 @@ pole:
   material: N42             # Magnet grade
 
 tube:
-  inner_radius: 6.1         # Inner radius of the external tube (mm)
-  outer_radius: 6.8         # Outer radius of the external tube (mm)
-  material: AluminumTube    # Material (AluminumTube Is custom)
-
-output:
-  folder_path: models/cmore839
-  file_name: motor
+  inner_radius: 6.1  # Inner radius of the external tube (mm)
+  outer_radius: 6.8  # Outer radius of the external tube (mm)
+  material:
+    name: AluminumTube
+    conductivity: 37

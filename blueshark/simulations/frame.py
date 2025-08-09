@@ -16,13 +16,13 @@ Description:
 """
 
 import os
-import warnings
+import logging
 from typing import Any
 from pathlib import Path
 
 import femm
 from blueshark.output.selector import OutputSelector
-from blueshark.motor.linear_interface import LinearBase
+from blueshark.motor.interface import LinearBase
 
 from blueshark.configs import MAXIMUM_FAILS
 
@@ -53,51 +53,54 @@ def simulate_frame(
     ans_path = base_path.with_suffix(".ans")
 
     try:
-        femm.openfemm(1)
-    except Exception as e:
-        msg = f"[ERROR] Failed to start FEMM instance: {e}"
-        warnings.warn(msg)
-        return None
-
-    try:
-        femm.opendocument(str(fem_path))
-    except Exception as e:
-        msg = f"[ERROR] Failed to open FEMM document: {fem_path} — {e}"
-        warnings.warn(msg)
-        femm.closefemm()
-        return None
-
-    try:
-        if step != 0:
-            motor.step(step)
-        motor.set_currents(currents)
-    except Exception as e:
-        msg = f"[ERROR] Failed to step motor or set currents: {e}"
-        warnings.warn(msg)
-        femm.closefemm()
-        return None
-
-    fail_count = 0
-    while fail_count < MAXIMUM_FAILS:
         try:
-            femm.mi_analyse(1)
-            femm.mi_loadsolution()
-            break
+            femm.openfemm(1)
         except Exception as e:
-            fail_count += 1
-            if fail_count >= MAXIMUM_FAILS:
-                msg = f"FEMM load failed ({fail_count} tries): {e}"
-                warnings.warn(msg)
-                femm.closefemm()
-                return None
+            msg = f"Failed to start FEMM instance: {e}"
+            logging.critical(msg)
+            return None
 
-    frame_result = output_selector.compute(subjects)
-    try:
-        femm.closefemm()
+        try:
+            femm.opendocument(str(fem_path))
+        except Exception as e:
+            msg = f"Failed to open FEMM document: {fem_path} - {e}"
+            logging.critical(msg)
+            return None
+
+        try:
+            if step != 0:
+                motor.step(step)
+            motor.set_currents(currents)
+        except Exception as e:
+            msg = f"Failed to step motor or set currents: {e}"
+            logging.error(msg)
+            return None
+
+        fail_count = 0
+        while fail_count < MAXIMUM_FAILS:
+            try:
+                femm.mi_analyse(1)
+                femm.mi_loadsolution()
+                break
+            except Exception as e:
+                fail_count += 1
+                if fail_count >= MAXIMUM_FAILS:
+                    msg = f"FEMM load failed ({fail_count} tries): {e}"
+                    logging.critical(msg)
+                    return None
+
+        frame_result = output_selector.compute(subjects)
+
+    finally:
+        try:
+            femm.closefemm()
+        except Exception as e:
+            logging.warning(f"Could not close FEMM instance: {e}")
+
         if os.path.exists(ans_path):
-            os.remove(ans_path)
-    except Exception as e:
-        msg = f"[WARN] Could not delete .ans file: {e}"
-        warnings.warn(msg)
+            try:
+                os.remove(ans_path)
+            except Exception as e:
+                logging.warning(f"Could not delete .ans file {e}")
 
     return frame_result

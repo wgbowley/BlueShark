@@ -14,8 +14,9 @@ Description:
     - Simulates frames to produce results with respect to dispalcement.
 """
 
+import logging
 from typing import Any
-from blueshark.motor.linear_interface import LinearBase
+from blueshark.motor.interface import LinearBase
 from blueshark.output.selector import OutputSelector
 
 from blueshark.domain.physics.commutation import displacement_commutation
@@ -46,10 +47,17 @@ def rotational_analysis(
         List[dict]: Simulation outputs for each displacement step.
     """
 
+    logging.info(f"Starting rotational analysis for {motor}")
+
     if number_samples <= 0:
-        raise ValueError("Number of samples must be a positive integer.")
+        msg = f"Number of samples must be > 0, got {number_samples}"
+        logging.error(msg)
+        raise ValueError(msg)
+
     if not isinstance(status, bool):
-        raise ValueError("Status must be a boolean value.")
+        msg = f"Status must be a boolean value, got {status}"
+        logging.error(msg)
+        raise ValueError(msg)
 
     motor_circumference = motor.circumference
     motor_pole_pairs = motor.number_poles // 2
@@ -64,7 +72,6 @@ def rotational_analysis(
     )
 
     results = []
-
     for step, currents in enumerate(profile, start=1):
         displacement = step * step_size
 
@@ -82,4 +89,5 @@ def rotational_analysis(
         formatted = {"displacement": displacement, "outputs": frame_results}
         results.append(formatted)
 
+    logging.info(f"Rotational Analysis completed for {motor}")
     return results

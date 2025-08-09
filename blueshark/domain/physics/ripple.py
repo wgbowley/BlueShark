@@ -8,15 +8,17 @@ Description:
     (peak-to-peak, RMS, percentage) from sequences of numeric values.
 
 Functions:
-- ripple_peak_to_peak(values)
+- ripple_peak_to_peak(values):
     Returns the magitude of difference between minimum and maximum values
 
-- ripple_rms(values) -> float
+- ripple_rms(values):
     Returns the root mean square of the waveform
 
-- ripple_percent(values) -> float
+- ripple_percent(values):
     Returns the percent that the ripple takes of the whole waveform
 """
+
+import logging
 
 from math import sqrt
 from typing import Sequence
@@ -24,12 +26,23 @@ from blueshark.configs import PRECISION, EPSILON
 
 
 def _validate_values(values: Sequence[int | float]) -> None:
+    """
+    Helper function to validate the input sequence.
+    """
     if not values:
-        raise ValueError("Input sequence 'values' must not be empty.")
+        msg = "Input sequence 'values' must not be empty."
+        logging.error(msg)
+        raise ValueError(msg)
 
     for element in values:
         if not isinstance(element, (int, float)):
-            raise TypeError("All elements in the series must be int or float")
+            msg = (
+                f"All elements in the series must be int or float,"
+                f"found '{type(element).__name__}'."
+            )
+            logging.error(msg)
+
+            raise TypeError(msg)
 
 
 def ripple_peak_to_peak(values: Sequence[int | float]) -> float:

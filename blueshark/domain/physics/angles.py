@@ -15,6 +15,8 @@ Functions:
     Returns electrical angle in radians
 """
 
+import logging
+
 from blueshark.configs import PRECISION, TWO_PI
 
 
@@ -34,7 +36,9 @@ def mechanical_angle(
     """
 
     if circumference <= 0:
-        raise ValueError(f"Circumference must be > 0, got {circumference}")
+        msg = f"Circumference must be > 0, got {circumference}"
+        logging.error(msg)
+        raise ValueError(msg)
 
     angle = (TWO_PI * displacement) / circumference
     angle %= TWO_PI
@@ -58,6 +62,7 @@ def electrical_angle(
 
     if num_pole_pairs <= 0:
         msg = f"Number of pole pairs must be > 0, got {num_pole_pairs}"
+        logging.error(msg)
         raise ValueError(msg)
 
     angle = mech_angle * num_pole_pairs

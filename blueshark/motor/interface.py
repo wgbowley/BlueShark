@@ -1,5 +1,5 @@
 """
-Filename: motor_interface.py
+Filename: interface.py
 Author: William Bowley
 Version: 1.2
 Date: 2025-07-28
@@ -45,24 +45,50 @@ class LinearBase(ABC):
         """
 
     @abstractmethod
-    def _compute_geometry(self) -> None:
-        """Compute motor geometry and geometry-based parameters."""
+    def add_materials(self) -> None:
+        """
+        Add materials to FEMM simulation space.
+        Called by the FEMM interface setup helpers.
+        Not intended to be called directly by end users.
+        """
 
     @abstractmethod
-    def _add_armature(self) -> None:
-        """Add the armature to FEMM simulation space."""
+    def compute_geometry(self) -> None:
+        """
+        Compute motor geometry and geometry-based parameters.
+        Called by the FEMM interface setup helpers.
+        Not intended to be called directly by end users.
+        """
 
     @abstractmethod
-    def _add_stator(self) -> None:
-        """Add the stator to FEMM simulation space."""
+    def add_armature(self) -> None:
+        """
+        Add the armature to FEMM simulation space.
+        Called by the FEMM interface setup helpers.
+        Not intended to be called directly by end users.
+        """
 
     @abstractmethod
-    def _add_boundary(self) -> None:
-        """Add the boundary to FEMM simulation space."""
+    def add_stator(self) -> None:
+        """
+        Add the stator to FEMM simulation space.
+        Called by the FEMM interface setup helpers.
+        Not intended to be called directly by end users.
+        """
+
+    @abstractmethod
+    def add_boundary(self) -> None:
+        """
+        Add the boundary to FEMM simulation space.
+        Called by the FEMM interface setup helpers.
+        Not intended to be called directly by end users.
+        """
 
     @abstractmethod
     def setup(self) -> None:
-        """Setup the FEMM file and generate the motor geometry."""
+        """
+        Setup the FEMM file and generate the motor geometry.
+        """
 
     @abstractmethod
     def step(self, step: float) -> None:
@@ -79,7 +105,7 @@ class LinearBase(ABC):
         Set the 3-phase currents (IA, IB, IC) for this simulation step.
 
         Args:
-            currents (Tuple[float, float, float]): A, B, C current values.
+            currents: A, B, C current values as a tuple of floats.
         """
 
     @abstractmethod
@@ -121,6 +147,12 @@ class LinearBase(ABC):
     def number_slots(self) -> int:
         """Number of slots in the motor."""
         return int
+
+    @property
+    @abstractmethod
+    def phases(self) -> list[str]:
+        """list of phases in the motor"""
+        return list[str]
 
     @property
     @abstractmethod

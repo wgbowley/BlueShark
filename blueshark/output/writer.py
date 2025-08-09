@@ -6,8 +6,7 @@ Date: 2025-08-03
 
 Description:
     Standalone utility functions for exporting simulation output data
-    to JSON and CSV formats. Designed for easy integration and modular
-    postprocessing of FEMM-based motor simulation results.
+    to JSON and CSV formats.
 
 Functions:
 - write_output_json(data, filename = "output.json", status = true):
@@ -18,15 +17,16 @@ Functions:
 """
 
 import os
+import logging
 import json
 import csv
+
 from typing import List, Dict, Any
 
 
 def write_output_json(
     data: List[Dict[str, Any]],
-    filename: str = "output.json",
-    status: bool = True
+    filename: str = "output.json"
 ) -> None:
     """
     Write a list of dictionaries to a JSON file.
@@ -34,26 +34,34 @@ def write_output_json(
     Args:
         data (List[Dict]): List of dicts to write.
         filename (str): Output filename (default: "output.json").
-        status (bool): Whether to print confirmation message.
 
-    Returns:
-        None
+    Raises:
+        RuntimeError: If the directory or file cannot be written.
     """
-    dir_path = os.path.dirname(filename)
-    if dir_path:
-        os.makedirs(dir_path, exist_ok=True)
+    try:
+        dir_path = os.path.dirname(filename)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
 
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
 
-    if status:
-        print(f"Saved output to {filename}")
+        logging.info(f"Successfully saved output to {filename}")
+
+    except OSError as e:
+        msg = f"Error writing to directory or file: {e}"
+        logging.error(msg)
+        raise RuntimeError(msg) from e
+
+    except Exception as e:
+        msg = f"An unexpected error occurred while writing JSON: {e}"
+        logging.error(msg)
+        raise RuntimeError(msg) from e
 
 
 def write_output_csv(
     data: List[Dict[str, Any]],
     filename: str = "output.csv",
-    status: bool = True,
     sep: str = "|"
 ) -> None:
     """
@@ -63,37 +71,46 @@ def write_output_csv(
     Args:
         data (List[Dict]): List of dicts to write.
         filename (str): Output filename (default: "output.csv").
-        status (bool): Whether to print confirmation message.
         sep (str): Separator for flattening list/tuple values (default: "|").
 
-    Returns:
-        None
+    Raises:
+        RuntimeError: If the directory or file cannot be written.
     """
     if not data:
-        if status:
-            print("Warning: No data given to write")
+        msg = "No data given to write to CSV. Skipping file creation."
+        logging.warning(msg)
         return
 
-    dir_path = os.path.dirname(filename)
-    if dir_path:
-        os.makedirs(dir_path, exist_ok=True)
+    try:
+        dir_path = os.path.dirname(filename)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
 
-    keys = sorted({k for entry in data for k in entry})
+        keys = sorted({k for entry in data for k in entry})
 
-    rows = []
-    for entry in data:
-        row = {}
-        for k in keys:
-            v = entry.get(k, "")
-            if isinstance(v, (list, tuple)):
-                v = sep.join(str(i) for i in v)
-            row[k] = v
-        rows.append(row)
+        rows = []
+        for entry in data:
+            row = {}
+            for k in keys:
+                v = entry.get(k, "")
+                if isinstance(v, (list, tuple)):
+                    v = sep.join(str(i) for i in v)
+                row[k] = v
+            rows.append(row)
 
-    with open(filename, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=keys)
-        writer.writeheader()
-        writer.writerows(rows)
+        with open(filename, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=keys)
+            writer.writeheader()
+            writer.writerows(rows)
 
-    if status:
-        print(f"Saved CSV output to {filename}")
+        logging.info(f"Successfully saved CSV output to {filename}")
+
+    except OSError as e:
+        msg = f"Error writing to directory or file: {e}"
+        logging.error(msg)
+        raise RuntimeError(msg) from e
+
+    except Exception as e:
+        msg = f"An unexpected error occurred while writing CSV: {e}"
+        logging.error(msg)
+        raise RuntimeError(msg) from e

@@ -16,6 +16,7 @@ Functions:
 
 """
 
+import logging
 import femm
 
 
@@ -44,15 +45,24 @@ def add_bounds(
     """
 
     if radius <= 0:
-        raise ValueError(f"Radius must be > 0, got {radius}")
+        msg = f"Radius must be > 0, got {radius}"
+        logging.error(msg)
+        raise ValueError(msg)
+
     if not isinstance(num_shells, int) or num_shells <= 0:
         msg = f"Number of shells must be a positive integer, got {num_shells}"
+        logging.error(msg)
         raise ValueError(msg)
+
     if bound_type not in (0, 1):
         msg = f"Bound must be 0/1 (Dirichlet/Neumann), got {bound_type}"
+        logging.error(msg)
         raise ValueError(msg)
+
     if not isinstance(material, str) or not material.strip():
-        raise ValueError("Material name must be a non-empty string.")
+        msg = "Material name must be a non-empty string."
+        logging.error(msg)
+        raise ValueError(msg)
 
     try:
         femm.mi_makeABC(num_shells, radius, origin[0], origin[1], bound_type)
@@ -67,4 +77,6 @@ def add_bounds(
         femm.mi_clearselected()
 
     except Exception as e:
-        raise RuntimeError(f"Failed to add FEMM boundary shells: {e}") from e
+        msg = f"Failed to add FEMM boundary shells: {e}"
+        logging.critical(msg)
+        raise RuntimeError(msg) from e

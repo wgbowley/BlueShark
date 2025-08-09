@@ -14,7 +14,9 @@ Functions:
     Returns None.
 """
 
+import logging
 import femm
+
 from blueshark.domain.generation.geometry import get_centroid_point
 
 
@@ -50,29 +52,51 @@ def draw_and_set_properties(
     """
 
     if not isinstance(origin, tuple) or len(origin) != 2:
-        raise TypeError("Origin must be a tuple of length 2")
+        msg = f"Object Origin must be a tuple of length 2, got {origin}"
+        logging.error(msg)
+        raise TypeError(msg)
+
     if length <= 0:
-        raise ValueError(f"Region length must be > 0, got {length}")
+        msg = f"Region length must be > 0, got {length}"
+        logging.error(msg)
+        raise ValueError(msg)
+
     if height <= 0:
-        raise ValueError(f"Region height must be > 0, got {height}")
+        msg = f"Region height must be > 0, got {height}"
+        logging.error(msg)
+        raise ValueError(msg)
 
     if not isinstance(group, int) or not isinstance(turns, int):
-        raise TypeError("Group and Turns must be integer values")
+        msg = "Group and Turns must be integer values"
+        logging.error(msg)
+        raise TypeError(msg)
+
     if not isinstance(incircuit, str):
-        raise TypeError("Circuit name & material must be a string")
+        msg = "Circuit name & material must be a str"
+        logging.error(msg)
+        raise TypeError(msg)
 
-    object_label = get_centroid_point(origin, length, height)
+    try:
+        object_label = get_centroid_point(origin, length, height)
 
-    # Vertexs (bottom left and top right)
-    bl = (origin[0], origin[1])
-    tr = (origin[0] + length, origin[1] + height)
+        # Vertexs (bottom left and top right)
+        bl = (origin[0], origin[1])
+        tr = (origin[0] + length, origin[1] + height)
 
-    femm.mi_drawrectangle(bl[0], bl[1], tr[0], tr[1])
-    femm.mi_selectrectangle(bl[0], bl[1], tr[0], tr[1])
-    femm.mi_setgroup(group)
-    femm.mi_clearselected()
+        femm.mi_drawrectangle(bl[0], bl[1], tr[0], tr[1])
+        femm.mi_selectrectangle(bl[0], bl[1], tr[0], tr[1])
+        femm.mi_setgroup(group)
+        femm.mi_clearselected()
 
-    femm.mi_addblocklabel(object_label[0], object_label[1])
-    femm.mi_selectlabel(object_label[0], object_label[1])
-    femm.mi_setblockprop(material, 0, 0, incircuit, direction, group, turns)
-    femm.mi_clearselected()
+        femm.mi_addblocklabel(object_label[0], object_label[1])
+        femm.mi_selectlabel(object_label[0], object_label[1])
+        femm.mi_setblockprop(
+            material, 0, 0, incircuit,
+            direction, group, turns
+        )
+
+        femm.mi_clearselected()
+    except Exception as e:
+        msg = f"Failed to draw FEMM rectangle or set properties {e}"
+        logging.critical(msg)
+        raise RuntimeError(msg) from e

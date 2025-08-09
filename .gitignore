@@ -4,7 +4,6 @@
 /build
 *.fem
 *.ans
-*.json
 *.edge
 docs/placeholder.aux
 docs/placeholder.synctex.gz

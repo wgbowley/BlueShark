@@ -1,7 +1,26 @@
 # An Idealized Linear Motor Design Explorer
 
 ## Overview  
-This package serves to explore possible linear motor designs quickly, providing easy integration for optimizers. It targets applications such as 3D printers, pick-and-place machines, laser cutters, and other precision automation systems.
+This package serves to explore possible linear motor designs quickly, providing easy integration for optimizers. It targets applications such as 3D printers, pick-and-place machines, laser cutters, and other electromechanical systems.
+
+<b>Status:</b><br>
+- This version is <b>archived</b> and no longer actively maintained.<br>
+- Active development continues in the <code>v1.3-dev</code> branch.<br>
+<br>
+
+<b>Limitations:</b><br>
+- No support or updates for this version.<br>
+- Experimental and loosely structured codebase.<br>
+- Some features may be incomplete or unstable.<br>
+<br>
+
+<b>Improvements in Newer Versions:</b><br>
+- More abstraction (Solver, FEMMSolver, Motor)
+- Multi-Physics (Heat & Electromagnetic Sims)
+- Motor models are only high level. Independent of Solver
+
+<br>
+
 
 ## Installation
 

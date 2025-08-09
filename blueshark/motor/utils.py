@@ -12,6 +12,8 @@ Functions:
     Retrieves a required parameter from a configuration section.
 """
 
+import logging
+
 from collections.abc import Mapping
 
 
@@ -28,5 +30,8 @@ def require(key: str, group: Mapping) -> object:
     """
 
     if key not in group:
-        raise KeyError(f"Missing required key '{key}' in section {group}")
+        msg = f"Missing required key '{key}' in section {group}"
+        logging.critical(msg)
+        raise KeyError(msg)
+
     return group[key]

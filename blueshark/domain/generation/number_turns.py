@@ -12,6 +12,7 @@ Functions:
     Estimates the number of turns within the slot/coil cross section.
 """
 
+import logging
 from math import ceil
 
 
@@ -38,13 +39,24 @@ def estimate_turns(
     """
 
     if length <= 0 or height <= 0 or wire_diameter <= 0:
-        raise ValueError("All dimensions must be positive and non-zero.")
+        msg = "All dimensions must be positive and non-zero."
+        logging.error(msg)
+        raise ValueError(msg)
+
     if fill_factor <= 0 or fill_factor >= 1:
-        raise ValueError("Fill factor must be between 0 and 1.")
+        msg = "Fill factor must be between 0 and 1."
+        logging.critical(msg)
+        raise ValueError(msg)
 
     slot_area = length * height
     wire_area = wire_diameter ** 2
     effective_area = slot_area * fill_factor
+
+    if wire_area == 0:
+        msg = f"Calculated wire area is zero, {wire_area}"
+        logging.error(msg)
+        return 0
+
     turns = effective_area / wire_area
 
     return ceil(turns)

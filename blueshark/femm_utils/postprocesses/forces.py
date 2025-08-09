@@ -16,9 +16,9 @@ Functions:
 """
 
 import math
-import femm
 
 from blueshark.configs import PRECISION
+from blueshark.femm_utils.postprocesses import utils
 
 
 def lorentz(group: int) -> tuple[float, float]:
@@ -32,13 +32,13 @@ def lorentz(group: int) -> tuple[float, float]:
         angle (float): Resultant Lorentz force angle in degrees [0, 360).
         (rounded to configured precision)
     """
-    femm.mo_groupselectblock(group)
-    fx = femm.mo_blockintegral(11)
-    fy = femm.mo_blockintegral(12)
-    femm.mo_clearblock()
+
+    fx = utils.get_block_integral(group, 11)
+    fy = utils.get_block_integral(group, 12)
 
     magnitude = math.hypot(fx, fy)
     angle = (math.degrees(math.atan2(fy, fx)) + 360) % 360
+
     return round(magnitude, PRECISION), round(angle, PRECISION)
 
 
@@ -54,11 +54,10 @@ def weighted_stress_tensor(group: int) -> tuple[float, float]:
         (rounded to configured precision)
     """
 
-    femm.mo_groupselectblock(group)
-    fx = femm.mo_blockintegral(18)
-    fy = femm.mo_blockintegral(19)
-    femm.mo_clearblock()
+    fx = utils.get_block_integral(group, 18)
+    fy = utils.get_block_integral(group, 19)
 
     magnitude = math.hypot(fx, fy)
     angle = (math.degrees(math.atan2(fy, fx)) + 360) % 360
+
     return round(magnitude, PRECISION), round(angle, PRECISION)

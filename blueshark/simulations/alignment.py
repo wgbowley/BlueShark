@@ -14,7 +14,9 @@ Description:
     - Return optimal alignment
 """
 
-from blueshark.motor.linear_interface import LinearBase
+import logging
+
+from blueshark.motor.interface import LinearBase
 from blueshark.output.selector import OutputSelector
 
 from blueshark.domain.physics.transforms import inverse_clarke_transform
@@ -35,16 +37,22 @@ def phase_alignment(
     Args:
         motor (LinearBase): The motor object to be aligned.
         number_samples (int): Number of discrete phase offsets to test.
-        status (bool): If True, print intermediate alignment data.
+        status (bool): Whether to print progress messages
 
     Returns:
         float: Phase shift (radians) for peak Lorentz force alignment.
     """
+    logging.info(f"Starting phase alignment for {motor}")
 
     if number_samples <= 0:
-        raise ValueError(f"Number samples must be > 0, got {number_samples}")
+        msg = f"Number samples must be > 0, got {number_samples}"
+        logging.error(msg)
+        raise ValueError(msg)
+
     if not isinstance(status, bool):
-        raise ValueError(f"Status must be a boolean value, got {status}")
+        msg = f"Status must be a boolean value, got {status}"
+        logging.error(msg)
+        raise ValueError(msg)
 
     best_offset = 0.0
     max_force = float("-inf")
@@ -53,8 +61,15 @@ def phase_alignment(
     circumference = motor.circumference
     pole_count = motor.number_poles
 
-    if pole_count <= 0 or circumference <= 0:
-        raise ValueError("pole_count and circumference must be > 0")
+    if pole_count <= 0 or not isinstance(pole_count, int):
+        msg = f"Pole count must be > 0 & integer, got {pole_count}"
+        logging.error(msg)
+        raise ValueError(msg)
+
+    if circumference <= 0:
+        msg = f"Circumference must be > 0, got {circumference}"
+        logging.error(msg)
+        raise ValueError(msg)
 
     pole_pitch = circumference / pole_count
     shift_size = pole_pitch / number_samples
@@ -80,8 +95,8 @@ def phase_alignment(
         )
 
         if result is None:
-            if status:
-                print(f"[WARN] Simulation failed at offset {angle:.4f}")
+            msg = f"Simulation failed at offset {angle:.4f}"
+            logging.warning(msg)
             continue
 
         force = result["force_lorentz"][0]
@@ -93,4 +108,5 @@ def phase_alignment(
             max_force = force
             best_offset = angle
 
+    logging.info(f"Phase alignment completed for {motor}")
     return best_offset

@@ -13,6 +13,8 @@ Functions:
     on rotor displacement and motor parameters.
 """
 
+import logging
+
 from typing import Tuple, List
 from blueshark.domain.physics.angles import electrical_angle, mechanical_angle
 from blueshark.domain.physics.transforms import inverse_clarke_transform
@@ -48,18 +50,33 @@ def displacement_commutation(
     """
 
     if displacement == 0:
-        raise ValueError("Displacement cannot be set to zero.")
+        msg = "Displacement cannot be set to zero."
+        logging.error(msg)
+        raise ValueError(msg)
+
     if num_samples <= 0:
-        raise ValueError(f"Number of samples must be > 0, got {num_samples}")
+        msg = f"Number of samples must be > 0, got {num_samples}"
+        logging.error(msg)
+        raise ValueError(msg)
+
     if circumference <= 0:
         msg = f"Motor circumference must be > 0, got {circumference}"
+        logging.error(msg)
         raise ValueError(msg)
+
     if pole_pairs <= 0:
-        raise ValueError(f"Number of pole pairs must be > 0, got {pole_pairs}")
+        msg = f"Number of pole pairs must be > 0, got {pole_pairs}"
+        logging.error(msg)
+        raise ValueError(msg)
 
     if not isinstance(currents_peak, tuple) or len(currents_peak) != 2:
-        raise TypeError("Current peaks must be a tuple of length 2.")
+        msg = "Current peaks must be a tuple of length 2."
+        logging.error(msg)
+        raise TypeError(msg)
+
     if any(not isinstance(i, (int, float)) for i in currents_peak):
+        msg = "Each current peak must be a number."
+        logging.error(msg)
         raise TypeError("Each current peak must be a number.")
 
     step_size = displacement / num_samples

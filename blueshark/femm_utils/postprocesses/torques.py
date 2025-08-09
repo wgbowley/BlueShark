@@ -7,15 +7,15 @@ Description:
     Torque calculation utilities for FEMM post-processing.
 
 Functions:
-- lorentz(group) -> float
+- lorentz(group):
     Calculates torque on a group using the Lorentz force method.
 
-- weighted_stress_tensor(group) -> float
+- weighted_stress_tensor(group):
     Calculates torque on a group using the weighted stress tensor method.
 """
 
-import femm
 from blueshark.configs import PRECISION
+from blueshark.femm_utils.postprocesses import utils
 
 
 def lorentz(group: int) -> float:
@@ -26,12 +26,10 @@ def lorentz(group: int) -> float:
         group (int): FEMM group number.
 
     Returns:
-        float: Resultant Lorentz torque magnitude,
-               rounded to configured precision.
+        float: Resultant Lorentz torque magnitude.
+               (rounded to configured precision)
     """
-    femm.mo_groupselectblock(group)
-    torque = femm.mo_blockintegral(15)
-    femm.mo_clearblock()
+    torque = utils.get_block_integral(group, 15)
 
     return round(torque, PRECISION)
 
@@ -44,11 +42,10 @@ def weighted_stress_tensor(group: int) -> float:
         group (int): FEMM group number.
 
     Returns:
-        float: Resultant weighted stress tensor torque magnitude,
-        rounded to configured precision.
+        float: Resultant weighted stress tensor torque magnitude.
+        (rounded to configured precision)
     """
-    femm.mo_groupselectblock(group)
-    torque = femm.mo_blockintegral(22)
-    femm.mo_clearblock()
+
+    torque = utils.get_block_integral(group, 22)
 
     return round(torque, PRECISION)

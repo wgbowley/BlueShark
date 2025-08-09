@@ -20,6 +20,8 @@ Description:
     - phase_flux_linkage
 """
 
+import logging
+
 from typing import Any, Callable, Union
 from blueshark.femm_utils.postprocesses import forces as force
 from blueshark.femm_utils.postprocesses import circuits as phases
@@ -58,10 +60,12 @@ class OutputSelector:
 
         unknown = set(requested_outputs) - set(self.available_outputs)
         if unknown:
-            raise ValueError(
+            msg = (
                 f"Unknown outputs requested: {unknown}. "
                 f"Available: {list(self.available_outputs)}"
             )
+            logging.critical(msg)
+            raise ValueError(msg)
 
         self.outputs = requested_outputs
 
@@ -99,6 +103,7 @@ class OutputSelector:
         groups = subjects.get("group")
         if groups is None:
             msg = f"Missing 'group' key; keys={list(subjects.keys())}"
+            logging.critical(msg)
             raise ValueError(msg)
 
         if isinstance(groups, (list, tuple)):
@@ -124,6 +129,7 @@ class OutputSelector:
         names = subjects.get("phaseName")
         if names is None:
             msg = f"Missing 'phaseName' key; keys={list(subjects.keys())}"
+            logging.critical(msg)
             raise ValueError(msg)
 
         if isinstance(names, (list, tuple)):

@@ -21,7 +21,7 @@ from deap import base, creator, tools, algorithms
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from blueshark.output.selector import OutputSelector
-from models.cmore839.motor import CmoreTubular
+from models.tubular.motor import Tubular
 
 from blueshark.simulations.rotational_analysis import rotational_analysis
 from blueshark.simulations.alignment import phase_alignment
@@ -43,8 +43,8 @@ LOWER_BOUND = 0.2
 ALIGNMENT_SAMPLES = 10
 ROTATIONAL_SAMPLES = 10
 
-motor_parameter_path = "models/cmore839/motor.yaml"
-output_path = "models/cmore839/deap_optimization_results.json"
+motor_parameter_path = "models/tubular/motor.yaml"
+output_path = "models/tubular/deap_optimization_results.json"
 
 requested_outputs = [
     "force_lorentz",
@@ -62,7 +62,7 @@ def simulate(
     Runs a motor simulation with given slot thickness and axial length.
     """
     # 'CmoreTubular' Can be changed out for any motor in 'model'
-    motor = CmoreTubular(motor_parameter_path)
+    motor = Tubular(motor_parameter_path)
     motor.slot_thickness = slot_thickness
     motor.slot_axial_length = slot_axial_length
     motor.setup()
@@ -91,10 +91,12 @@ def evaluate_motor(individual) -> tuple[float, float, float]:
     total_power = 0
     total_inductance = 0
     samples = 0
+    total_inductance_values = 0
 
     results = simulate(individual[0], individual[1])
     print(
-        f"Evaluating: height={individual[0]:.3f}, radius={individual[1]:.3f} "
+        f"Evaluating: slot_thickness={individual[0]:.3f}, "
+        f"slot_axial_length={individual[1]:.3f} "
     )
 
     for step in results:
@@ -116,12 +118,20 @@ def evaluate_motor(individual) -> tuple[float, float, float]:
         inductance_values = outputs.get("phase_inductance")
 
         # Existence check
-        if force_values is None or power_values is None:
-            continue
+        if force_values is None:
+            print("Design failed: force_values is None")
+            return (0.0, 0.0, 0.0)
+        if power_values is None:
+            print("Design failed: power_values is None")
+            return (0.0, 0.0, 0.0)
+        if inductance_values is None:
+            print("Design failed: inductance_values is None")
+            return (0.0, 0.0, 0.0)
 
         total_force += force_values[0]  # [Force, Angle]
         total_power += sum(power_values)
         total_inductance += sum(inductance_values)
+        total_inductance_values += len(inductance_values)
 
         samples += 1
 
@@ -131,16 +141,22 @@ def evaluate_motor(individual) -> tuple[float, float, float]:
 
     avg_force = total_force / samples
     avg_power = total_power / samples
-    avg_inductance = total_inductance / samples
 
-    # Range check  (max power)
+    # calculate the average inductance by dividing by the total count
+    if total_inductance_values > 0:
+        avg_inductance = 0  # total_inductance / total_inductance_values
+    else:
+        avg_inductance = 0
+
+    # Range check (max power)
     if avg_power > POWER_MAX:
         print(f"Design fail: Power {avg_power:.2f} W exceeds limit")
         return (0.0, 0.0, 0.0)
 
-    # Range check  (max inductance)
+    # Range check (max inductance)
     if avg_inductance > INDUCTANCE_MAX:
         print(f"Design fail: Inductance {avg_inductance:.2f} H exceeds limit")
+        return (0.0, 0.0, 0.0)
 
     print(
         f"Average Force: {avg_force:.3f} "

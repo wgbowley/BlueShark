@@ -3,7 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name='blueshark',
     version='1.2.0',
-    description='Modular FEMM-based linear and tubular motor simulation framework',
+    description=(
+        'Modular FEMM-based linear and tubular motor simulation framework'
+    ),
     author='William Bowley',
     author_email='wgrantbowley@gmail.com',
     packages=find_packages(include=["blueshark", "blueshark.*"]),
