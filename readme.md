@@ -3,7 +3,7 @@
 
 <b>Status:</b><br>
 - This version is <b>archived</b> and no longer actively maintained.<br>
-- Active development continues in the <code>release</code> branch.<br>
+- Active development continues in the <code>v1.3-dev</code> branch.<br>
 <br>
 
 <b>Limitations:</b><br>
