@@ -1,4 +1,4 @@
-<h2>Linear Motor Design & Simulator – Version 1.0</h2>
+<h2>Linear Motor Design & Simulator – Version 1.1</h2>
 <br>
 
 <b>Status:</b><br>
