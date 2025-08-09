@@ -19,7 +19,7 @@
 - Easier extensibility and cleaner code structure.<br>
 <br>
 
-<b>Setup Instructions (v1.0):</b><br>
+<b>Setup Instructions (v1.1):</b><br>
 1. Install <a href="http://www.femm.info/wiki/HomePage" target="_blank">FEMM</a> (Finite Element Method Magnetics) from the official site.<br>
 2. Make sure <code>femm.exe</code> is available in your system PATH or configured correctly in the framework.<br>
 3. Install required Python packages using:<br>
