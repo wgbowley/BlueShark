@@ -1,1 +1,8 @@
 *.pyc
+*.txt
+*.fem
+*.ans
+*.edge
+
+/blueshark.egg-info
+/build
