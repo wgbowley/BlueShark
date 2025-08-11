@@ -6,3 +6,4 @@
 
 /blueshark.egg-info
 /build
+*.log
