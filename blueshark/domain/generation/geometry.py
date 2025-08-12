@@ -6,7 +6,7 @@ Date: 2025-08-12
 
 Description:
     These functions are used to calculate
-    properties of geometric areas.
+    the area of shapes for analysis.
 """
 
 import logging
@@ -91,6 +91,7 @@ def calculate_area(geometry: Geometry) -> float:
                 logging.error(msg)
                 warnings.warn(f"{__name__}: {msg}")
                 return 0.0
+
             area = _area_polygon(points)
 
         case ShapeType.CIRCLE:
@@ -99,6 +100,7 @@ def calculate_area(geometry: Geometry) -> float:
                 msg = "Circle radius must be defined"
                 logging.error(msg)
                 raise ValueError(f"{__name__}: {msg}")
+
             area = _area_circle(radius)
 
         case ShapeType.ANNULUS_SECTOR:
@@ -123,9 +125,10 @@ def calculate_area(geometry: Geometry) -> float:
             r_outer = geometry.get("radius_outer")
             r_inner = geometry.get("radius_inner", 0)
             if r_outer is None:
-                msg = "Annulus Circle radius_outer missing"
+                msg = "Annulus Circle parameters missing"
                 logging.error(msg)
                 raise ValueError(f"{__name__}: {msg}")
+
             area = _area_annulus_circle(r_outer, r_inner)
 
         case _:

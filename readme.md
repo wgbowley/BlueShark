@@ -4,6 +4,8 @@
 This package serves to explore possible linear motor designs quickly, providing easy integration for optimizers. It targets applications such as 3D printers, pick-and-place machines, laser cutters, and other electromechanical systems.
 
 ## Installation
+The only solver/renderer that comes with the package currently is FEMM. Others will be added in the future if the project grows past
+FEMM use cases. 
 
 1. **Install FEMM**  
    FEMM (Finite Element Method Magnetics) is a free, open-source tool for low-frequency electromagnetic simulations, ideal for motor design.

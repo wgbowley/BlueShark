@@ -11,12 +11,12 @@ Description:
     and the solver.
 """
 
-import typing
 import logging
 import warnings
 
 from math import ceil
 from blueshark.domain.generation.geometry import calculate_area
+from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.constants import (
     CurrentPolarity, Geometry
 )
@@ -93,7 +93,7 @@ class Slot:
         turns = effective_area / wire_area
         return ceil(turns)
 
-    def draw(self, renderer: typing.Any) -> None:
+    def draw(self, renderer: BaseRenderer) -> None:
         """
         Renders the slot to the solver's simulation space
 
@@ -102,7 +102,6 @@ class Slot:
         """
         turns = self.estimate_turns()
 
-        # Haven't made the renderer yet
         renderer.draw(
             self.geometry,
             self.material,

@@ -20,6 +20,28 @@ PRECISION: int = 12
 TWOPI = 2*pi
 
 
+class SimulationType(Enum):
+    """
+    Types of simulation spaces
+    - axi-symmetric
+    - Planar (2D)
+    """
+    AXI_SYMMETRIC = auto()
+    PLANAR = auto()
+
+
+class Units(Enum):
+    """
+    All units supported by the simulator
+    """
+    MIRCOMETERS = "micrometers"
+    CENTIMETERS = "centimeters"
+    MILLIMETER = "millimeters"
+    METER = "meters"
+    INCH = "inches"
+    MILS = "mils"
+
+
 class ShapeType(Enum):
     """
     Possible shapes within the simulator
