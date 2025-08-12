@@ -43,7 +43,7 @@ def estimate_turns(
         logging.error(msg)
         raise ValueError(msg)
 
-    if fill_factor <= 0 or fill_factor >= 1:
+    if fill_factor <= 0 or fill_factor > 1:
         msg = "Fill factor must be between 0 and 1."
         logging.critical(msg)
         raise ValueError(msg)
