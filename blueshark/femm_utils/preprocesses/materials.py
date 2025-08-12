@@ -8,6 +8,7 @@ Description:
 """
 
 import logging
+import importlib
 import pathlib
 import femm
 import json
@@ -90,14 +91,13 @@ def _normalize_material_input(
     return normalized
 
 
-def load_materials(
-    path: str = None
-) -> list[dict[str, Any]]:
+def load_materials(path: str | None = None) -> list[dict[str, Any]]:
     """
     Loads all materials from a JSON file and performs validation.
 
     Args:
-        path: The file path to the material library.
+        path: Optional file path to the material library. If None,
+              loads from package resources.
 
     Returns:
         A list of material dictionaries.
@@ -106,29 +106,39 @@ def load_materials(
         RuntimeError: If the file path does not exist or fails to load.
         ValueError: If the loaded JSON data is not a list.
     """
-
-    lib_path = pathlib.Path(path) if path else pathlib.Path(MATERIAL_LIB_PATH)
-
-    if not lib_path.exists():
-        msg = f"Material library not found: {lib_path}"
-        logging.error(msg)
-        raise RuntimeError(msg)
-
-    try:
-        with lib_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-    except Exception as e:
-        msg = f"Failed to load material library {lib_path}: {e}"
-        logging.critical(msg)
-        raise RuntimeError(msg) from e
+    if path is None:
+        try:
+            with importlib.resources.open_text(
+                "blueshark.lib",
+                "femm_materials.json"
+            ) as f:
+                data = json.load(f)
+        except Exception as e:
+            msg = (
+                f"Failed to load material library from package resources: {e}"
+            )
+            logging.critical(msg)
+            raise RuntimeError(msg) from e
+    else:
+        lib_path = pathlib.Path(path)
+        if not lib_path.exists():
+            msg = f"Material library not found: {lib_path}"
+            logging.error(msg)
+            raise RuntimeError(msg)
+        try:
+            with lib_path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            msg = f"Failed to load material library {lib_path}: {e}"
+            logging.critical(msg)
+            raise RuntimeError(msg) from e
 
     if not isinstance(data, list):
-        msg = f"Material library JSON must be a list: {lib_path}"
+        msg = "Material library JSON must be a list."
         logging.critical(msg)
         raise ValueError(msg)
 
     return data
-
 
 def add_femm_material(
     materials: list[dict[str, Any]],
