@@ -14,7 +14,7 @@ from math import pi
 from blueshark.domain.constants import (
     ShapeType, Geometry, PRECISION
 )
-from blueshark.domain.generation.geometry import (
+from blueshark.domain.generation.geometric_area import (
     calculate_area
 )
 

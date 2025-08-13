@@ -1,7 +1,7 @@
 """
 Filename: constants.py
 Author: William Bowley
-Version: 1.2
+Version: 1.3
 Date: 2025-07-28
 
 Description:

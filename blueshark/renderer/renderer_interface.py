@@ -22,11 +22,20 @@ class BaseRenderer(ABC):
     Standardized interface for renderers.
     """
     @abstractmethod
+    def __init__(self, file_path: Path) -> None:
+        """
+        Initializes the  renderer
+        under the file_path given by the user
+
+        Args:
+            file_path (Path): Path to save or load simulation files.
+        """
+
+    @abstractmethod
     def setup(
         self,
         sim_type: SimulationType,
         units: Units,
-        file_path: Path,
         depth: float = 0,
         frequency: float = 0,
     ) -> None:
@@ -43,6 +52,7 @@ class BaseRenderer(ABC):
         geometry: Geometry,
         material: str,
         group_id: int,
+        tag_coords: tuple[float, float],
         phase: str = None,
         turns: int = 0,
         magnetization: float = 0.0
@@ -54,6 +64,7 @@ class BaseRenderer(ABC):
             geometry (Geometry): The shape to render.
             material (str): Material of the element.
             group_id (int): Group identifier.
+            tag_coords (tuple): x and y coordinates of the blocklabel
             phase (str, optional): The phase the element belongs to.
             turns (int, optional): Number of turns of material
                                    within the shape.

@@ -15,7 +15,7 @@ import logging
 import warnings
 
 from math import ceil
-from blueshark.domain.generation.geometry import calculate_area
+from blueshark.domain.generation.geometric_area import calculate_area
 from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.constants import (
     CurrentPolarity, Geometry
@@ -62,7 +62,7 @@ class Slot:
             logging.critical(msg)
             raise ValueError(f"{self.__class__.__name__}: {msg}")
 
-        if fill_factor <= 0 or fill_factor >= 1:
+        if fill_factor <= 0 or fill_factor > 1:
             msg = f"Fill factor must be between 0 and 1, got {fill_factor}"
             logging.critical(msg)
             raise ValueError(f"{self.__class__.__name__}: {msg}")

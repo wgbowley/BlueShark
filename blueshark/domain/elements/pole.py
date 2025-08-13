@@ -13,7 +13,6 @@ Description:
 
 import logging
 
-from math import pi
 from blueshark.domain.constants import Geometry
 from blueshark.renderer.renderer_interface import BaseRenderer
 
@@ -47,12 +46,12 @@ class Pole:
             logging.critical(msg)
             raise ValueError(f"{self.__class__.__name__}: {msg}")
 
-        # Normalize magnetization angle to [0, 2*pi)
-        if not 0 <= magnetization_angle < 2 * pi:
+        # Normalize magnetization angle to [0, 360)
+        if not 0 <= magnetization_angle < 360:
             old_angle = magnetization_angle
-            magnetization_angle = magnetization_angle % (2 * pi)
+            magnetization_angle %= 360
             msg = (
-                f"Mag angle: {old_angle:.3f}→{magnetization_angle:.3f} rad"
+                f"Mag angle: {old_angle:.3f}→{magnetization_angle:.3f} degrees"
             )
             logging.warning(msg)
 

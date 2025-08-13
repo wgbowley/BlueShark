@@ -17,13 +17,18 @@ import logging
 
 import femm
 
-from blueshark.renderer.femm.magnetic.shapes import (
+from blueshark.renderer.femm.magnetic.primitives import (
     draw_polygon,
     draw_circle,
     draw_annulus_sector,
     draw_annulus_circle
 )
-
+from blueshark.domain.generation.geometric_centroid import (
+    centroid_point
+)
+from blueshark.renderer.femm.magnetic.properties import (
+    set_properties
+)
 from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.constants import (
     SimulationType,
@@ -37,11 +42,18 @@ class FEMMMagneticsRenderer(BaseRenderer):
     """
     Magnetic renderer for the femm simulator
     """
+
+    def __init__(self, file_path: Path):
+        """
+        Initializes the femm magnetic renderer
+        under the file_path given by the user
+        """
+        self.file_path = Path(file_path)
+
     def setup(
         self,
         sim_type: SimulationType,
         units: Units,
-        file_path: Path,
         depth: float = 0,
         frequency: float = 0,
     ) -> None:
@@ -68,9 +80,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
                 depth
             )
 
-            self.file_path = file_path  # Really bad pratice lol
-
-            femm.mi_saveas(str(file_path))
+            femm.mi_saveas(str(self.file_path))
         except Exception as e:
             msg = f"FEMM Setup failed ({sim_type}): {e}"
             logging.critical(msg)
@@ -81,6 +91,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         geometry: Geometry,
         material: str,
         group_id: int,
+        tag_coords: tuple[float, float] = None,
         phase: str = None,
         turns: int = 0,
         magnetization: float = 0.0
@@ -91,67 +102,45 @@ class FEMMMagneticsRenderer(BaseRenderer):
         """
 
         shape = geometry.get("shape")
-        points = geometry.get("points", [])
         match shape:
             case ShapeType.POLYGON | ShapeType.RECTANGLE:
-                if not points or len(points) < 3:
-                    msg = (
-                        "At least 3 points required for polygon/rectangle area"
-                    )
-                    logging.error(msg)
-                    raise RuntimeError(f"{__name__}: {msg}")
-
                 draw_polygon(geometry["points"])
 
             case ShapeType.CIRCLE:
-                radius = geometry.get("radius")
-                center = geometry.get("center")
-
-                if radius is None or center is None:
-                    msg = "Circle radius and center must be defined"
-                    logging.error(msg)
-                    raise ValueError(f"{__name__}: {msg}")
-
-                draw_circle(radius, center)
+                draw_circle(
+                    geometry["radius"],
+                    geometry["center"]
+                )
 
             case ShapeType.ANNULUS_SECTOR:
-                center = geometry.get("center")
-                r_outer = geometry.get("radius_outer")
-                r_inner = geometry.get("radius_inner")
-                start_angle = geometry.get("start_angle")
-                end_angle = geometry.get("end_angle")
-
-                if None in (r_outer, r_inner, start_angle, end_angle):
-                    msg = "Annulus Sector parameters missing"
-                    logging.error(msg)
-                    raise ValueError(f"{__name__}: {msg}")
-
                 draw_annulus_sector(
-                    center,
-                    r_outer,
-                    r_inner,
-                    start_angle,
-                    end_angle
+                    geometry["center"],
+                    geometry["radius_outer"],
+                    geometry["radius_inner"],
+                    geometry["start_angle"],
+                    geometry["end_angle"]
                 )
 
             case ShapeType.ANNULUS_CIRCLE:
-                center = geometry.get("center")
-                r_outer = geometry.get("radius_outer")
-                r_inner = geometry.get("radius_inner", 0)
-
-                if r_outer is None:
-                    msg = "Annulus Circle parameters missing"
-                    logging.error(msg)
-                    raise ValueError(f"{__name__}: {msg}")
-
                 draw_annulus_circle(
-                    center,
-                    r_outer,
-                    r_inner
+                    geometry["center"],
+                    geometry["radius_outer"],
+                    geometry["radius_inner"]
                 )
 
             case _:
                 raise NotImplementedError(f"Shape '{shape}' not supported")
+
+        # Adds blocklabel and sets properties of it
+        if tag_coords is None:
+            tag_coords = centroid_point(geometry)
+
+        set_properties(
+            tag_coords,
+            group_id,
+            material,
+            magnetization
+        )
 
         # Saves changes to femm file
         femm.mi_saveas(str(self.file_path))
