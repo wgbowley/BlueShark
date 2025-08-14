@@ -1,3 +1,7 @@
+"""
+Install script -> Just do pip install -e .  (for editing)
+"""
+
 from setuptools import setup, find_packages
 
 setup(
@@ -23,4 +27,8 @@ setup(
         'Topic :: Scientific/Engineering',
     ],
     python_requires='>=3.8',
+    include_package_data=True,
+    package_data={
+        "blueshark.lib": ["femm_materials.json"],
+    },
 )

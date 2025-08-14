@@ -1,7 +1,7 @@
 """
 File: renderer.py
 Author: William Bowley
-Version: 1.1
+Version: 1.3
 Date: 2025-08-09
 Description:
     Renderer for FEMM based on the abtrast base
@@ -17,6 +17,7 @@ import logging
 
 import femm
 
+from blueshark.renderer.femm.magnetic.boundary import add_bounds
 from blueshark.renderer.femm.magnetic.primitives import (
     draw_polygon,
     draw_circle,
@@ -27,7 +28,12 @@ from blueshark.domain.generation.geometric_centroid import (
     centroid_point
 )
 from blueshark.renderer.femm.magnetic.properties import (
-    set_properties
+    set_properties,
+    add_phase
+)
+from blueshark.renderer.femm.magnetic.materials import (
+    load_materials,
+    add_femm_material
 )
 from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.constants import (
@@ -49,6 +55,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         under the file_path given by the user
         """
         self.file_path = Path(file_path)
+        self.materials = load_materials()
 
     def setup(
         self,
@@ -131,15 +138,56 @@ class FEMMMagneticsRenderer(BaseRenderer):
             case _:
                 raise NotImplementedError(f"Shape '{shape}' not supported")
 
+        # adds material to simulation space
+        add_femm_material(
+            self.materials,
+            material
+        )
+
         # Adds blocklabel and sets properties of it
         if tag_coords is None:
             tag_coords = centroid_point(geometry)
 
+        if phase is not None:
+            add_phase(phase, 1)
+
+        # Sets blocklabel properties
         set_properties(
             tag_coords,
             group_id,
             material,
+            phase,
+            turns,
             magnetization
+        )
+
+        # Saves changes to femm file
+        femm.mi_saveas(str(self.file_path))
+
+    def add_bounds(
+        self,
+        origin: tuple[float, float],
+        radius: float,
+        num_shells: int = 7,
+        bound_type: int = 1,
+        material: str = "Air"
+    ) -> None:
+        """
+        Adds bounds to the simulation space
+        """
+
+        # adds material to simulation space
+        add_femm_material(
+            self.materials,
+            material
+        )
+
+        add_bounds(
+            origin,
+            radius,
+            num_shells,
+            bound_type,
+            material
         )
 
         # Saves changes to femm file

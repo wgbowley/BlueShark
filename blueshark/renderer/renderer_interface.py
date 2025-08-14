@@ -24,7 +24,7 @@ class BaseRenderer(ABC):
     @abstractmethod
     def __init__(self, file_path: Path) -> None:
         """
-        Initializes the  renderer
+        Initializes the renderer
         under the file_path given by the user
 
         Args:

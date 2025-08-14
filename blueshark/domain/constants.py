@@ -17,6 +17,15 @@ from math import pi
 PRECISION: int = 12
 # Default number of decimal places for rounding or formatting output.
 
+EPSILON: float = 1e-10
+# Minimum threshold to treat floating-point values as effectively zero.
+# Prevents division-by-zero errors or instability due to numerical noise.
+
+
+MAXIMUM_FAILS: int = 5
+# Maximum allowed consecutive simulation failures (e.g., FEMM not converging)
+# before aborting a run or skipping a parameter set.
+
 TWOPI = 2*pi
 
 

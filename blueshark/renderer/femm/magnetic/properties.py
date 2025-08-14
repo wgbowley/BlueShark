@@ -9,7 +9,6 @@ Description:
 """
 
 from typing import Tuple
-
 import femm
 
 
@@ -48,3 +47,10 @@ def set_properties(
     )
 
     femm.mi_clearselected()
+
+
+def add_phase(phase, inital_current) -> None:
+    """
+    * Temp function will be removed
+    """
+    femm.mi_addcircprop(phase, inital_current, 1)

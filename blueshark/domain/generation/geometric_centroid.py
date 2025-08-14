@@ -90,7 +90,7 @@ def _annulus_circle(
 
     radius = (r_outer + r_inner) / 2
 
-    x_coords = center[0] + radius
+    x_coords = center[0] 
     y_coords = center[1] + radius
 
     return (x_coords, y_coords)
