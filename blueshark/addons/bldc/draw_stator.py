@@ -4,8 +4,8 @@ Author: William Bowley
 Version: 1.2
 Date: 2025-07-28
 Description:
-    This is an addon for drawing bldc 
-    motors through the renderer interface.
+    This is an addon for drawing bldc
+    motors stators through the renderer interface.
 
     (Tests)
 """
@@ -35,12 +35,12 @@ def _back_iron_geometry(
 
 def _poles_geometries(
     number_poles: int,
-    pole_height: float,
-    pole_length: float,
+    pole_radial_length: float,
+    pole_radial_thickness: float,
     radius_inner: float
 ) -> list[Geometry]:
     pole_angle = 360/number_poles
-    arc_anlge = pole_length/(radius_inner-pole_height) * 180/pi
+    arc_anlge = pole_radial_length/(radius_inner-pole_radial_thickness)
 
     geometries = []
     for pole in range(0, number_poles):
@@ -48,24 +48,22 @@ def _poles_geometries(
             'shape': ShapeType.ANNULUS_SECTOR,
             'center': (0, 0),
             'radius_outer': radius_inner,
-            'radius_inner': radius_inner - pole_height,
+            'radius_inner': radius_inner - pole_radial_thickness,
             'start_angle': pole_angle * pole,
-            'end_angle': pole_angle * pole + arc_anlge
+            'end_angle': pole_angle * pole + arc_anlge * 180 / pi
         }
         geometries.append(geometry)
     return geometries
 
 
-
-
 def stator_geometries(
     number_poles: int,
-    pole_height: float,
-    pole_length: float,
+    pole_radial_length: float,
+    pole_radial_thickness: float,
     radius_inner: float,
     radius_outer: float,
 ) -> None:
-    
+
     """
     Generates the geometries for the stator of a bldc motor
     """
@@ -77,8 +75,8 @@ def stator_geometries(
 
     poles = _poles_geometries(
         number_poles,
-        pole_height,
-        pole_length,
+        pole_radial_length,
+        pole_radial_thickness,
         radius_inner
     )
 

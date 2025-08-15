@@ -1,5 +1,7 @@
 """
 Initalize system test
+
+- Will have to refactor the renderer
 """
 
 from math import pi
@@ -9,8 +11,11 @@ from blueshark.domain.constants import (
     Geometry, ShapeType, SimulationType, Units, CurrentPolarity
 )
 from blueshark.renderer.femm.magnetic import renderer as Femmrenderer
-from blueshark.solver.femm.magnetic import solver as Femmsolver
-from blueshark.addons.draw_bldc import stator_geometries
+from blueshark.addons.bldc.draw_stator import stator_geometries
+from blueshark.addons.bldc.draw_armuture import (
+ slot_geometry_rotated,
+ coil_array
+)
 
 renderer = Femmrenderer.FEMMMagneticsRenderer("test.fem")
 renderer.setup(
@@ -24,12 +29,54 @@ radius_inner = 12
 radius_outer = 14
 pole_length = 4
 pole_height = 2
+
+# this one doesn't use polar coords to do it (Uses inbuild shapes)
 stator = stator_geometries(
-    number_poles=num_poles,
-    pole_height=pole_height,
-    pole_length=pole_length,
-    radius_inner=radius_inner,
-    radius_outer=radius_outer
+    12,
+    4,
+    2,
+    12,
+    14
+)
+
+# this one does use polar coords to do it
+armuture = slot_geometry_rotated(
+    12,
+    30,
+    5,
+    4,
+    9,
+    9.5
+)
+
+# this one does use polar coords to do it
+coils = coil_array(
+    12,
+    30,
+    5,
+    0.25,
+    4,
+    6,
+    8
+)
+
+renderer.draw(
+    armuture,
+    "Pure Iron",
+    1,
+    tag_coords=(2, 2)
+)
+
+axial: Geometry = {
+    "shape": ShapeType.CIRCLE,
+    "center": (0, 0),
+    "radius": 2
+}
+
+renderer.draw(
+    axial,
+    "Air",
+    0
 )
 
 renderer.draw(
@@ -53,4 +100,16 @@ for index in range(len(stator["poles"])):
         "N52",
         2,
         magnetization=angle_bisector
+    )
+
+for coil in coils.values():
+    element: Geometry = {
+        "shape": ShapeType.POLYGON,
+        "points": coil
+    }
+
+    renderer.draw(
+        element,
+        "0.315mm",
+        3,
     )

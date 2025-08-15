@@ -56,6 +56,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         """
         self.file_path = Path(file_path)
         self.materials = load_materials()
+        self.set_materials = []
 
     def setup(
         self,
@@ -139,10 +140,12 @@ class FEMMMagneticsRenderer(BaseRenderer):
                 raise NotImplementedError(f"Shape '{shape}' not supported")
 
         # adds material to simulation space
-        add_femm_material(
-            self.materials,
-            material
-        )
+        if material not in self.set_materials:
+            self.set_materials.append(material)
+            add_femm_material(
+                self.materials,
+                material
+            )
 
         # Adds blocklabel and sets properties of it
         if tag_coords is None:

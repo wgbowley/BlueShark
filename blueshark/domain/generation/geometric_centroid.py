@@ -34,25 +34,24 @@ def _polygon(
     # Thank you harriet on stackoverflow for this algorithm
     # https://stackoverflow.com/users/17433572/harriet
 
-    x, y = 0, 0
     num_points = len(points)
     signed_area = 0
+    cx = 0
+    cy = 0
 
-    for point in range(num_points):
-        x1, y1 = points[point]
-        x2, y2 = points[(point + 1) % num_points]
-
-        # Shoelance formula for polygon area
-        area = (x1 * y2) - (x2 - y1)
-        signed_area += area
-        x += (x1+x1) * area
-        y += (y1+y2) * area
+    for i in range(num_points):
+        x0, y0 = points[i]
+        x1, y1 = points[(i + 1) % num_points]
+        a = (x0 * y1) - (x1 * y0)
+        signed_area += a
+        cx += (x0 + x1) * a
+        cy += (y0 + y1) * a
 
     signed_area *= 0.5
-    x /= 6 * signed_area
-    y /= 6 * signed_area
+    cx /= 6 * signed_area
+    cy /= 6 * signed_area
 
-    return (x, y)
+    return (cx, cy)
 
 
 def _circle(
@@ -90,7 +89,7 @@ def _annulus_circle(
 
     radius = (r_outer + r_inner) / 2
 
-    x_coords = center[0] 
+    x_coords = center[0]
     y_coords = center[1] + radius
 
     return (x_coords, y_coords)
