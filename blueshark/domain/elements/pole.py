@@ -69,8 +69,8 @@ class Pole:
         """
 
         renderer.draw(
-            self.geometry,
-            self.material,
-            self.group_id,
+            geometry=self.geometry,
+            material=self.material,
+            group_id=self.group_id,
             magnetization=self.magnetization_angle
         )

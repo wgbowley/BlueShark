@@ -17,6 +17,7 @@ import logging
 
 import femm
 
+from blueshark.renderer.femm.magnetic.hybrid_geometry import draw_hybrid
 from blueshark.renderer.femm.magnetic.boundary import add_bounds
 from blueshark.renderer.femm.magnetic.primitives import (
     draw_polygon,
@@ -57,6 +58,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         self.file_path = Path(file_path)
         self.materials = load_materials()
         self.set_materials = []
+        self.phases = []
 
     def setup(
         self,
@@ -136,6 +138,11 @@ class FEMMMagneticsRenderer(BaseRenderer):
                     geometry["radius_inner"]
                 )
 
+            case ShapeType.HYBRID:
+                if "edges" not in geometry:
+                    raise ValueError("Hybrid shape requires 'edges' field")
+                draw_hybrid(geometry["edges"])
+
             case _:
                 raise NotImplementedError(f"Shape '{shape}' not supported")
 
@@ -147,12 +154,14 @@ class FEMMMagneticsRenderer(BaseRenderer):
                 material
             )
 
+        # Checks for phase and if not than adds the phase
+        if phase is not None and phase not in self.phases:
+            self.phases.append(phase)
+            add_phase(phase, 1)
+
         # Adds blocklabel and sets properties of it
         if tag_coords is None:
             tag_coords = centroid_point(geometry)
-
-        if phase is not None:
-            add_phase(phase, 1)
 
         # Sets blocklabel properties
         set_properties(

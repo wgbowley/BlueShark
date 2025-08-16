@@ -60,6 +60,27 @@ class ShapeType(Enum):
     CIRCLE = auto()
     ANNULUS_SECTOR = auto()
     ANNULUS_CIRCLE = auto()
+    HYBRID = auto()
+
+
+class Connectors(str, Enum):
+    """
+    Types of connectors for hybird shapes
+    """
+    LINE = "line"
+    ARC = "arc"
+
+
+class Connection(TypedDict, total=False):
+    """
+    Describes an connection in a hybrid geometry
+    """
+    type: Connectors
+    start: Tuple[float, float]             # Start point for line/arc
+    end: Tuple[float, float]               # End point for line/arc
+    center: Optional[Tuple[float, float]]  # Center for arcs/circle
+    angle: Optional[float]                 # Sweep angle for arcs
+    radius: Optional[float]                # Radius for circle/arc
 
 
 class Geometry(TypedDict, total=False):
@@ -69,13 +90,14 @@ class Geometry(TypedDict, total=False):
     Fields are optional depending on shape.
     """
     shape: ShapeType
-    points: List[Tuple[float, float]]
-    radius: Optional[float]                # For circles
-    radius_inner: Optional[float]          # For arcs with thickness
-    radius_outer: Optional[float]          # For arcs with thickness
-    center: Optional[Tuple[float, float]]  # Center point for arcs/circles
-    start_angle: Optional[float]           # Degrees, for arcs
-    end_angle: Optional[float]             # Degrees, for arcs
+    points: List[Tuple[float, float]]               # For POLYGON/RECTANGLE
+    radius: Optional[float]                         # For CIRCLE
+    radius_inner: Optional[float]                   # For arcs with thickness
+    radius_outer: Optional[float]                   # For arcs with thickness
+    center: Optional[Tuple[float, float]]           # Center point
+    start_angle: Optional[float]                    # Degrees, for arcs
+    end_angle: Optional[float]                      # Degrees, for arcs
+    edges: Optional[List[Connection]]               # <-- for HYBRID
 
 
 class CurrentPolarity(Enum):
