@@ -49,8 +49,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
     """
     Magnetic renderer for the femm simulator
     """
-
-    def __init__(self, file_path: Path):
+    def __init__(self, file_path: Path) -> None:
         """
         Initializes the femm magnetic renderer
         under the file_path given by the user
@@ -68,7 +67,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         frequency: float = 0,
     ) -> None:
         """
-        Setup the rendering environment or simulation space
+        Setup the rendering environment and simulation space
         """
 
         try:
@@ -92,7 +91,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
 
             femm.mi_saveas(str(self.file_path))
         except Exception as e:
-            msg = f"FEMM Setup failed ({sim_type}): {e}"
+            msg = f"FEMM Magnetic Setup failed ({sim_type}): {e}"
             logging.critical(msg)
             raise RuntimeError(f"{self.__class__.__name__}: {msg}") from e
 
@@ -108,7 +107,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
     ) -> None:
         """
         Draws elements to the simulation through their geometry,
-        and other properties (Work In progress)
+        and other properties 
         """
 
         shape = geometry.get("shape")

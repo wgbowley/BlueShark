@@ -37,7 +37,6 @@ class BaseRenderer(ABC):
         sim_type: SimulationType,
         units: Units,
         depth: float = 0,
-        frequency: float = 0,
     ) -> None:
         """
         Setup the rendering environment or simulation space.
@@ -53,9 +52,6 @@ class BaseRenderer(ABC):
         material: str,
         group_id: int,
         tag_coords: tuple[float, float],
-        phase: str = None,
-        turns: int = 0,
-        magnetization: float = 0.0
     ) -> None:
         """
         Draw geometry with given material and group.
