@@ -5,6 +5,7 @@
 *.edge
 *.log
 *.feh
+*.anh
 
 /blueshark.egg-info
 /build
