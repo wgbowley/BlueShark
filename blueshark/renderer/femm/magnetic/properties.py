@@ -42,15 +42,19 @@ def set_properties(
         0,              # Size constraint on the mesh in the block
         phase,          # 'Incirucit' Member of the circuit
         magnetization,  # Magnetization directed along an angle in degrees
-        group_id,       # Member of group number group
+        group_id,       # Member of group 'number group'
         turns           # Number of turns associated with this label
     )
 
     femm.mi_clearselected()
 
 
-def add_phase(phase, inital_current) -> None:
+def add_phase(
+    phase: str,
+    inital_current: float = 0.0
+) -> None:
     """
-    * Temp function will be removed
+    Adds a phase to the simulation space with
+    inital current of 0 Amps
     """
     femm.mi_addcircprop(phase, inital_current, 1)

@@ -22,7 +22,7 @@ from blueshark.domain.generation.geometric_validation import (
 )
 
 
-def draw_polygon(points: List[Tuple[float, float]]) -> None:
+def draw_polygon(points: List[Tuple[float, float]]) -> list[float, float]:
     """
     Draws a polygon to the simulation space.
 
@@ -37,7 +37,7 @@ def draw_polygon(points: List[Tuple[float, float]]) -> None:
 
     # Connects vertex pairs together
     for i in range(pairs):
-        femm.hi_addsegment(
+        femm.hi_drawline(
             points[i][0],
             points[i][1],
             points[i+1][0],
@@ -45,19 +45,21 @@ def draw_polygon(points: List[Tuple[float, float]]) -> None:
         )
 
     # Connects first and last vertex
-    femm.hi_addsegment(
+    femm.hi_drawline(
         points[-1][0],  # Last element in the point list
         points[-1][1],
         points[0][0],   # First element in the point list
         points[0][1]
     )
 
+    return points
+
 
 def draw_circle(
     radius: float,
     center: tuple[float, float],
     maxseg: int = 1
-) -> None:
+) -> list[float]:
     """
     Draws a circle to the simulation space via
     drawarc comamnd within femm.
@@ -82,7 +84,7 @@ def draw_circle(
     ]
 
     # left to top arc
-    femm.hi_addarc(
+    femm.hi_drawarc(
         points[1][0], points[1][1],
         points[0][0], points[0][1],
         90,
@@ -90,7 +92,7 @@ def draw_circle(
     )
 
     # Right to top arc
-    femm.hi_addarc(
+    femm.hi_drawarc(
         points[2][0], points[2][1],
         points[1][0], points[1][1],
         90,
@@ -98,7 +100,7 @@ def draw_circle(
     )
 
     # bottom to Right arc
-    femm.hi_addarc(
+    femm.hi_drawarc(
         points[3][0], points[3][1],
         points[2][0], points[2][1],
         90,
@@ -106,12 +108,14 @@ def draw_circle(
     )
 
     # Left to bottom arc
-    femm.hi_addarc(
+    femm.hi_drawarc(
         points[0][0], points[0][1],
         points[3][0], points[3][1],
         90,
         maxseg
     )
+
+    return points
 
 
 def draw_annulus_circle(
@@ -119,7 +123,7 @@ def draw_annulus_circle(
     r_outer: float,
     r_inner: float,
     maxseg: int = 1
-) -> None:
+) -> tuple[list, list]:
     """
     Draws an annulus (ring) by drawing two concentric circles:
     outer circle and inner circle (holes).
@@ -128,10 +132,12 @@ def draw_annulus_circle(
     validate_annulus_circle(center, r_outer, r_inner)
 
     # Outer circle (clockwise)
-    draw_circle(r_outer, center, maxseg)
+    outer_points = draw_circle(r_outer, center, maxseg)
 
     # Inner circle (clockwise to create hole)
-    draw_circle(r_inner, center, maxseg)
+    inner_point = draw_circle(r_inner, center, maxseg)
+
+    return (inner_point, outer_points)
 
 
 def draw_annulus_sector(
@@ -141,7 +147,7 @@ def draw_annulus_sector(
     start_angle: float,
     end_angle: float,
     maxseg: int = 1
-) -> None:
+) -> tuple[list, list]:
     """
     Draw an annulus sector in magnetic FEMM.
     """
@@ -166,7 +172,7 @@ def draw_annulus_sector(
     ]
 
     # Outer arc
-    femm.hi_addarc(
+    femm.hi_drawarc(
         outer_points[0][0],
         outer_points[0][1],
         outer_points[1][0],
@@ -176,7 +182,7 @@ def draw_annulus_sector(
     )
 
     # Inner arc
-    femm.mi_drawarc(
+    femm.hi_drawarc(
         inner_points[0][0],
         inner_points[0][1],
         inner_points[1][0],
@@ -186,7 +192,7 @@ def draw_annulus_sector(
     )
 
     # Connect outer end to inner end
-    femm.hi_addsegment(
+    femm.hi_drawline(
         outer_points[1][0],
         outer_points[1][1],
         inner_points[1][0],
@@ -194,9 +200,11 @@ def draw_annulus_sector(
     )
 
     # # Connect inner start back to outer start
-    femm.hi_addsegment(
+    femm.hi_drawline(
         inner_points[0][0],
         inner_points[0][1],
         outer_points[0][0],
         outer_points[0][1],
     )
+
+    return (inner_points, outer_points)

@@ -3,7 +3,8 @@
 *.fem
 *.ans
 *.edge
+*.log
+*.feh
 
 /blueshark.egg-info
 /build
-*.log

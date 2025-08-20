@@ -107,7 +107,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
     ) -> None:
         """
         Draws elements to the simulation through their geometry,
-        and other properties 
+        and other properties
         """
 
         shape = geometry.get("shape")

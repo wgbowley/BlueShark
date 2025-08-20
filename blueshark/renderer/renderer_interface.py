@@ -52,6 +52,9 @@ class BaseRenderer(ABC):
         material: str,
         group_id: int,
         tag_coords: tuple[float, float],
+        phase: str = None,
+        turns: int = None,  
+        magnetization: float = None
     ) -> None:
         """
         Draw geometry with given material and group.
