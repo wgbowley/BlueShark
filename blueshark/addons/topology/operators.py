@@ -1,5 +1,5 @@
 """
-Filename: map.py
+Filename: operators.py
 Author: William Bowley
 Version: 0.1
 Date: 2025-08-16
@@ -18,14 +18,14 @@ from typing import Tuple
 
 
 def draw_line(
-    top_map: list[list[int]],  
     start: Tuple[float, float],
     end: Tuple[float, float],
     material: int
-) -> None:
+) -> list[list[tuple, int]]:
     """
     Draws a line to the topology map using Bresenham's line algorithm.
     """
+    points = []
 
     # Convert to integers
     x0, y0 = map(int, start)
@@ -40,8 +40,7 @@ def draw_line(
     err = dx + dy
 
     while True:
-        if 0 <= x0 < len(top_map[0]) and 0 <= y0 < len(top_map):
-            top_map[y0][x0] = material
+        points.append([(x0, y0), material])
         if x0 == x1 and y0 == y1:
             break
         e2 = 2 * err
@@ -52,66 +51,61 @@ def draw_line(
             err += dx
             y0 += sy
 
+    return points
+
 
 def draw_arc(
-    top_map: list[list[int]],
     start: Tuple[float, float],
     end: Tuple[float, float],
     sweep_angle: float,
     material: int,
-    segments: int = 50
-) -> None:
+    segments: int = 500
+) -> list[tuple[int, int]]:
     """
-    Draws an arc onto a topology map
+    Draws an arc onto a topology map and returns the list of points.
+    Corrected to ensure the center is always on the right side of the chord
+    based on the sweep angle sign.
     """
     x0, y0 = start
     x1, y1 = end
 
-    # Chord vector
     dx = x1 - x0
     dy = y1 - y0
-    chord_len = math.sqrt(dx*dx + dy*dy)
+    chord_len = math.hypot(dx, dy)
 
-    # Compute radius
     theta_rad = math.radians(abs(sweep_angle))
     if theta_rad == 0:
-        return  # degenerate case
+        return []
+
+    # Circle radius
     radius = chord_len / (2 * math.sin(theta_rad / 2))
 
     # Midpoint of chord
     mx, my = (x0 + x1)/2, (y0 + y1)/2
 
-    # Distance from midpoint to center along perpendicular bisector
+    # Distance from midpoint to center along perpendicular
     h = math.sqrt(radius**2 - (chord_len/2)**2)
 
-    # Unit perpendicular vector to chord (choose CCW side)
+    # Unit perpendicular vector
     perp_dx = -dy / chord_len
     perp_dy = dx / chord_len
-    if sweep_angle < 0:  # flip for CW
-        perp_dx *= -1
-        perp_dy *= -1
 
-    # Center of circle
-    cx = mx + h * perp_dx
-    cy = my + h * perp_dy
+    # Determine which side to place center on
+    # Positive sweep_angle -> CCW, negative -> CW
+    ccw = 1 if sweep_angle >= 0 else -1
+    cx = mx + ccw * h * perp_dx
+    cy = my + ccw * h * perp_dy
 
-    # Start and end angles relative to center
+    # Start and end angles
     start_angle = math.atan2(y0 - cy, x0 - cx)
-    end_angle = math.atan2(y1 - cy, x1 - cx)
+    end_angle = start_angle + math.copysign(theta_rad, sweep_angle)
 
-    # Make sure angles progress in correct sweep direction
-    if sweep_angle > 0:
-        if end_angle < start_angle:
-            end_angle += 2*math.pi
-    else:
-        if end_angle > start_angle:
-            end_angle -= 2*math.pi
-
-    # Draw arc points
+    points = []
     for i in range(segments + 1):
         t = i / segments
-        theta = start_angle + t * (end_angle - start_angle)
-        x = int(round(cx + radius * math.cos(theta)))
-        y = int(round(cy + radius * math.sin(theta)))
-        if 0 <= x < len(top_map[0]) and 0 <= y < len(top_map):
-            top_map[y][x] = material
+        angle = start_angle + t * (end_angle - start_angle)
+        x = int(round(cx + radius * math.cos(angle)))
+        y = int(round(cy + radius * math.sin(angle)))
+        points.append([(x, y), material])
+
+    return points

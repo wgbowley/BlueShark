@@ -1,7 +1,7 @@
 """
 File: draw_bldc.py
 Author: William Bowley
-Version: 1.2
+Version: 0.1
 Date: 2025-07-28
 Description:
     This is an addon for drawing bldc

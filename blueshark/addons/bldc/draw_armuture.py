@@ -1,7 +1,7 @@
 """
 File: draw_bldc.py
 Author: William Bowley
-Version: 1.2
+Version: 0.1
 Date: 2025-07-28
 Description:
     This is an addon for drawing bldc
@@ -19,12 +19,9 @@ from blueshark.domain.constants import (
 )
 
 
-def polar_to_cartesian(r, theta_deg):
-    """
-    Converts polar form to cartesian form
-    """
-    theta_rad = math.radians(theta_deg)  
-    return r * math.cos(theta_rad), r * math.sin(theta_rad)
+def polar_to_cartesian(r: float, angle_deg: float) -> tuple[float, float]:
+    theta = math.radians(angle_deg)
+    return r * math.cos(theta), r * math.sin(theta)
 
 
 def rotate_point(

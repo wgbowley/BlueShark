@@ -65,7 +65,6 @@ stator = stator_geometries(
     back_plate_outer_radius
 )
 
-# Armuture geometry (Uses polar coords)
 armuture = slot_geometry_rotated(
     num_slots,
     sector_angle,

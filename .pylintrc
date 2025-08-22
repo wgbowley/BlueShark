@@ -1,0 +1,4 @@
+[MESSAGES CONTROL]
+disable=W0201 # Declaring all variables within __init__ of a class
+disable=W0718 # Catching too general exception ExceptionPylint
+disable=W0212 # Access to a protected member "Method" of a client class

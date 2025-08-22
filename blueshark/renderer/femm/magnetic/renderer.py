@@ -17,13 +17,13 @@ import logging
 
 import femm
 
-from blueshark.renderer.femm.magnetic.hybrid_geometry import draw_hybrid
 from blueshark.renderer.femm.magnetic.boundary import add_bounds
 from blueshark.renderer.femm.magnetic.primitives import (
     draw_polygon,
     draw_circle,
     draw_annulus_sector,
-    draw_annulus_circle
+    draw_annulus_circle,
+    draw_hybrid
 )
 from blueshark.domain.generation.geometric_centroid import (
     centroid_point
