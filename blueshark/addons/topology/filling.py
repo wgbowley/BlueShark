@@ -11,55 +11,31 @@ Description:
     This module fills geometry using scanline fill
 """
 
-
-def fill_polygon(
-    points: list[tuple[int, int]],
+def flood_fill(
+    voxel_map: list[list[int]],
+    centroid: tuple[int, int],
     material: int,
-    gap_tolerance: int = 0
-) -> list[tuple[tuple[int, int], int]]:
+) -> None:
+    y, x = centroid  # swap to row = y, col = x
+    if voxel_map[y][x] == material:
+        return
 
-    """
-    Fills the interior of a polygon defined by `points`.
-    Returns a list of points [(x, y), material].
-    Uses scanline fill.
-    """
-    if not points:
-        return []
+    orig_color = voxel_map[y][x]
+    m, n = len(voxel_map), len(voxel_map[0])
+    stack = [(y, x)]
+    # voxel_map[y][x] = 4  # fill the seed immediately
 
-    filled_points = []
+    while stack:
+        cy, cx = stack.pop()
+        if voxel_map[cy][cx] == orig_color:
+            voxel_map[cy][cx] = material
 
-    # Extract coordinates (points might be [(x,y), mat])
-    coords = [p[0] if isinstance(p[0], tuple) else p for p in points]
-
-    # Bounding box
-    min_y = min(p[1] for p in coords)
-    max_y = max(p[1] for p in coords)
-
-    for y in range(min_y, max_y + 1):
-        intersections = []
-        for i in range(len(coords)):
-            p1 = coords[i]
-            p2 = coords[(i + 1) % len(coords)]
-
-            # Allow small gaps
-            if abs(p1[1] - p2[1]) <= gap_tolerance:
-                continue
-
-            if (p1[1] <= y < p2[1]) or (p2[1] <= y < p1[1]):
-                x = int(
-                    round(
-                        p1[0] + (y - p1[1]) * (p2[0] - p1[0]) / (p2[1] - p1[1])
-                        )
-                    )
-                intersections.append(x)
-
-        intersections.sort()
-
-        for i in range(0, len(intersections), 2):
-            if i + 1 < len(intersections):
-                x_start = intersections[i]
-                x_end = intersections[i + 1]
-                for x in range(x_start, x_end + 1):
-                    filled_points.append(((x, y), material))
-
-    return filled_points
+            # neighbors (up, down, left, right)
+            if cy + 1 < m:
+                stack.append((cy + 1, cx))
+            if cy - 1 >= 0:
+                stack.append((cy - 1, cx))
+            if cx + 1 < n:
+                stack.append((cy, cx + 1))
+            if cx - 1 >= 0:
+                stack.append((cy, cx - 1))
