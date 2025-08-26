@@ -12,6 +12,8 @@ Description:
 """
 
 import logging
+import pathlib
+import os
 from typing import Dict, Any
 
 import femm
@@ -28,7 +30,7 @@ class FEMMMagneticsSolver(BaseSolver):
     """
     def __init__(
         self,
-        file_path,
+        file_path: pathlib.Path,
         requested_ouputs,
         subjects
     ) -> None:
@@ -48,6 +50,9 @@ class FEMMMagneticsSolver(BaseSolver):
         self.selector = OutputSelector(requested_ouputs)
 
     def solve(self) -> Dict[str, Any]:
+        """
+        Solves the magnetic problem defined by the renderer
+        """
         fail_count = 0
         while fail_count < MAXIMUM_FAILS:
             try:
@@ -63,3 +68,17 @@ class FEMMMagneticsSolver(BaseSolver):
 
         outputs = self.selector.compute(self.subjects)
         return outputs
+
+    def _clean_up(self) -> None:
+        """
+        Removes the temp ans file and closes the solver
+        """
+        ans_path = self.file_path.with_suffix(".ans")
+
+        if os.path.exists(ans_path):
+            try:
+                os.remove(ans_path)
+            except Exception as e:
+                logging.warning(f"Could not delete .ans file {e}")
+
+        femm.closefemm()

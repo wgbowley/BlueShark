@@ -187,6 +187,13 @@ class FEMMMagneticsRenderer(BaseRenderer):
         Adds bounds to the simulation space
         """
 
+        if material not in self.set_materials:
+            self.set_materials.append(material)
+            add_femm_material(
+                self.materials,
+                material
+            )
+
         # adds material to simulation space
         add_femm_material(
             self.materials,
@@ -200,6 +207,79 @@ class FEMMMagneticsRenderer(BaseRenderer):
             bound_type,
             material
         )
+
+        # Saves changes to femm file
+        femm.mi_saveas(str(self.file_path))
+
+    def set_property(
+        self,
+        origin: tuple[float, float],
+        group_id: int,
+        material: str = "Air"
+    ) -> None:
+        """
+        Sets property of a undefined region such
+        as the gap between the stator and armuture
+        """
+
+        if material not in self.set_materials:
+            self.set_materials.append(material)
+            add_femm_material(
+                self.materials,
+                material
+            )
+
+        set_properties(origin, group_id, material)
+
+        # Saves changes to femm file
+        femm.mi_saveas(str(self.file_path))
+
+    def move_group(
+        self,
+        group_id: int,
+        delta: tuple[float, float]
+    ) -> None:
+        """
+        Moves a group by dx and dy
+        """
+
+        dx, dy = delta
+        femm.mi_selectgroup(group_id)
+        femm.mi_movetranslate(dx, dy)
+        femm.mi_clearselected()
+
+        # Saves changes to femm file
+        femm.mi_saveas(str(self.file_path))
+
+    def rotate_group(
+        self,
+        group_id: int,
+        point: tuple[float, float],
+        angle: float
+    ) -> None:
+        """
+        Rotates a group by a angle around a point in space
+        """
+
+        x, y = point
+        femm.mi_selectgroup(group_id)
+        femm.mi_moverotate(x, y, angle)
+        femm.mi_clearselected()
+
+        # Saves changes to femm file
+        femm.mi_saveas(str(self.file_path))
+
+    def change_phase_current(
+        self,
+        phase: str,
+        current: float
+    ) -> None:
+
+        if phase is not None and phase not in self.phases:
+            self.phases.append(phase)
+            add_phase(phase, current)
+
+        femm.mi_setcurrent(phase, float(current))
 
         # Saves changes to femm file
         femm.mi_saveas(str(self.file_path))

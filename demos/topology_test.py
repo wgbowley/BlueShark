@@ -9,15 +9,22 @@ Description:
     ever works to add simple geometries
 """
 import matplotlib.pyplot as plt
-
+from blueshark.addons.topology.smoothing import (
+    order_points, simplify_points
+)
 from blueshark.addons.topology.renderer import TopologyRenderer
-from blueshark.domain.constants import SimulationType, Geometry, ShapeType
+from blueshark.domain.constants import (
+    SimulationType, Geometry, ShapeType, Units
+)
 from blueshark.addons.bldc.draw_armuture import (
     slot_geometry_rotated,
     coil_array
 )
 from blueshark.addons.bldc.draw_stator import (
     stator_geometries
+)
+from blueshark.renderer.femm.heat.renderer import (
+    FEMMHeatflowRenderer as Femmrenderer
 )
 
 materials = {
@@ -29,7 +36,8 @@ materials = {
     # Stator
     "Stator": 13,
     "Pole": 14,
-    "Backplate": 15
+    "Backplate": 15,
+    "Axial": 16
 }
 
 renderer = TopologyRenderer(1000, 1000, materials, SimulationType.PLANAR)
@@ -45,7 +53,7 @@ pole_radial_thickness = 2 * SCALE_FACTOR
 
 num_slots = 12
 sector_angle = 360 / num_slots
-spacing_angle = 5
+spacing_angle = 10
 r_start = 5 * SCALE_FACTOR
 r_slot = 15 * SCALE_FACTOR
 r_teeth = 16 * SCALE_FACTOR
@@ -94,7 +102,7 @@ axial: Geometry = {
 
 # # Draws objects to simulation space
 renderer.draw(armuture, "Stator", tag_coords=(r_axial, r_axial))
-renderer.draw(axial, "Air")
+renderer.draw(axial, "Axial")
 renderer.draw(stator["back_iron"], "Backplate")
 
 for pole in range(len(stator["poles"])):
@@ -109,16 +117,41 @@ for key in sorted(coils.keys()):
     renderer.draw(slot, f"Coil{coil_num}")
 
 
-# plt.imshow(renderer.topology_map, origin='lower', cmap='tab20')
-# plt.title("Topology Map")
-# plt.colorbar(label='Material')
-# plt.show()
+for _ in range(0, 10):
+    renderer.boundary_mutation("Stator", 0.01, 0.2)
 
-renderer.boundary_mutation("Pole", 0.1, 0.2)
-for _ in range(0, 4):
-    for i in range(0, 12):
-        renderer.boundary_mutation(f"Coil{i}", 0.1, 0.5)
+max_radius = 20
+min_dis = 5
 
+stator_points = renderer._find_boundaries(13)
+stator_points = order_points(stator_points, 20)
+stator_points = simplify_points(stator_points, 4)
+
+frender = Femmrenderer("test.feh")
+
+frender.setup(
+    SimulationType.PLANAR,
+    Units.CENTIMETERS
+)
+
+test: Geometry = {
+    "shape": ShapeType.POLYGON,
+    "points": stator_points
+}
+
+for key in sorted(coils.keys()):
+    coil_num = (key - 1) // 2
+    material = materials[f"Coil{coil_num}"]
+    points = renderer._find_boundaries(material)
+    points = order_points(points, 20)
+    points = simplify_points(points, 4)
+    coil: Geometry = {
+        "shape": ShapeType.POLYGON,
+        "points": points
+    }
+    frender.draw(coil, "Air", 1)
+
+frender.draw(test, "Air", 1)
 plt.imshow(renderer.topology_map, origin='lower', cmap='tab20')
 plt.title("Topology Map")
 plt.colorbar(label='Material')

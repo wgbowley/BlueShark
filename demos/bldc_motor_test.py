@@ -12,11 +12,13 @@ Description:
 """
 
 import math
-
 from blueshark.domain.elements.pole import Pole
 from blueshark.domain.elements.slot import Slot
 from blueshark.renderer.femm.magnetic.renderer import (
     FEMMMagneticsRenderer as Femmrenderer
+)
+from blueshark.solver.femm.magnetic.solver import (
+    FEMMMagneticsSolver as Femmsolver
 )
 from blueshark.domain.constants import (
     Geometry, ShapeType, SimulationType, Units, CurrentPolarity
@@ -53,7 +55,7 @@ r_axial = 3
 renderer = Femmrenderer("test.fem")
 renderer.setup(
     SimulationType.PLANAR,
-    Units.CENTIMETERS
+    Units.MILLIMETER
 )
 
 # Stator geometry (doesn't use polar coords as inbuild shapes)
@@ -92,6 +94,8 @@ axial: Geometry = {
 }
 
 # Draws objects to simulation space
+r_tag = (r_teeth+back_plate_inner_radius-pole_radial_thickness) / 2
+renderer.set_property([r_tag, 0], 10)
 renderer.draw(armuture, "Pure Iron", 2, tag_coords=(r_axial, r_axial))
 renderer.draw(axial, "Air", 0)
 renderer.draw(stator["back_iron"], "Pure Iron", 1)
@@ -138,3 +142,8 @@ for idx, coil in enumerate(coils.values()):
 
     element.estimate_turns()
     element.draw(renderer)
+
+solver = Femmsolver("test.fem", {"torque_lorentz"}, {"group": [1, 2, 3, 4]})
+results = solver.solve()
+
+print(results)

@@ -150,7 +150,7 @@ class TopologyRenderer:
         material: int,
         p_remove: float = 0.1,
         p_add: float = 0.05,
-        block_size: int = 3
+        block_size: int = 2
     ) -> None:
         """
         Mutates only the boundary voxels of the selected material with
@@ -248,39 +248,38 @@ class TopologyRenderer:
                 if cx - 1 >= 0:
                     stack.append((cy, cx - 1))
 
-    def _find_boundaries(
-        self,
-        material: int
-    ) -> List[Tuple[int, int]]:
+    def _find_boundaries(self, material: int) -> List[Tuple[int, int]]:
         """
-        Finds all boundary voxels of the given material region
-
-        A boundary bvoxel has at least one neighbor with a different material
+        Finds all boundary voxels of the given material region.
+        A boundary voxel has at least one neighbor with a different material
+        or lies on the edge of the map.
 
         Args:
             Material: Material type of the enclosed region
         """
         voxel_map = self.topology_map
         boundaries = []
-        m = self.window[1]
-        n = self.window[0]
+        m, n = self.window[1], self.window[0]
+
         for y in range(m):
             for x in range(n):
                 if voxel_map[y][x] != material:
                     continue
-                # Check neighbors
-                neighbors = [
-                    (y + 1, x), (y - 1, x),
-                    (y, x + 1), (y, x - 1)
-                ]
-                for ny, nx in neighbors:
-                    if 0 <= ny < m and 0 <= nx < n:
-                        if voxel_map[ny][nx] != material:
-                            boundaries.append((y, x))
-                            break  # no need to check other neighbors
+
+                # Check 4 neighbors (up, down, left, right)
+                is_boundary = False
+                for dy, dx in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                    ny, nx = y + dy, x + dx
+                    # If neighbor is out of bounds or different material
+                    if ny < 0 or ny >= m or nx < 0 or nx >= n or voxel_map[ny][nx] != material:
+                        is_boundary = True
+                        break
+
+                if is_boundary:
+                    boundaries.append((y, x))
 
         return boundaries
-    
+
     def _find_mat(self, voxel_map, y, x, target_material):
         rows, cols = self.window[0], self.window[1]
         visited = set()
@@ -298,9 +297,9 @@ class TopologyRenderer:
                 return mat
 
             # enqueue neighbors
-            for dy, dx in [(-1,0),(1,0),(0,-1),(0,1)]:
+            for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                 ny, nx = cy + dy, cx + dx
                 if 0 <= ny < rows and 0 <= nx < cols and (ny, nx) not in visited:
                     queue.append((ny, nx))
 
-        return target_material  # fallback if nothing found
+        return target_material  # if material fails

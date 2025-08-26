@@ -45,3 +45,10 @@ class BaseSolver(ABC):
 
         Returns: Outputs dict[str, Any]
         """
+
+    @abstractmethod
+    def _clean_up(self) -> None:
+        """
+        Cleans up an temporary files after solving the problem and closes
+        the solver also.
+        """

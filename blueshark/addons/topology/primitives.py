@@ -39,7 +39,6 @@ def draw_polygon(
     validate_polygon(points)
 
     pairs = len(points) - 1
-    print
     return_points = []
     # Connects vertex pairs together
     for i in range(pairs):

@@ -175,3 +175,25 @@ class FEMMHeatflowRenderer(BaseRenderer):
         )
 
         femm.hi_saveas(str(self.file_path))
+
+    def add_bounds(
+        self,
+        origin,
+        radius,
+        num_shells=7,
+        bound_type=1,
+        material="Air"
+    ):
+        return None
+
+    def change_phase_current(self, phase, current):
+        return None
+
+    def move_group(self, group_id, delta):
+        return None
+
+    def rotate_group(self, group_id, point, angle):
+        return None
+
+    def set_property(self, origin, group_id, material="Air"):
+        return None
