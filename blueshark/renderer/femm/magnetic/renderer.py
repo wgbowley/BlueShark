@@ -113,7 +113,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         shape = geometry.get("shape")
         match shape:
             case ShapeType.POLYGON | ShapeType.RECTANGLE:
-                draw_polygon(geometry["points"])
+                draw_polygon(geometry["points"], geometry["enclosed"])
 
             case ShapeType.CIRCLE:
                 draw_circle(

@@ -118,7 +118,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
         shape = geometry.get("shape")
         match shape:
             case ShapeType.POLYGON | ShapeType.RECTANGLE:
-                points = draw_polygon(geometry["points"])
+                points = draw_polygon(geometry["points"], geometry["enclosed"])
 
             case ShapeType.CIRCLE:
                 points = draw_circle(

@@ -64,6 +64,33 @@ def simplify_points(
     return simplified
 
 
+def smooth_points(
+    points: List[Tuple[float, float]],
+    window_size: int = 3
+) -> List[Tuple[float, float]]:
+    """
+    Smooths a list of 2D points using a moving average.
+    """
+    if not points or window_size < 2:
+        return points
+
+    n = len(points)
+    smoothed = []
+
+    for i in range(n):
+        # Determine the window boundaries
+        start = max(0, i - window_size // 2)
+        end = min(n, i + window_size // 2 + 1)
+
+        # Average x and y in the window
+        avg_x = sum(points[j][0] for j in range(start, end)) / (end - start)
+        avg_y = sum(points[j][1] for j in range(start, end)) / (end - start)
+
+        smoothed.append((avg_x, avg_y))
+
+    return smoothed
+
+
 def order_points(
     points: list[tuple[int, int]],
     radius: int = 20

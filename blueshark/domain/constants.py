@@ -97,6 +97,7 @@ class Geometry(TypedDict, total=False):
     center: Optional[Tuple[float, float]]           # Center point
     start_angle: Optional[float]                    # Degrees, for arcs
     end_angle: Optional[float]                      # Degrees, for arcs
+    enclosed: bool                                  # Enclosed [true] / [false]
     edges: Optional[List[Connection]]               # <-- for HYBRID
 
 

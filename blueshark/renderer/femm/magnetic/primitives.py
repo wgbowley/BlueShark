@@ -23,7 +23,10 @@ from blueshark.domain.generation.geometric_validation import (
 )
 
 
-def draw_polygon(points: List[Tuple[float, float]]) -> None:
+def draw_polygon(
+    points: List[Tuple[float, float]],
+    enclosed: bool = True
+) -> None:
     """
     Draws a polygon to the simulation space.
 
@@ -45,13 +48,14 @@ def draw_polygon(points: List[Tuple[float, float]]) -> None:
             points[i+1][1]
         )
 
-    # Connects first and last vertex
-    femm.mi_drawline(
-        points[-1][0],  # Last element in the point list
-        points[-1][1],
-        points[0][0],   # First element in the point list
-        points[0][1]
-    )
+    if enclosed:
+        # Connects first and last vertex
+        femm.mi_drawline(
+            points[-1][0],  # Last element in the point list
+            points[-1][1],
+            points[0][0],   # First element in the point list
+            points[0][1]
+        )
 
 
 def draw_circle(

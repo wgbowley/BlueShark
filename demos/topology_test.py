@@ -8,9 +8,14 @@ Description:
     This demo tests to see if the topology addon
     ever works to add simple geometries
 """
+import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from blueshark.addons.topology.smoothing import (
-    order_points, simplify_points
+    order_points, simplify_points, smooth_points
+)
+from blueshark.addons.topology.interfaces import (
+    remove_nearby_points, connect_lists
 )
 from blueshark.addons.topology.renderer import TopologyRenderer
 from blueshark.domain.constants import (
@@ -29,15 +34,11 @@ from blueshark.renderer.femm.heat.renderer import (
 
 materials = {
     "Air": 0,
-    # Coils 0→11
-    "Coil0": 1, "Coil1": 2, "Coil2": 3, "Coil3": 4,
-    "Coil4": 5, "Coil5": 6, "Coil6": 7, "Coil7": 8,
-    "Coil8": 9, "Coil9": 10, "Coil10": 11, "Coil11": 12,
-    # Stator
-    "Stator": 13,
-    "Pole": 14,
-    "Backplate": 15,
-    "Axial": 16
+    "Stator": 2,
+    "Backplate": 1,
+    "Axial": 4,
+    **{f"Coil{i}": i + 1 + 4 for i in range(24)},  # Coils 0→23
+    **{f"Pole{i}": i + 1 + 24 for i in range(16)},
 }
 
 renderer = TopologyRenderer(1000, 1000, materials, SimulationType.PLANAR)
@@ -105,16 +106,16 @@ renderer.draw(armuture, "Stator", tag_coords=(r_axial, r_axial))
 renderer.draw(axial, "Axial")
 renderer.draw(stator["back_iron"], "Backplate")
 
-for pole in range(len(stator["poles"])):
-    renderer.draw(stator["poles"][pole], "Pole")
-
 for key in sorted(coils.keys()):
-    coil_num = (key - 1) // 2
+    coil_num = (key - 1)
     slot = {
         "shape": ShapeType.POLYGON,
         "points": coils[key]
     }
     renderer.draw(slot, f"Coil{coil_num}")
+
+for pole in range(len(stator["poles"])):
+    renderer.draw(stator["poles"][pole], f"Pole{pole}")
 
 
 for _ in range(0, 10):
@@ -123,9 +124,15 @@ for _ in range(0, 10):
 max_radius = 20
 min_dis = 5
 
-stator_points = renderer._find_boundaries(13)
+stator_points = renderer._find_boundaries(materials["Stator"])
 stator_points = order_points(stator_points, 20)
 stator_points = simplify_points(stator_points, 4)
+stator_points = smooth_points(stator_points, 5)
+
+stator2_points = renderer._find_boundaries(materials["Backplate"])
+stator2_points = order_points(stator2_points, 20)
+stator2_points = simplify_points(stator2_points, 4)
+stator2_points = smooth_points(stator2_points, 5)
 
 frender = Femmrenderer("test.feh")
 
@@ -134,25 +141,65 @@ frender.setup(
     Units.CENTIMETERS
 )
 
-test: Geometry = {
+test2: Geometry = {
     "shape": ShapeType.POLYGON,
-    "points": stator_points
+    "points": stator2_points,
+    "enclosed": True
 }
 
+test: Geometry = {
+    "shape": ShapeType.POLYGON,
+    "points": stator_points,
+    "enclosed": True
+}
+
+frender.draw(test, "Air", 1)
+frender.draw(test2, "Air", 1)
 for key in sorted(coils.keys()):
-    coil_num = (key - 1) // 2
+    coil_num = (key - 1)
+    print(coil_num)
     material = materials[f"Coil{coil_num}"]
     points = renderer._find_boundaries(material)
     points = order_points(points, 20)
     points = simplify_points(points, 4)
+    points = remove_nearby_points(points, stator_points, 4)
+    points = connect_lists(points, stator_points)
+    # Going to have to make a custom one for interfaces
+    points = order_points(points, 100)
     coil: Geometry = {
         "shape": ShapeType.POLYGON,
-        "points": points
+        "points": points,
+        "enclosed": False
     }
     frender.draw(coil, "Air", 1)
 
-frender.draw(test, "Air", 1)
-plt.imshow(renderer.topology_map, origin='lower', cmap='tab20')
+for pole in range(len(stator["poles"])):
+    points = renderer._find_boundaries(f"Pole{pole}")
+    points = order_points(points, 20)
+    points = simplify_points(points, 4)
+    points = remove_nearby_points(points, stator["back_iron"], 4)
+    points = connect_lists(points, stator2_points)
+
+    points = order_points(points, 100)
+    pole: Geometry = {
+        "shape": ShapeType.POLYGON,
+        "points": points,
+        "enclosed": False
+    }
+    frender.draw(pole, "Air", 1)
+
+
+num_materials = np.max(renderer.topology_map) + 1  # 0..N
+
+# Generate distinct colors in HSV space
+hues = np.linspace(0, 1, num_materials, endpoint=False)  # evenly spaced hues
+saturation = 0.8
+value = 0.9
+distinct_colors = np.array([plt.cm.hsv(h)[:3] for h in hues])  # RGB from HSV
+
+cmap = ListedColormap(distinct_colors)
+
+plt.imshow(renderer.topology_map, origin='lower', cmap=cmap)
 plt.title("Topology Map")
 plt.colorbar(label='Material')
 plt.show()
