@@ -7,6 +7,9 @@ Date: 2025-08-16
 Description:
     This addon aims to add topology optimization
     to the framework for all solvers
+
+    This module orders list of boundary points,
+    than smooths them and than simplies them.
 """
 
 import math

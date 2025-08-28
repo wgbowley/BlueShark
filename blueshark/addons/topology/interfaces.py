@@ -60,10 +60,10 @@ def connect_lists(target_points, other_points):
             if sep > max_sep:
                 max_sep = sep
                 best_pair = (candidates[i], candidates[j])
-    
+
     # Handle edge case: if we only had one candidate
     if best_pair is None:
         best_pair = (candidates[0], candidates[0])
-    
+
     extended = [best_pair[0]] + target_points + [best_pair[1]]
     return extended

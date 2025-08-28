@@ -6,7 +6,7 @@ Date: 2025-08-16
 
 Description:
     This addon aims to add topology optimization
-    to the framework for all solvers
+    to the framework for all renderers / solvers.
 
     This module adds perimeters for the
     topology map
@@ -26,7 +26,8 @@ from blueshark.domain.generation.geometric_validation import (
 
 def draw_polygon(
     points: List[Tuple[float, float]],
-    material: int
+    material: int,
+    enclosed: bool = True
 ) -> list[tuple[int, int]]:
     """
     Draws a polygon to the simulation space.
@@ -51,13 +52,14 @@ def draw_polygon(
         )
 
     # Connects first and last vertex
-    return_points.extend(
-        draw_line(
-            points[-1],  # Last element in the point list
-            points[0],   # First element in the point list
-            material
+    if enclosed:
+        return_points.extend(
+            draw_line(
+                points[-1],  # Last element in the point list
+                points[0],   # First element in the point list
+                material
+            )
         )
-    )
 
     return return_points
 
@@ -66,7 +68,7 @@ def draw_circle(
     radius: float,
     center: tuple[float, float],
     material: int,
-    maxseg: int = 1
+    maxseg: int = 0
 ) -> list[tuple[int, int]]:
     """
     Draws a circle to the simulation space via
@@ -140,7 +142,7 @@ def draw_annulus_circle(
     r_outer: float,
     r_inner: float,
     material: int,
-    maxseg: int = 1
+    maxseg: int = 0
 ) -> list[tuple[int, int]]:
     """
     Draws an annulus (ring) by drawing two concentric circles:
@@ -166,7 +168,7 @@ def draw_annulus_sector(
     start_angle: float,
     end_angle: float,
     material: int,
-    maxseg: int = 1
+    maxseg: int = 500
 ) -> None:
     """
     Draw an annulus sector in magnetic FEMM.
@@ -199,7 +201,8 @@ def draw_annulus_sector(
             outer_points[0],
             outer_points[1],
             arc_angle,
-            material
+            material,
+            maxseg
         )
     )
 
@@ -209,7 +212,8 @@ def draw_annulus_sector(
             inner_points[0],
             inner_points[1],
             arc_angle,
-            material
+            material,
+            maxseg
         )
     )
 
@@ -227,7 +231,7 @@ def draw_annulus_sector(
         draw_line(
             inner_points[0],
             outer_points[0],
-            material
+            material,
         )
     )
 

@@ -48,7 +48,7 @@ class TopologyRenderer:
         self.window = (x_size, y_size)
         self.materials = materials
         self.type = sim_type
-        self.topology_map = []
+        self.voxel_map = []
 
         # Calculates shift value for simulation types
         x, y = 0, 0
@@ -63,17 +63,17 @@ class TopologyRenderer:
         default_material: str
     ) -> list[list[int]]:
         """
-        Initalizes the topology map
+        Initalizes the voxel map
         """
 
-        topology_map = []
+        voxel_map = []
         for _ in range(0, self.window[1]):
             row = []
             for _ in range(0, self.window[0]):
                 row.append(self.materials[default_material])
-            topology_map.append(row)
+            voxel_map.append(row)
 
-        self.topology_map = topology_map
+        self.voxel_map = voxel_map
 
     def draw(
         self,
@@ -82,7 +82,7 @@ class TopologyRenderer:
         tag_coords: None = None
     ) -> None:
         """
-        Draws element to the topology map
+        Draws element to the voxel map
 
         Args:
             Geometry: Shape geometry
@@ -139,59 +139,43 @@ class TopologyRenderer:
         for point in points:
             self._set_points(point[0], point[1])
 
+        # Gets centroid if no tags are prescribed
         if tag_coords is None:
             tag_coords = centroid_point(geometry)
 
         tag_coords = (int(tag_coords[0]), int(tag_coords[1]))
-        self._fill_region(tag_coords, self.materials[material])
+        self._fill__regions(tag_coords, self.materials[material])
 
-    def boundary_mutation(
+    def mutation(
         self,
         material: int,
-        p_remove: float = 0.1,
-        p_add: float = 0.05,
-        block_size: int = 2
+        probability: int,
     ) -> None:
         """
         Mutates only the boundary voxels of the selected material with
-        block-based growth/removal.
-
-        Args:
-            Material: Material region to mutate shape
-            p_remove: Probability that a boundary voxel filps material type
-            p_add: Probability that a boundary voxel filps to material type
-            block_size: How much material is growth/removed each time
+        probability of change p in [-1,1]. Where negative is removal
+        and positive is addition
         """
 
-        voxel_map = self.topology_map
-        mat = self.materials[material]
-        rows, cols = len(voxel_map), len(voxel_map[0])
-        boundaries = self._find_boundaries(mat)
-        half = block_size // 2
+        voxel_map = self.voxel_map
+        columns, rows = self.window
+
+        mat_index = self.materials[material]
+        boundaries = self._find_boundaries(mat_index)
+        step_pattern = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
         for y, x in boundaries:
-            # Remove block
-            if random() < p_remove:
-                for dy in range(-half, half+1):
-                    for dx in range(-half, half+1):
-                        ny, nx = y + dy, x + dx
-                        if 0 <= ny < rows and 0 <= nx < cols:
-                            if voxel_map[ny][nx] == mat:
-                                    voxel_map[ny][nx] = self._find_mat(
-                                        voxel_map,
-                                        ny,
-                                        nx,
-                                        mat
-                                    )
-                                    
-            # Grow block into neighboring voids
-            if random() < p_add:
-                for dy in range(-half, half+1):
-                    for dx in range(-half, half+1):
-                        ny, nx = y + dy, x + dx
-                        if 0 <= ny < rows and 0 <= nx < cols:
-                            if voxel_map[ny][nx] == 0:
-                                voxel_map[ny][nx] = mat
+            if probability < 0 and random() < abs(probability):
+                voxel_map[y][x] = self._find_material(
+                    (y, x),
+                    mat_index
+                )
+
+            if probability > 0 and random() < abs(probability):
+                for dy, dx in step_pattern:
+                    ny, nx = y + dy, x + dx
+                    if 0 <= ny < rows and 0 <= nx < columns:
+                        voxel_map[ny][nx] = mat_index
 
     def _set_points(
         self,
@@ -207,9 +191,9 @@ class TopologyRenderer:
         """
         x, y = coord
         shifted = (x + self.shift[0], y + self.shift[1])
-        self.topology_map[shifted[1]][shifted[0]] = material
+        self.voxel_map[shifted[1]][shifted[0]] = material
 
-    def _fill_region(
+    def _fill__regions(
         self,
         centroid: Tuple[int, int],
         material: int
@@ -223,7 +207,7 @@ class TopologyRenderer:
             Material: Material type of the enclosed region
         """
         x, y = (centroid[0] + self.shift[0], centroid[1] + self.shift[1])
-        voxel_map = self.topology_map
+        voxel_map = self.voxel_map
 
         # Checks if the region is already filled
         if voxel_map[y][x] == material:
@@ -248,58 +232,93 @@ class TopologyRenderer:
                 if cx - 1 >= 0:
                     stack.append((cy, cx - 1))
 
-    def _find_boundaries(self, material: int) -> List[Tuple[int, int]]:
+    def _find_boundaries(
+        self,
+        material_index: int
+    ) -> List[Tuple[int, int]]:
         """
-        Finds all boundary voxels of the given material region.
-        A boundary voxel has at least one neighbor with a different material
-        or lies on the edge of the map.
+        Finds boundary voxels of the given material region
+
+        Definition of boundary voxel:
+        - Has at least one neighbor with a different material
+          or lies on the edge of the map
 
         Args:
-            Material: Material type of the enclosed region
+            material_index: Material designation in the map
         """
-        voxel_map = self.topology_map
+
+        voxel_map = self.voxel_map
+        columns, rows = self.window
+
+        step_pattern = [(0, 1), (0, -1), (1, 0), (-1, 0)]
         boundaries = []
-        m, n = self.window[1], self.window[0]
 
-        for y in range(m):
-            for x in range(n):
-                if voxel_map[y][x] != material:
-                    continue
+        for index in range(columns * rows):
+            y, x = divmod(index, rows)
 
-                # Check 4 neighbors (up, down, left, right)
-                is_boundary = False
-                for dy, dx in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-                    ny, nx = y + dy, x + dx
-                    # If neighbor is out of bounds or different material
-                    if ny < 0 or ny >= m or nx < 0 or nx >= n or voxel_map[ny][nx] != material:
-                        is_boundary = True
-                        break
+            if voxel_map[y][x] != material_index:
+                continue
 
-                if is_boundary:
-                    boundaries.append((y, x))
+            is_boundary = False
+            for dy, dx in step_pattern:
+                ny, nx = y + dy, x + dx
+
+                # Out-of-bounds check
+                if not (0 <= ny < columns) or not (0 <= nx < rows):
+                    is_boundary = True
+                    break
+
+                # Material Difference check
+                if voxel_map[ny][nx] != material_index:
+                    is_boundary = True
+                    break
+
+            if is_boundary:
+                boundaries.append((y, x))
 
         return boundaries
 
-    def _find_mat(self, voxel_map, y, x, target_material):
-        rows, cols = self.window[0], self.window[1]
+    def _find_material(
+        self,
+        coords: Tuple[int, int],  # (y, x)
+        target_material_index: int
+    ) -> int:
+        """
+        Finds the closest different material to
+        coords given
+
+        Args:
+            coords: (y, x) of the target material
+            target_material_index: Material designation in the map
+        """
+        voxel_map = self.voxel_map
+        columns, rows = self.window
+        y, x = coords
+
         visited = set()
         queue = [(y, x)]
+        step_pattern = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
         while queue:
-            cy, cx = queue.pop(0)  # pop from front to mimic BFS
+            cy, cx = queue.pop(0)
             if (cy, cx) in visited:
                 continue
             visited.add((cy, cx))
 
-            # If this voxel is a different material, return it
-            mat = voxel_map[cy][cx]
-            if mat != target_material:
-                return mat
+            material_index = voxel_map[cy][cx]
+            if material_index != target_material_index:
+                return material_index
 
-            # enqueue neighbors
-            for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            for dy, dx in step_pattern:
                 ny, nx = cy + dy, cx + dx
-                if 0 <= ny < rows and 0 <= nx < cols and (ny, nx) not in visited:
+
+                # Out-of-bounds check
+                if not (0 <= ny < columns) or not (0 <= nx < rows):
                     queue.append((ny, nx))
 
-        return target_material  # if material fails
+                # Material Difference check
+                if voxel_map[ny][nx] != material_index:
+                    queue.append((ny, nx))
+
+        # If material fails
+        return target_material_index
