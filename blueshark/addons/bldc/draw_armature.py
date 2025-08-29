@@ -1,5 +1,5 @@
 """
-File: draw_bldc.py
+File: draw_armature.py
 Author: William Bowley
 Version: 0.1
 Date: 2025-07-28

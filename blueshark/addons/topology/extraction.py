@@ -122,3 +122,40 @@ def order_points(
             ordered.append(nearest_point)
 
     return ordered
+
+
+def order_remaining_points(
+    full_set: list[tuple[int, int]],
+    path_set: list[tuple[int, int]],
+    radius: int = 20
+) -> list[tuple[int, int]]:
+    remaining_points = [p for p in full_set if p not in path_set]
+
+    if not remaining_points:
+        return []
+
+    # Pick the point with the most local neighbors as the start
+    start_point = max(
+        remaining_points,
+        key=lambda p: len(_influence_points(remaining_points, p, radius))
+    )
+
+    ordered = [start_point]
+    remaining_points.remove(start_point)
+
+    while remaining_points:
+        current_point = ordered[-1]
+        local_points = _influence_points(
+            remaining_points,
+            current_point,
+            radius
+        )
+
+        if not local_points:
+            break  # no more connected points
+
+        nearest = min(local_points, key=lambda p: _distance(p, current_point))
+        remaining_points.remove(nearest)
+        ordered.append(nearest)
+
+    return ordered

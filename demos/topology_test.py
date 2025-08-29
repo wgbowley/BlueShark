@@ -1,57 +1,83 @@
 """
-Filename: topology_test.py
+Filename: Topology_test.py
 Author: William Bowley
-Version: 1.3
-Date: 2025-08-16
+Version: 0.2
+Data: 2025-08-29
 
 Description:
-    This demo tests to see if the topology addon
-    ever works to add simple geometries
+    This demo tests to see if the topology
+    optimizer addon works to optimize a bldc
+    motor using the femm magnetic solver.
 """
+
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from blueshark.addons.topology.smoothing import (
-    order_points, simplify_points, smooth_points
-)
-from blueshark.addons.topology.interfaces import (
-    remove_nearby_points, connect_lists
-)
+import matplotlib.pyplot as plot
+import matplotlib.colors as colors
+
+# Topology renderer -> Voxel setup, draw and mutation
 from blueshark.addons.topology.renderer import TopologyRenderer
+
+# Femm Renderer -> Draw, set properties, phases
+from blueshark.renderer.femm.magnetic.renderer import FEMMMagneticsRenderer
+
+# Extraction of data from voxel topology map
+from blueshark.addons.topology.extraction import (
+    order_points,
+    order_remaining_points,
+    smooth_points,
+    simplify_points
+)
+
+# Interfaces between extraction geometry
+from blueshark.addons.topology.interfaces import (
+    interfaced_geometry,
+)
+
+# Domain Items
 from blueshark.domain.constants import (
     SimulationType, Geometry, ShapeType, Units
 )
-from blueshark.addons.bldc.draw_armuture import (
-    slot_geometry_rotated,
-    coil_array
+from blueshark.domain.generation.geometric_centroid import (
+    _polygon
+)
+
+# Bldc Motor addons
+from blueshark.addons.bldc.draw_armature import (
+    slot_geometry_rotated, coil_array
 )
 from blueshark.addons.bldc.draw_stator import (
     stator_geometries
 )
-from blueshark.renderer.femm.heat.renderer import (
-    FEMMHeatflowRenderer as Femmrenderer
-)
 
-materials = {
+topology_materials = {
     "Air": 0,
-    "Stator": 2,
+    "Armature": 2,
     "Backplate": 1,
     "Axial": 4,
     **{f"Coil{i}": i + 1 + 4 for i in range(24)},  # Coils 0→23
-    **{f"Pole{i}": i + 1 + 24 for i in range(16)},
+    **{f"Pole{i}": i + 1 + 24 for i in range(16)},   # Poles 24->40
 }
 
-renderer = TopologyRenderer(1000, 1000, materials, SimulationType.PLANAR)
-renderer.initalize_map("Air")
+POLY_NUM = 6
+
+topology_renderer = TopologyRenderer(
+    1000,
+    1000,
+    topology_materials,
+    SimulationType.PLANAR
+)
+topology_renderer.initalize_map("Air")
 
 SCALE_FACTOR = 16
 
+# Pole & Stator Geometry
 num_poles = 16
 back_plate_outer_radius = 20 * SCALE_FACTOR
 back_plate_inner_radius = 19 * SCALE_FACTOR
 pole_length = 5 * SCALE_FACTOR
 pole_radial_thickness = 2 * SCALE_FACTOR
 
+# Coil & Armature Geometry
 num_slots = 12
 sector_angle = 360 / num_slots
 spacing_angle = 10
@@ -64,8 +90,7 @@ r_coilS = 7 * SCALE_FACTOR
 r_coilE = 14 * SCALE_FACTOR
 r_axial = 3 * SCALE_FACTOR
 
-
-# Stator geometry (doesn't use polar coords as inbuild shapes)
+# Stator Geometry -> Cartesian Coordinate System
 stator = stator_geometries(
     num_poles,
     pole_length,
@@ -74,8 +99,8 @@ stator = stator_geometries(
     back_plate_outer_radius
 )
 
-# Armuture geometry (Uses polar coords)
-armuture = slot_geometry_rotated(
+# Armature Geometry -> Polar Coordinate System
+Armature = slot_geometry_rotated(
     num_slots,
     sector_angle,
     spacing_angle,
@@ -84,7 +109,7 @@ armuture = slot_geometry_rotated(
     r_teeth
 )
 
-# Coil geometry (Uses polar coords)
+# Coil array geometry -> Polar Coordinate System
 coils = coil_array(
     num_slots,
     sector_angle,
@@ -95,111 +120,124 @@ coils = coil_array(
     r_coilE
 )
 
+# Topology Rendering
+
 axial: Geometry = {
     "shape": ShapeType.CIRCLE,
     "center": (0, 0),
     "radius": r_axial
 }
 
-# # Draws objects to simulation space
-renderer.draw(armuture, "Stator", tag_coords=(r_axial, r_axial))
-renderer.draw(axial, "Axial")
-renderer.draw(stator["back_iron"], "Backplate")
+topology_renderer.draw(Armature, "Armature", tag_coords=(r_axial, r_axial))
+topology_renderer.draw(axial, "Axial")
+topology_renderer.draw(stator["back_iron"], "Backplate")
 
+# Drawing Coils to voxel grid
 for key in sorted(coils.keys()):
     coil_num = (key - 1)
     slot = {
         "shape": ShapeType.POLYGON,
         "points": coils[key]
     }
-    renderer.draw(slot, f"Coil{coil_num}")
+    topology_renderer.draw(slot, f"Coil{coil_num}")
 
+# Drawing poles to voxel grid
 for pole in range(len(stator["poles"])):
-    renderer.draw(stator["poles"][pole], f"Pole{pole}")
+    topology_renderer.draw(stator["poles"][pole], f"Pole{pole}")
+
+num_materials = np.max(topology_renderer.voxel_map) + 1  # 0..N
 
 
-for _ in range(0, 10):
-    renderer.mutation("Stator", 0.9)
+# Femm Renderer
+femm_renderer = FEMMMagneticsRenderer("test.femm")
+femm_renderer.setup(
+    SimulationType.PLANAR,
+    Units.CENTIMETERS,
+    40
+)
 
-max_radius = 20
-min_dis = 5
+blackplate = topology_renderer._find_boundaries(
+    topology_materials["Backplate"]
+)
+inner_backplate = order_points(blackplate, 10)
+outer_backplate = order_remaining_points(blackplate, inner_backplate, 10)
 
-# stator_points = renderer._find_boundaries(materials["Stator"])
-# stator_points = order_points(stator_points, 20)
-# stator_points = simplify_points(stator_points, 4)
-# stator_points = smooth_points(stator_points, 5)
+inner: Geometry = {
+    "shape": ShapeType.POLYGON,
+    "points": simplify_points(smooth_points(inner_backplate, 5), POLY_NUM),
+    "enclosed": True,
+}
 
-# stator2_points = renderer._find_boundaries(materials["Backplate"])
-# stator2_points = order_points(stator2_points, 20)
-# stator2_points = simplify_points(stator2_points, 4)
-# stator2_points = smooth_points(stator2_points, 5)
+outer: Geometry = {
+    "shape": ShapeType.POLYGON,
+    "points": simplify_points(smooth_points(outer_backplate, 5), POLY_NUM),
+    "enclosed": True,
+}
 
-# frender = Femmrenderer("test.feh")
 
-# frender.setup(
-#     SimulationType.PLANAR,
-#     Units.CENTIMETERS
-# )
+Armature = topology_renderer._find_boundaries(
+    topology_materials["Armature"]
+)
 
-# test2: Geometry = {
-#     "shape": ShapeType.POLYGON,
-#     "points": stator2_points,
-#     "enclosed": True
-# }
+armature = order_points(Armature, 10)
+axial = order_remaining_points(Armature, armature, 20)
+arm: Geometry = {
+    "shape": ShapeType.POLYGON,
+    "points": simplify_points(smooth_points(armature, 5), POLY_NUM),
+    "enclosed": True,
+}
 
-# test: Geometry = {
-#     "shape": ShapeType.POLYGON,
-#     "points": stator_points,
-#     "enclosed": True
-# }
+axial: Geometry = {
+    "shape": ShapeType.POLYGON,
+    "points": simplify_points(smooth_points(axial, 5), POLY_NUM),
+    "enclosed": True,
+}
 
-# frender.draw(test, "Air", 1)
-# frender.draw(test2, "Air", 1)
-# for key in sorted(coils.keys()):
-#     coil_num = (key - 1)
-#     print(coil_num)
-#     material = materials[f"Coil{coil_num}"]
-#     points = renderer._find_boundaries(material)
-#     points = order_points(points, 20)
-#     points = simplify_points(points, 4)
-#     points = remove_nearby_points(points, stator_points, 4)
-#     points = connect_lists(points, stator_points)
-#     # Going to have to make a custom one for interfaces
-#     points = order_points(points, 100)
-#     coil: Geometry = {
-#         "shape": ShapeType.POLYGON,
-#         "points": points,
-#         "enclosed": False
-#     }
-#     frender.draw(coil, "Air", 1)
 
-# for pole in range(len(stator["poles"])):
-#     points = renderer._find_boundaries(f"Pole{pole}")
-#     points = order_points(points, 20)
-#     points = simplify_points(points, 4)
-#     points = remove_nearby_points(points, stator["back_iron"], 4)
-#     points = connect_lists(points, stator2_points)
+femm_renderer.draw(inner, "Pure Iron", 1)
+femm_renderer.draw(outer, "Pure Iron", 1)
+femm_renderer.draw(axial, "Air", 2)
+femm_renderer.draw(arm, "Pure Iron", 2)
 
-#     points = order_points(points, 100)
+
+for key in sorted(coils.keys()):
+    coil_num = (key - 1)
+    material = topology_materials[f"Coil{coil_num}"]
+    points = topology_renderer._find_boundaries(material)
+    points = simplify_points(points, 10)
+    points = interfaced_geometry(points, arm["points"], POLY_NUM)
+    # print(key)
+    coil: Geometry = {
+        "shape": ShapeType.POLYGON,
+        "points": points,
+        "enclosed": False
+    }
+    femm_renderer.draw(coil, "0.2mm", 2, (0, 0))
+
+
+# for key in range(len(stator["poles"])):
+#     material = topology_materials[f"Pole{key}"]
+#     points = topology_renderer._find_boundaries(material)
+#     points = simplify_points(points, 10)
+#     points = interfaced_geometry(points, inner["points"], POLY_NUM)
+#     # print(key)
 #     pole: Geometry = {
 #         "shape": ShapeType.POLYGON,
 #         "points": points,
 #         "enclosed": False
 #     }
-#     frender.draw(pole, "Air", 1)
+#     femm_renderer.draw(pole, "N52", 2, (0, 0))
 
-
-num_materials = np.max(renderer.voxel_map) + 1  # 0..N
 
 # Generate distinct colors in HSV space
 hues = np.linspace(0, 1, num_materials, endpoint=False)  # evenly spaced hues
 saturation = 0.8
 value = 0.9
-distinct_colors = np.array([plt.cm.hsv(h)[:3] for h in hues])  # RGB from HSV
+distinct_colors = np.array([plot.cm.hsv(h)[:3] for h in hues])  # RGB from HSV
 
-cmap = ListedColormap(distinct_colors)
+cmap = colors.ListedColormap(distinct_colors)
 
-plt.imshow(renderer.voxel_map, origin='lower', cmap=cmap)
-plt.title("Topology Map")
-plt.colorbar(label='Material')
-plt.show()
+plot.imshow(topology_renderer.voxel_map, origin='lower', cmap=cmap)
+plot.title("Topology Map")
+plot.colorbar(label='Material')
+plot.show()

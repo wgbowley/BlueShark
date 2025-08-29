@@ -24,7 +24,7 @@ from blueshark.domain.constants import (
     Geometry, ShapeType, SimulationType, Units, CurrentPolarity
 )
 from blueshark.addons.bldc.draw_stator import stator_geometries
-from blueshark.addons.bldc.draw_armuture import (
+from blueshark.addons.bldc.draw_armature import (
     slot_geometry_rotated,
     coil_array
 )
