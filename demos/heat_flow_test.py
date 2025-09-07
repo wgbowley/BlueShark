@@ -118,7 +118,8 @@ for pole in range(len(stator["poles"])):
 for idx, coil in enumerate(coils.values()):
     coil_geometry: Geometry = {
         "shape": ShapeType.POLYGON,
-        "points": coil
+        "points": coil,
+        "enclosed": True
     }
     phase = phases[idx % len(phases)]
 
@@ -138,3 +139,13 @@ for idx, coil in enumerate(coils.values()):
 
     element.estimate_turns()
     element.draw(renderer)
+
+tag = (
+    ((back_plate_inner_radius-pole_radial_thickness)+r_teeth)/2,
+    0
+)
+renderer.set_property(tag, 0)
+renderer.add_bounds((0, 0), back_plate_outer_radius*1.5)
+
+for i in phases:
+    renderer.change_phase_current(i, 10)

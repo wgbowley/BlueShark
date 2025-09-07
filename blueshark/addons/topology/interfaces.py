@@ -1,30 +1,12 @@
-
-"""
-Filename: interfaces.py
-Author: William Bowley
-Version: 0.1
-Date: 2025-08-16
-
-Description:
-    This addon aims to add topology optimization
-    to the framework for all solvers
-
-    This module breaks geometric shapes into
-    an shared interface between them.
-"""
-
 import math
-from typing import List, Tuple
 
-from blueshark.addons.topology.extraction import (
-    order_points
-)
+from blueshark.addons.topology.extraction import _order_points
 
 
 def _min_point_to_geometry(
-    point_1: Tuple[int, int],
-    geometry_2: List[Tuple[int, int]]
-) -> Tuple[int, int]:
+    point_1: tuple[int, int],
+    geometry_2: list[tuple[int, int]]
+) -> tuple[int, int]:
     """
     Finds the point on geometry_2 that is closest to point_1.
     """
@@ -42,35 +24,35 @@ def _min_point_to_geometry(
 
 
 def _shared_points(
-    geometry_1: List[Tuple[int, int]],
-    geometry_2: List[Tuple[int, int]],
-    threshold: int
-) -> List[Tuple[int, int]]:
+    geometry_1: list[tuple[int, int]],
+    geometry_2: list[tuple[int, int]],
+    threshold: int = 4
+) -> list[tuple[int, int]]:
     """
     Removes points in geometry_1 that are
     within 'threshold' distance of any
     point in reference_points.
     """
-
+    list = []
     filtered_points = []
     for tx, ty in geometry_1:
         too_close = False
         for rx, ry in geometry_2:
             dist = math.hypot(rx - tx, ry - ty)
             if dist <= threshold:
+                list.append((rx, ry))
                 too_close = True
                 break
         if not too_close:
             filtered_points.append((tx, ty))
-
     return filtered_points
 
 
 def interfaced_geometry(
-    geometry_1: List[Tuple[int, int]],
-    geometry_2: List[Tuple[int, int]],
+    geometry_1: list[tuple[int, int]],
+    geometry_2: list[tuple[int, int]],
     threshold: int = 5
-) -> List[Tuple[int, int]]:
+) -> list[tuple[int, int]]:
     """"
     Removes shared points and than finds points on
     geometry 2 to connect to.
@@ -80,14 +62,16 @@ def interfaced_geometry(
         geometry_2,
         threshold
     )
-    geometry_1 = order_points(geometry_1, threshold)
+    points = _order_points(geometry_1)
+
     start = _min_point_to_geometry(
-        geometry_1[0],
+        points[0],
         geometry_2
     )
     end = _min_point_to_geometry(
-        geometry_1[-1],
+        points[-1],
         geometry_2
     )
+    points = _order_points([start] + geometry_1 + [end])
 
-    return [start] + geometry_1 + [end]
+    return points

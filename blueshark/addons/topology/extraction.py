@@ -1,24 +1,10 @@
-"""
-Filename: smoothing.py
-Author: William Bowley
-Version: 0.1
-Date: 2025-08-16
-
-Description:
-    This addon aims to add topology optimization
-    to the framework for all solvers
-
-    This module orders list of boundary points,
-    than smooths them and than simplies them.
-"""
-
 import math
-from typing import List, Tuple
+from blueshark.addons.topology.renderer import TopologyRenderer
 
 
 def _distance(
-    point_1: Tuple[int, int],
-    point_2: Tuple[int, int]
+    point_1: tuple[int, int],
+    point_2: tuple[int, int]
 ) -> float:
     """
     Calculates the distance between two points
@@ -29,10 +15,10 @@ def _distance(
 
 
 def _influence_points(
-    points: List[Tuple[int, int]],
-    current_point: Tuple[int, int],
+    points: list[tuple[int, int]],
+    current_point: tuple[int, int],
     radius: int,
-) -> list[Tuple[int, int]]:
+) -> list[tuple[int, int]]:
     """
     Finds local points to a point within a square area
     """
@@ -46,58 +32,10 @@ def _influence_points(
     return influence_points
 
 
-def simplify_points(
-    points: List[Tuple[float, float]],
-    min_dist: float
-) -> List[Tuple[float, float]]:
-    """
-    Simplifies a list of 2D points by removing points that are too close
-    together.
-    """
-    if not points:
-        return []
-
-    simplified = [points[0]]
-    for pt in points[1:]:
-        x0, y0 = simplified[-1]
-        x1, y1 = pt
-        if _distance((x0, y0), (x1, y1)) >= min_dist:
-            simplified.append(pt)
-
-    return simplified
-
-
-def smooth_points(
-    points: List[Tuple[float, float]],
-    window_size: int = 3
-) -> List[Tuple[float, float]]:
-    """
-    Smooths a list of 2D points using a moving average.
-    """
-    if not points or window_size < 2:
-        return points
-
-    n = len(points)
-    smoothed = []
-
-    for i in range(n):
-        # Determine the window boundaries
-        start = max(0, i - window_size // 2)
-        end = min(n, i + window_size // 2 + 1)
-
-        # Average x and y in the window
-        avg_x = sum(points[j][0] for j in range(start, end)) / (end - start)
-        avg_y = sum(points[j][1] for j in range(start, end)) / (end - start)
-
-        smoothed.append((avg_x, avg_y))
-
-    return smoothed
-
-
-def order_points(
+def _order_points(
     points: list[tuple[int, int]],
     radius: int = 20
-) -> List[Tuple[float, float]]:
+) -> list[tuple[float, float]]:
     """
     Orders the points into a series of connected
     points perimeter
@@ -124,38 +62,78 @@ def order_points(
     return ordered
 
 
-def order_remaining_points(
-    full_set: list[tuple[int, int]],
-    path_set: list[tuple[int, int]],
-    radius: int = 20
-) -> list[tuple[int, int]]:
-    remaining_points = [p for p in full_set if p not in path_set]
+def _materials_boundaries(
+    topology: TopologyRenderer
+) -> dict[int, list[tuple[int, int]]]:
+    """
+    Finds all points along the boundaries of materials
+    expect for zero. Which is considered empty space
+    """
+    materials = topology.materials
 
-    if not remaining_points:
-        return []
+    boundaries = {}
+    for i in materials:
+        if i != 0:
+            material_index = materials[i]
+            points = topology._find_boundaries(material_index)
+            boundaries[i] = points
 
-    # Pick the point with the most local neighbors as the start
-    start_point = max(
-        remaining_points,
-        key=lambda p: len(_influence_points(remaining_points, p, radius))
-    )
+    return boundaries
 
-    ordered = [start_point]
-    remaining_points.remove(start_point)
+
+def _material_perimeters(
+    points: list[tuple[int, int]],
+    radius: int = 10
+) -> list[list[tuple[int, int]]]:
+    """
+    Finds material perimeters from a set of
+    randomly ordered boundary points.
+
+    Each returned list is one connected island.
+
+    Note:
+        This is my first "novel" alogithrm,
+        hence frontward its called "bowely's islands" lol.
+    """
+    perimeters = []
+    remaining_points = set(points)  # use set for O(1) removals
 
     while remaining_points:
-        current_point = ordered[-1]
-        local_points = _influence_points(
+        # Pick the point with the most neighbors as starting point
+        start_point = max(
             remaining_points,
-            current_point,
-            radius
+            key=lambda p: len(
+                _influence_points(list(remaining_points), p, radius)
+            )
         )
 
-        if not local_points:
-            break  # no more connected points
+        ordered = [start_point]
+        remaining_points.remove(start_point)
 
-        nearest = min(local_points, key=lambda p: _distance(p, current_point))
-        remaining_points.remove(nearest)
-        ordered.append(nearest)
+        frontier = [start_point]
+        while frontier:
+            current_point = frontier.pop()
+            local_points = _influence_points(
+                list(remaining_points),
+                current_point,
+                radius
+            )
 
-    return ordered
+            for neighbor in local_points:
+                if neighbor in remaining_points:
+                    remaining_points.remove(neighbor)
+                    frontier.append(neighbor)
+                    ordered.append(neighbor)
+
+        # Optionally close the loop
+        if ordered[0] != ordered[-1]:
+            ordered.append(ordered[0])
+
+        perimeters.append(ordered)
+
+    order_perimeters = []
+    for index in perimeters:
+        points = _order_points(index, radius)
+        order_perimeters.append(points)
+
+    return order_perimeters

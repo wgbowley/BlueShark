@@ -95,6 +95,20 @@ class FEMMMagneticsRenderer(BaseRenderer):
             logging.critical(msg)
             raise RuntimeError(f"{self.__class__.__name__}: {msg}") from e
 
+    def import_geometry(
+        self,
+        dxf: Path,
+    ) -> None:
+        """
+        Import geometry through a dxf file
+        """
+        try:
+            femm.mi_readdxf(str(dxf))
+            femm.mi_saveas(str(self.file_path))
+        except Exception as e:
+            msg = f"FEMM Magnetic dxf import failed: {e}"
+            logging.warning(msg)
+
     def draw(
         self,
         geometry: Geometry,

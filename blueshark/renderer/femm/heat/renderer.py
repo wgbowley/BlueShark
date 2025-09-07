@@ -20,7 +20,7 @@ from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.generation.geometric_centroid import centroid_point
 from blueshark.renderer.femm.heat.hybrid_geometry import draw_hybrid
 from blueshark.renderer.femm.heat.properties import (
-    add_conductor, set_properties
+    create_conductor, set_properties, assign_conductor, update_conductor
 )
 from blueshark.renderer.femm.heat.primitives import (
     draw_polygon,
@@ -37,6 +37,9 @@ from blueshark.domain.constants import (
 from blueshark.renderer.femm.heat.materials import (
     load_materials,
     add_femm_material
+)
+from blueshark.renderer.femm.heat.boundary import (
+    add_bounds
 )
 
 
@@ -114,20 +117,22 @@ class FEMMHeatflowRenderer(BaseRenderer):
         _ = turns
         _ = magnetization
 
-        points = _
+        elements = _
         shape = geometry.get("shape")
         match shape:
             case ShapeType.POLYGON | ShapeType.RECTANGLE:
-                points = draw_polygon(geometry["points"], geometry["enclosed"])
+                elements = draw_polygon(
+                    geometry["points"], geometry["enclosed"]
+                )
 
             case ShapeType.CIRCLE:
-                points = draw_circle(
+                elements = draw_circle(
                     geometry["radius"],
                     geometry["center"]
                 )
 
             case ShapeType.ANNULUS_SECTOR:
-                points = draw_annulus_sector(
+                elements = draw_annulus_sector(
                     geometry["center"],
                     geometry["radius_outer"],
                     geometry["radius_inner"],
@@ -136,7 +141,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
                 )
 
             case ShapeType.ANNULUS_CIRCLE:
-                points = draw_annulus_circle(
+                elements = draw_annulus_circle(
                     geometry["center"],
                     geometry["radius_outer"],
                     geometry["radius_inner"]
@@ -146,7 +151,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
                 if "edges" not in geometry:
                     raise ValueError("Hybrid shape requires 'edges' field")
                 draw_hybrid(geometry["edges"])
-                points = geometry["edges"]
+                elements = geometry["edges"]
 
             case _:
                 raise NotImplementedError(f"Shape '{shape}' not supported")
@@ -162,7 +167,14 @@ class FEMMHeatflowRenderer(BaseRenderer):
         # Checks for phase and if not than adds the phase
         if phase is not None and phase not in self.phases:
             self.phases.append(phase)
-            add_conductor(phase, 1)
+            create_conductor(phase, 1)
+
+        if phase in self.phases:
+            assign_conductor(
+                elements,
+                group_id,
+                phase
+            )
 
         # Adds blocklabel and set properties of it
         if tag_coords is None:
@@ -184,10 +196,19 @@ class FEMMHeatflowRenderer(BaseRenderer):
         bound_type=1,
         material="Air"
     ):
-        return None
+        add_bounds(origin, radius)
+        femm.hi_saveas(str(self.file_path))
 
-    def change_phase_current(self, phase, current):
-        return None
+    def change_phase_current(
+        self,
+        phase,
+        heat_flux,
+        current: int = 0  # required by ABC, Unused
+    ) -> None:
+
+        _ = current
+        update_conductor(phase, heat_flux)
+        femm.hi_saveas(str(self.file_path))
 
     def move_group(self, group_id, delta):
         return None
@@ -196,4 +217,9 @@ class FEMMHeatflowRenderer(BaseRenderer):
         return None
 
     def set_property(self, origin, group_id, material="Air"):
-        return None
+        set_properties(
+            origin,
+            group_id,
+            material
+        )
+        femm.hi_saveas(str(self.file_path))

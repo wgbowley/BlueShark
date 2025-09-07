@@ -11,6 +11,8 @@ Description:
 from typing import Tuple
 import femm
 
+from blueshark.domain.constants import Connectors, ShapeType
+
 
 def set_properties(
     tag_coords: Tuple[float, float],
@@ -38,7 +40,7 @@ def set_properties(
     femm.hi_clearselected()
 
 
-def add_conductor(
+def create_conductor(
     phase: str,
     inital_heat_flux: float = 0.0
 ) -> None:
@@ -48,3 +50,36 @@ def add_conductor(
     """
 
     femm.hi_addconductorprop(phase, 0, inital_heat_flux, 0)
+
+
+def update_conductor(
+    phase: str,
+    heat_flux: float = 0.0
+) -> None:
+    """
+    update a conductor within the simulation space with
+    a new heat flux 
+    """
+    femm.hi_modifyconductorprop(phase, 2, heat_flux)
+
+
+def assign_conductor(
+    element: ShapeType,
+    group: int,
+    conductor: str
+) -> None:
+    """
+    Assigns a conductor to a parimeter of
+    a shape
+    """
+    # Assign properties to line segments
+    for point in element[Connectors.LINE]:
+        femm.hi_selectsegment(point[0], point[1])
+        femm.hi_setsegmentprop("", 0, 0, 0, group, conductor)
+        femm.hi_clearselected()
+
+    # Assign properties to arc segments
+    for point in element[Connectors.ARC]:
+        femm.hi_selectarcsegment(point[0], point[1])
+        femm.hi_setarcsegmentprop(0, "", 0, group, conductor)
+        femm.hi_clearselected()
