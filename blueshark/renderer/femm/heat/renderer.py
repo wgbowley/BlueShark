@@ -20,7 +20,8 @@ from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.generation.geometric_centroid import centroid_point
 from blueshark.renderer.femm.heat.hybrid_geometry import draw_hybrid
 from blueshark.renderer.femm.heat.properties import (
-    create_conductor, set_properties, assign_conductor, update_conductor
+    create_conductor, set_properties, assign_conductor, update_conductor,
+    assign_boundary
 )
 from blueshark.renderer.femm.heat.primitives import (
     draw_polygon,
@@ -32,7 +33,8 @@ from blueshark.domain.constants import (
     SimulationType,
     Units,
     Geometry,
-    ShapeType
+    ShapeType,
+    Connectors
 )
 from blueshark.renderer.femm.heat.materials import (
     load_materials,
@@ -41,6 +43,7 @@ from blueshark.renderer.femm.heat.materials import (
 from blueshark.renderer.femm.heat.boundary import (
     add_bounds
 )
+from blueshark.visualization.renderer import Visualize
 
 
 class FEMMHeatflowRenderer(BaseRenderer):
@@ -50,6 +53,8 @@ class FEMMHeatflowRenderer(BaseRenderer):
     def __init__(
         self,
         file_path: Path,
+        grid_size: tuple[int, int],
+        ambient_material: str,
         boundary_temperature: float = 288.15
     ) -> None:
         """
@@ -65,6 +70,18 @@ class FEMMHeatflowRenderer(BaseRenderer):
         self.set_materials = []
         self.boundary = boundary_temperature
         self.phases = []
+        self.contours = {
+            Connectors.LINE: [],
+            Connectors.ARC: []
+        }
+        self.grid = Visualize(
+            grid_size[0],
+            grid_size[1],
+            ambient_material,
+            SimulationType.PLANAR  # This might fuck me over in the future
+        )
+        self.ambient_material = ambient_material
+        self.grid.initalize_map()
 
     def setup(
         self,
@@ -119,6 +136,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
 
         elements = _
         shape = geometry.get("shape")
+        self.grid.draw(geometry, material, tag_coords)
         match shape:
             case ShapeType.POLYGON | ShapeType.RECTANGLE:
                 elements = draw_polygon(
@@ -150,11 +168,14 @@ class FEMMHeatflowRenderer(BaseRenderer):
             case ShapeType.HYBRID:
                 if "edges" not in geometry:
                     raise ValueError("Hybrid shape requires 'edges' field")
-                draw_hybrid(geometry["edges"])
-                elements = geometry["edges"]
+                elements = draw_hybrid(geometry["edges"])
 
             case _:
                 raise NotImplementedError(f"Shape '{shape}' not supported")
+
+        if phase is None:
+            self.contours[Connectors.LINE].extend(elements[Connectors.LINE])
+            self.contours[Connectors.ARC].extend(elements[Connectors.ARC])
 
         # adds material to simulation space
         if material not in self.set_materials:
@@ -205,7 +226,6 @@ class FEMMHeatflowRenderer(BaseRenderer):
         heat_flux,
         current: int = 0  # required by ABC, Unused
     ) -> None:
-
         _ = current
         update_conductor(phase, heat_flux)
         femm.hi_saveas(str(self.file_path))
@@ -222,4 +242,83 @@ class FEMMHeatflowRenderer(BaseRenderer):
             group_id,
             material
         )
+        femm.hi_saveas(str(self.file_path))
+
+    def set_boundaries(self, boundpropname: str, groud_id: int) -> None:
+        # Step 1: find air boundaries
+        air_boundaries = self.grid.find_boundary_segments(
+            self.contours,
+            self.ambient_material
+        )
+
+        # Step 2: assign AIR boundaries
+        assign_boundary(air_boundaries, boundpropname, groud_id)
+
+        # Step 4: save
+        femm.hi_saveas(str(self.file_path))
+
+    def create_surface_condition(
+        self,
+        boundpropname: str,
+        condition_type: str,
+        Tset: float = 0.0,
+        qs: float = 0.0,
+        Tinf: float = 0.0,
+        h: float = 0.0,
+        beta: float = 0.0
+    ) -> None:
+        """
+        Creates a surface boundary condition in FEMM.
+
+        Args:
+            boundpropname: Name of the boundary property
+            condition_type: Type of boundary condition. One of:
+                "fixed_temp", "heat_flux", "convection", "radiation",
+                "periodic", "anti_periodic"
+            Tset: Set temperature (used for fixed_temp)
+            qs: Heat flux density (used for heat_flux)
+            Tinf: External temperature (used for convection or radiation)
+            h: Heat transfer coefficient (used for convection)
+            beta: Emissivity (used for radiation)
+        """
+        match condition_type:
+            case "fixed_temp":
+                BdryFormat = 0
+                femm.hi_addboundprop(
+                    boundpropname, BdryFormat, Tset, 0, 0, 0, 0
+                )
+
+            case "heat_flux":
+                BdryFormat = 1
+                femm.hi_addboundprop(
+                    boundpropname, BdryFormat, 0, qs, 0, 0, 0
+                )
+
+            case "convection":
+                BdryFormat = 2
+                femm.hi_addboundprop(
+                    boundpropname, BdryFormat, 0, 0, Tinf, h, 0
+                )
+
+            case "radiation":
+                BdryFormat = 3
+                femm.hi_addboundprop(
+                    boundpropname, BdryFormat, 0, 0, Tinf, 0, beta
+                )
+
+            case "periodic":
+                BdryFormat = 4
+                femm.hi_addboundprop(
+                    boundpropname, BdryFormat, 0, 0, 0, 0, 0
+                )
+
+            case "anti_periodic":
+                BdryFormat = 5
+                femm.hi_addboundprop(
+                    boundpropname, BdryFormat, 0, 0, 0, 0, 0
+                )
+
+            case _:
+                raise ValueError(f"Unknown condition type: {condition_type}")
+
         femm.hi_saveas(str(self.file_path))

@@ -9,6 +9,9 @@ Description:
     if blueshark can even heat flow renderer
     and solve a bldc motor from its addon "bldc"
 """
+import numpy as np
+import matplotlib.pyplot as plot
+import matplotlib.colors as colors
 
 import math
 
@@ -20,6 +23,7 @@ from blueshark.renderer.femm.heat.renderer import (
 from blueshark.domain.constants import (
     Geometry, ShapeType, SimulationType, Units, CurrentPolarity
 )
+
 from blueshark.addons.bldc.draw_stator import stator_geometries
 from blueshark.addons.bldc.draw_armature import (
     slot_geometry_rotated,
@@ -49,11 +53,19 @@ r_axial = 3
 
 
 # Sets the renderer to femm magnetics
-renderer = Femmrenderer("test.feh")
+renderer = Femmrenderer(
+    "test.feh",
+    (
+        back_plate_outer_radius*3,
+        back_plate_outer_radius*3
+    ),
+    "Air"
+)
 renderer.setup(
     SimulationType.PLANAR,
-    Units.CENTIMETERS
+    Units.CENTIMETERS,
 )
+renderer.create_surface_condition("AIR", "convection", 0, 0, 300, 25)
 
 # Stator geometry (doesn't use polar coords as inbuild shapes)
 stator = stator_geometries(
@@ -146,6 +158,20 @@ tag = (
 )
 renderer.set_property(tag, 0)
 renderer.add_bounds((0, 0), back_plate_outer_radius*1.5)
-
+renderer.set_boundaries("AIR", 10)
 for i in phases:
     renderer.change_phase_current(i, 10)
+
+num_materials = np.max(renderer.grid.voxel_map) + 1  # 0..N
+
+hues = np.linspace(0, 1, num_materials, endpoint=False)  # evenly spaced hues
+saturation = 0.8
+value = 0.9
+distinct_colors = np.array([plot.cm.hsv(h)[:3] for h in hues])  # RGB from HSV
+
+cmap = colors.ListedColormap(distinct_colors)
+
+plot.imshow(renderer.grid.voxel_map, origin='lower', cmap=cmap)
+plot.title("Map")
+plot.colorbar(label='Material')
+plot.show()

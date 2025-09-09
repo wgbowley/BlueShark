@@ -13,6 +13,10 @@ Description:
 from typing import List
 import femm
 from blueshark.domain.constants import Connection, Connectors
+from blueshark.renderer.femm.heat.primitives import (
+    _mid_points_line,
+    _mid_points_arc
+)
 
 
 def draw_hybrid(edges: List[Connection]) -> None:
@@ -25,10 +29,19 @@ def draw_hybrid(edges: List[Connection]) -> None:
     if not edges:
         raise ValueError("No edges provided for hybrid geometry")
 
+    elements = {
+        Connectors.LINE: [],
+        Connectors.ARC: []
+    }
     for edge in edges:
         edge_type = edge["type"]
 
         if edge_type == Connectors.LINE:
+            elements[Connectors.LINE].append(
+                _mid_points_line(
+                    edge["start"], edge["end"]
+                )
+            )
             femm.hi_drawline(
                 edge["start"][0], edge["start"][1],
                 edge["end"][0], edge["end"][1]
@@ -37,6 +50,11 @@ def draw_hybrid(edges: List[Connection]) -> None:
         elif edge_type == Connectors.ARC:
             if edge.get("angle") is None:
                 raise ValueError("Arc edge requires an angle (degrees)")
+            elements[Connectors.ARC].append(
+                _mid_points_arc(
+                    edge["start"], edge["end"], (0, 0)
+                )
+            )
             femm.hi_drawarc(
                 edge["start"][0], edge["start"][1],
                 edge["end"][0], edge["end"][1],
@@ -46,3 +64,5 @@ def draw_hybrid(edges: List[Connection]) -> None:
 
         else:
             raise ValueError(f"Unknown edge type: {edge_type}")
+
+    return elements

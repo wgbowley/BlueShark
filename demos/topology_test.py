@@ -8,7 +8,7 @@ Description:
     This demo tests to see if the topology
     optimizer addon works to optimize a bldc
     motor using the femm magnetic solver.
-
+th
 Note:
     Somewhat works very very slow ~3m 30s to run
 """
@@ -136,7 +136,7 @@ for key in sorted(coils.keys()):
 
 # Drawing poles to voxel grid
 for pole in range(len(stator["poles"])):
-    topology_renderer.draw(stator["poles"][pole], f"Pole")
+    topology_renderer.draw(stator["poles"][pole], "Pole")
 
 num_materials = np.max(topology_renderer.voxel_map) + 1  # 0..N
 

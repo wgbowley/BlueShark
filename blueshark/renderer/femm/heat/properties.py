@@ -83,3 +83,29 @@ def assign_conductor(
         femm.hi_selectarcsegment(point[0], point[1])
         femm.hi_setarcsegmentprop(0, "", 0, group, conductor)
         femm.hi_clearselected()
+
+
+def assign_boundary(
+    element: ShapeType,
+    boundary: str,
+    group: int
+) -> None:
+    """
+    Assigns a boundary property to the perimeter of a shape.
+
+    Args:
+        element: ShapeType object containing line and arc segments
+        group: Group number to assign to the boundary
+    """
+
+    # Assign properties to line segments
+    for point in element[Connectors.LINE]:
+        femm.hi_selectsegment(point[0], point[1])
+        femm.hi_setsegmentprop(boundary, 0, 0, 0, group, "")
+        femm.hi_clearselected()
+
+    # Assign properties to arc segments
+    for point in element[Connectors.ARC]:
+        femm.hi_selectarcsegment(point[0], point[1])
+        femm.hi_setarcsegmentprop(0, boundary, 0, group, "")
+        femm.hi_clearselected()
