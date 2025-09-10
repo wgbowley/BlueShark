@@ -1,5 +1,5 @@
 """
-Filename: heat_flow_test.py
+Filename: thermal_test.py
 Author: William Bowley
 Version: 1.3
 Date: 2025-08-16
@@ -17,8 +17,11 @@ import math
 
 from blueshark.domain.elements.pole import Pole
 from blueshark.domain.elements.slot import Slot
-from blueshark.renderer.femm.heat.renderer import (
+from blueshark.renderer.femm.thermal.renderer import (
     FEMMHeatflowRenderer as Femmrenderer
+)
+from blueshark.solver.femm.thermal.solver import (
+    FEMMHeatSolver as Femmsolver
 )
 from blueshark.domain.constants import (
     Geometry, ShapeType, SimulationType, Units, CurrentPolarity
@@ -161,6 +164,15 @@ renderer.add_bounds((0, 0), back_plate_outer_radius*1.5)
 renderer.set_boundaries("AIR", 10)
 for i in phases:
     renderer.change_phase_current(i, 10)
+
+solver = Femmsolver(
+    "test.feh",
+    {"average_temp"},
+    {"group": [4]}
+)
+
+output = solver.solve()
+print(output)
 
 num_materials = np.max(renderer.grid.voxel_map) + 1  # 0..N
 

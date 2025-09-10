@@ -4,7 +4,7 @@ Author: William Bowley
 Version: 1.2
 Date: 2025-07-28
 Description:
-    Circuit analysis utilities for FEMM post-processing.
+    Circuit analysis utilities for FEMM magentic post-processing.
 
 """
 

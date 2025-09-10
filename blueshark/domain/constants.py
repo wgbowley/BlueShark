@@ -39,6 +39,17 @@ class SimulationType(Enum):
     PLANAR = auto()
 
 
+class PhysicsType(Enum):
+    """
+    Defines the type of physics being simulated
+    """
+    THERMAL = auto()       # Heat flow, temperature distribution
+    ELECTRIC = auto()      # Current, voltage, electrostatics
+    MAGNETIC = auto()      # Magnetic fields, Lorentz forces
+    MECHANICAL = auto()    # Force, stress, motion
+    MULTIPHYSICS = auto()  # Combined physics simulations
+
+
 class Units(Enum):
     """
     All units supported by the simulator

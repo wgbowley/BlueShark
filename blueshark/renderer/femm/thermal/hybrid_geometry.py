@@ -13,7 +13,7 @@ Description:
 from typing import List
 import femm
 from blueshark.domain.constants import Connection, Connectors
-from blueshark.renderer.femm.heat.primitives import (
+from blueshark.renderer.femm.thermal.primitives import (
     _mid_points_line,
     _mid_points_arc
 )

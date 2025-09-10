@@ -8,7 +8,7 @@ Description:
     BaseSolver.
 
     This class is responsible for solving
-    femm mangetic problems and doing calculations
+    femm heat problems and doing calculations
 """
 
 import logging
@@ -18,14 +18,14 @@ from typing import Dict, Any
 import femm
 from blueshark.domain.constants import MAXIMUM_FAILS
 from blueshark.solver.solver_interface import BaseSolver
-from blueshark.solver.femm.magnetic.output_selector import (
+from blueshark.solver.femm.thermal.output_selector import (
     OutputSelector
 )
 
 
-class FEMMMagneticsSolver(BaseSolver):
+class FEMMHeatSolver(BaseSolver):
     """
-    Magnetic solver for the femm simulator
+    Heat solver for the femm simulator
     """
     def __init__(
         self,
@@ -45,6 +45,7 @@ class FEMMMagneticsSolver(BaseSolver):
         """
         self.file_path = file_path
         self.subjects = subjects
+
         self.selector = OutputSelector(requested_ouputs)
 
     def solve(self) -> Dict[str, Any]:
@@ -55,8 +56,8 @@ class FEMMMagneticsSolver(BaseSolver):
         while fail_count < MAXIMUM_FAILS:
             try:
                 femm.opendocument(str(self.file_path))
-                femm.mi_analyse(1)
-                femm.mi_loadsolution()
+                femm.hi_analyse(1)
+                femm.hi_loadsolution()
                 break
             except RuntimeError as e:
                 fail_count += 1

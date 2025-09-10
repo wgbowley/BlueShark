@@ -14,7 +14,7 @@ Description:
 import logging
 import femm
 
-from blueshark.renderer.femm.heat.primitives import _mid_points_arc
+from blueshark.renderer.femm.thermal.primitives import _mid_points_arc
 
 
 def add_bounds(

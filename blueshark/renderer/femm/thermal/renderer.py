@@ -18,12 +18,12 @@ import femm
 
 from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.generation.geometric_centroid import centroid_point
-from blueshark.renderer.femm.heat.hybrid_geometry import draw_hybrid
-from blueshark.renderer.femm.heat.properties import (
+from blueshark.renderer.femm.thermal.hybrid_geometry import draw_hybrid
+from blueshark.renderer.femm.thermal.properties import (
     create_conductor, set_properties, assign_conductor, update_conductor,
     assign_boundary
 )
-from blueshark.renderer.femm.heat.primitives import (
+from blueshark.renderer.femm.thermal.primitives import (
     draw_polygon,
     draw_circle,
     draw_annulus_circle,
@@ -36,11 +36,11 @@ from blueshark.domain.constants import (
     ShapeType,
     Connectors
 )
-from blueshark.renderer.femm.heat.materials import (
+from blueshark.renderer.femm.thermal.materials import (
     load_materials,
     add_femm_material
 )
-from blueshark.renderer.femm.heat.boundary import (
+from blueshark.renderer.femm.thermal.boundary import (
     add_bounds
 )
 from blueshark.visualization.renderer import Visualize
@@ -231,9 +231,6 @@ class FEMMHeatflowRenderer(BaseRenderer):
         femm.hi_saveas(str(self.file_path))
 
     def move_group(self, group_id, delta):
-        return None
-
-    def rotate_group(self, group_id, point, angle):
         return None
 
     def set_property(self, origin, group_id, material="Air"):

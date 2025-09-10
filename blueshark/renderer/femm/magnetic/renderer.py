@@ -15,6 +15,7 @@ Description:
 from pathlib import Path
 import logging
 
+import math
 import femm
 
 from blueshark.renderer.femm.magnetic.boundary import add_bounds
@@ -256,40 +257,39 @@ class FEMMMagneticsRenderer(BaseRenderer):
         """
         Moves a group by dx and dy
         """
+        print(group_id, delta)
+        try:
+            if not isinstance(group_id, (list, tuple)):
+                groups_to_move = [group_id]
+            else:
+                groups_to_move = group_id
 
-        dx, dy = delta
-        femm.mi_selectgroup(group_id)
-        femm.mi_movetranslate(dx, dy)
-        femm.mi_clearselected()
+            for group in groups_to_move:
+                femm.mi_selectgroup(group)
 
-        # Saves changes to femm file
-        femm.mi_saveas(str(self.file_path))
+            step, angle = delta
+            sx = step * math.cos(angle)
+            sy = step * math.sin(angle)
 
-    def rotate_group(
-        self,
-        group_id: int,
-        point: tuple[float, float],
-        angle: float
-    ) -> None:
-        """
-        Rotates a group by a angle around a point in space
-        """
+            femm.mi_movetranslate(sx, sy)
+            femm.mi_clearselected()
 
-        x, y = point
-        femm.mi_selectgroup(group_id)
-        femm.mi_moverotate(x, y, angle)
-        femm.mi_clearselected()
+            # Saves changes to femm file
+            femm.mi_saveas(str(self.file_path))
 
-        # Saves changes to femm file
-        femm.mi_saveas(str(self.file_path))
+        except Exception as e:
+            msg = f"Failed to move group(s) {groups_to_move} in FEMM: {e}"
+            logging.critical(msg)
+            raise RuntimeError(msg) from {e}
 
     def change_phase_current(
         self,
         phase: str,
         current: float
     ) -> None:
-
+        print(phase, current)
         if phase is not None and phase not in self.phases:
+            print("updating coils")
             self.phases.append(phase)
             add_phase(phase, current)
 

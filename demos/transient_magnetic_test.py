@@ -1,14 +1,12 @@
 """
-Filename: bldc_motor_test.py
+Filename: transient_magnetic_test.py
 Author: William Bowley
 Version: 1.3
 Date: 2025-08-16
 
 Description:
-    This project tests to see
-    if blueshark can even renderer and
-    solve a bldc motor from its addon
-    "bldc"
+    This script tests transient magnetic simulations
+    for the framework
 """
 
 import math
@@ -21,14 +19,15 @@ from blueshark.solver.femm.magnetic.solver import (
     FEMMMagneticsSolver as Femmsolver
 )
 from blueshark.domain.constants import (
-    Geometry, ShapeType, SimulationType, Units, CurrentPolarity
+    Geometry, ShapeType, SimulationType, Units, CurrentPolarity,
+    PhysicsType
 )
 from blueshark.addons.bldc.draw_stator import stator_geometries
 from blueshark.addons.bldc.draw_armature import (
     slot_geometry_rotated,
     coil_array
 )
-
+from blueshark.simulation.transient import transient_simulate
 phases = ["phase_a", "phase_b", "phase_c"]
 
 num_poles = 16
@@ -122,7 +121,8 @@ for pole in range(len(stator["poles"])):
 for idx, coil in enumerate(coils.values()):
     coil_geometry: Geometry = {
         "shape": ShapeType.POLYGON,
-        "points": coil
+        "points": coil,
+        "enclosed": False
     }
     phase = phases[idx % len(phases)]
 
@@ -143,7 +143,23 @@ for idx, coil in enumerate(coils.values()):
     element.estimate_turns()
     element.draw(renderer)
 
-solver = Femmsolver("test.fem", {"torque_lorentz"}, {"group": [1, 2, 3, 4]})
-results = solver.solve()
+timeline = [
+    {
+        "motion": [(0.1, 0.0), [4]],
+        "currents": [(1.5, -1.5, 0.0), ["phase_a", "phase_b", "phase_c"]]
+    },
+    {
+        "motion": [(0.1, 5), [4]],
+        "currents": [(1.5, -1.5, 0.0), ["phase_a", "phase_b", "phase_c"]]
+    },
+]
 
-print(results)
+print(transient_simulate(
+        PhysicsType.MAGNETIC,
+        renderer,
+        Femmsolver,
+        ["torque_stress_tensor"],
+        {"group": 4},
+        timeline
+    )
+)

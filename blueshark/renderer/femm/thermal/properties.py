@@ -58,7 +58,7 @@ def update_conductor(
 ) -> None:
     """
     update a conductor within the simulation space with
-    a new heat flux 
+    a new heat flux
     """
     femm.hi_modifyconductorprop(phase, 2, heat_flux)
 

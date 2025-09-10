@@ -30,6 +30,7 @@ class BaseRenderer(ABC):
         Args:
             file_path (Path): Path to save or load simulation files.
         """
+        self.file_path = file_path
 
     @abstractmethod
     def setup(
@@ -112,7 +113,7 @@ class BaseRenderer(ABC):
     @abstractmethod
     def move_group(
         self,
-        group_id: int,
+        group_id: tuple[float],
         delta: tuple[float, float]
     ) -> None:
         """
@@ -120,24 +121,8 @@ class BaseRenderer(ABC):
         and dy in the y direction
 
         Args:
-            group_id (int): Group identifier.
-            delta (tuple): Change in the x and y directions
-        """
-
-    @abstractmethod
-    def rotate_group(
-        self,
-        group_id: int,
-        point: tuple[float, float],
-        angle: float
-    ) -> None:
-        """
-        Rotates a group by a angle around a point in space
-
-        Args:
-            group_id (int): Group identifier.
-            point (tuple[float, float]): Point coordinates (x, y)
-            angle (float): Amount of rotation in degrees
+            group_id (int or tuple/list): Group identifier.
+            motion (tuple[]): Step in selected units and angle in radians
         """
 
     @abstractmethod

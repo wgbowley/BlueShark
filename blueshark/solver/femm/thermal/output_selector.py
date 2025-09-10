@@ -5,28 +5,18 @@ Version: 1.2
 Date: 2025-07-29
 
 Description:
-    OutputSelector dynamically selects and executes FEMM magnetic
+    OutputSelector dynamically selects and executes FEMM Heat
     post-processing output functions based on user requests.
 
     Supported outputs:
-    - force_lorentz
-    - torque_lorentz
-    - force_via_stress_tensor
-    - torque_via_stress_tensor
-    - phase_power
-    - phase_voltage
-    - phase_current
-    - phase_inductance
-    - phase_flux_linkage
 """
 
 import logging
-
 from typing import Any, Callable, Union
-from blueshark.solver.femm.magnetic import (
-    circuits as phases,
-    torques,
-    force
+
+from blueshark.solver.femm.thermal import (
+    blocks,
+    conductors as con
 )
 
 
@@ -47,17 +37,17 @@ class OutputSelector:
             ValueError: If unknown outputs are requested.
         """
         self.available_outputs = {
-            "force_lorentz": (force.lorentz, self._run_group),
-            "torque_lorentz": (torques.lorentz, self._run_group),
-            "force_stress_tensor": (force.weighted_stress_tensor,
-                                    self._run_group),
-            "torque_stress_tensor": (torques.weighted_stress_tensor,
-                                     self._run_group),
-            "phase_power": (phases.phase_power, self._run_phase),
-            "phase_voltage": (phases.phase_voltage, self._run_phase),
-            "phase_current": (phases.phase_current, self._run_phase),
-            "phase_inductance": (phases.phase_inductance, self._run_phase),
-            "phase_flux_linkage": (phases.phase_flux_linkage, self._run_phase),
+            "volume": (blocks.volume_block, self._run_group),
+            "average_temp": (blocks.average_temp_block, self._run_group),
+            "cross_section": (blocks.cross_section_block, self._run_group),
+            "flux_over_group": (
+                blocks.average_flux_over_block, self._run_group
+            ),
+            "gradient_over_group": (
+                blocks.average_graident_over_block, self._run_group
+            ),
+            "conductor_flux": (con.conductor_heat_flux, self._run_conductor),
+            "conductor_temp": (con.conductor_temperature, self._run_conductor)
         }
 
         unknown = set(requested_outputs) - set(self.available_outputs)
@@ -76,7 +66,7 @@ class OutputSelector:
         Compute all requested outputs using provided subjects.
 
         Args:
-            subjects (dict): Should contain 'group' or 'phaseName' keys.
+            subjects (dict): Should contain 'group' or 'conductorName' keys.
 
         Returns:
             dict: Output names mapped to results.
@@ -113,24 +103,24 @@ class OutputSelector:
 
         return function(groups)
 
-    def _run_phase(
+    def _run_conductor(
         self,
         function: Callable[[str], Any],
         subjects: dict
     ) -> Union[Any, list[Any]]:
         """
-        Apply a phase-based output function.
+        Apply a conductor-based output function.
 
         Args:
-            function (callable): Expects a phase name.
-            subjects (dict): Must include 'phaseName'.
+            function (callable): Expects a conductor name.
+            subjects (dict): Must include 'conductorName'.
 
         Returns:
             Result or list of results.
         """
-        names = subjects.get("phaseName")
+        names = subjects.get("conductorName")
         if names is None:
-            msg = f"Missing 'phaseName' key; keys={list(subjects.keys())}"
+            msg = f"Missing 'conductorName' key; keys={list(subjects.keys())}"
             logging.critical(msg)
             raise ValueError(msg)
 
