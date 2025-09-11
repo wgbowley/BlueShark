@@ -11,6 +11,7 @@ Description:
 from typing import Tuple
 import femm
 
+from blueshark.domain.constants import Connectors
 
 def set_properties(
     tag_coords: Tuple[float, float],
@@ -58,3 +59,28 @@ def add_phase(
     inital current of 0 Amps
     """
     femm.mi_addcircprop(phase, inital_current, 1)
+
+
+def assign_group(
+    element: dict[Connectors, tuple[float, float]],
+    group: int
+) -> None:
+    """
+    Assigns a group number to the perimeter of a shape.
+
+    Args:
+        element: ShapeType object containing line and arc segments
+        group: Group number to assign
+    """
+
+    # Assign group to line segments
+    for point in element[Connectors.LINE]:
+        femm.mi_selectsegment(point[0], point[1])   # select line
+        femm.mi_setgroup(group)                     # assign group
+        femm.mi_clearselected()                     # clear selection
+
+    # Assign group to arc segments
+    for point in element[Connectors.ARC]:
+        femm.mi_selectarcsegment(point[0], point[1])  # select arc
+        femm.mi_setgroup(group)                        # assign group
+        femm.mi_clearselected()                        # clear selection

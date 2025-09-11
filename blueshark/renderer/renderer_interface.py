@@ -113,7 +113,7 @@ class BaseRenderer(ABC):
     @abstractmethod
     def move_group(
         self,
-        group_id: tuple[float],
+        group_id: int,
         delta: tuple[float, float]
     ) -> None:
         """
@@ -137,4 +137,24 @@ class BaseRenderer(ABC):
         Args:
             phase: Name of a circuit or phase in the renderer
             current: Represents the current in amperes flowing in the element
+        """
+
+    def rotate_group(
+        self,
+        groups: int,
+        axis: tuple[float, float],
+        angle: float
+    ) -> None:
+        """
+        Rotates a group by a angle around a point in space
+
+        Args:
+            group_id (int): Group identifier.
+            point (tuple[float, float]): Point coordinates (x, y)
+            angle (float): Amount of rotation in degrees
+        """
+    @abstractmethod
+    def clean_up(self) -> None:
+        """
+        Remvoes all temp files and closes the femm renderer
         """

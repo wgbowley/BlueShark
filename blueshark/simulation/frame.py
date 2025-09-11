@@ -42,4 +42,4 @@ def simulate_frame(
         return solver.solve()
     except Exception as e:
         logging.critical(f"Simulation failed: {e}")
-        return None
+        raise ValueError(e)

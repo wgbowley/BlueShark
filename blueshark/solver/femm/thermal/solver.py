@@ -45,7 +45,7 @@ class FEMMHeatSolver(BaseSolver):
         """
         self.file_path = file_path
         self.subjects = subjects
-
+        self.state = False
         self.selector = OutputSelector(requested_ouputs)
 
     def solve(self) -> Dict[str, Any]:
@@ -55,6 +55,8 @@ class FEMMHeatSolver(BaseSolver):
         fail_count = 0
         while fail_count < MAXIMUM_FAILS:
             try:
+                femm.openfemm()
+                self.state = True
                 femm.opendocument(str(self.file_path))
                 femm.hi_analyse(1)
                 femm.hi_loadsolution()
@@ -86,5 +88,6 @@ class FEMMHeatSolver(BaseSolver):
 
         try:
             femm.closefemm()
+            self.state = False
         except Exception as e:
             logging.warning(f"Could not close FEMM instance: {e}")

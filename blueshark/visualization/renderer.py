@@ -156,12 +156,21 @@ class Visualize:
 
     def find_boundary_segments(
         self,
-        connectors: Dict[Connectors, List[tuple[float, float]]],
+        connectors: Dict[Connectors, List[tuple[float, float, int]]],
         ambient_material: str
-    ) -> Dict[Connectors, List[tuple[float, float]]]:
+    ) -> Dict[Connectors, List[tuple[float, float, int]]]:
         """
         Filters connectors to only keep points whose shifted coordinates
-        are **adjacent** to the ambient material (top/left/bottom/right).
+        are **adjacent** to the ambient material (top/left/bottom/right),
+        and preserves the group information.
+
+        Args:
+            connectors: Dict of Connectors to list of (x, y, group) tuples
+            ambient_material: Name of the ambient material to check adjacency
+            against
+
+        Returns:
+            Filtered dict of connectors with (x, y, group) tuples
         """
 
         columns, rows = len(self.voxel_map), len(self.voxel_map[0])
@@ -174,7 +183,7 @@ class Visualize:
 
         for connector_type, points in connectors.items():
             new_points = []
-            for x, y in points:
+            for x, y, group in points:  # unpack group
                 # Apply shift
                 sx, sy = self.scale*x + shift_x, self.scale*y + shift_y
 
@@ -193,7 +202,7 @@ class Visualize:
                                 break
 
                     if is_adjacent_to_ambient:
-                        new_points.append((x, y))  # keep original point
+                        new_points.append((x, y, group))
 
             filtered[connector_type] = new_points
 

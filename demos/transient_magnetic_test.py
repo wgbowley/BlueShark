@@ -12,6 +12,7 @@ Description:
 import math
 from blueshark.domain.elements.pole import Pole
 from blueshark.domain.elements.slot import Slot
+from blueshark.addons.bldc.timelines import commutation_magnetic
 from blueshark.renderer.femm.magnetic.renderer import (
     FEMMMagneticsRenderer as Femmrenderer
 )
@@ -96,7 +97,7 @@ axial: Geometry = {
 r_tag = (r_teeth+back_plate_inner_radius-pole_radial_thickness) / 2
 renderer.set_property([r_tag, 0], 10)
 renderer.draw(armuture, "Pure Iron", 2, tag_coords=(r_axial, r_axial))
-renderer.draw(axial, "Air", 0)
+renderer.draw(axial, "Air", 9)
 renderer.draw(stator["back_iron"], "Pure Iron", 1)
 
 for pole in range(len(stator["poles"])):
@@ -122,7 +123,7 @@ for idx, coil in enumerate(coils.values()):
     coil_geometry: Geometry = {
         "shape": ShapeType.POLYGON,
         "points": coil,
-        "enclosed": False
+        "enclosed": True
     }
     phase = phases[idx % len(phases)]
 
@@ -143,22 +144,22 @@ for idx, coil in enumerate(coils.values()):
     element.estimate_turns()
     element.draw(renderer)
 
-timeline = [
-    {
-        "motion": [(0.1, 0.0), [4]],
-        "currents": [(1.5, -1.5, 0.0), ["phase_a", "phase_b", "phase_c"]]
-    },
-    {
-        "motion": [(0.1, 5), [4]],
-        "currents": [(1.5, -1.5, 0.0), ["phase_a", "phase_b", "phase_c"]]
-    },
-]
+timeline = commutation_magnetic(
+    r_teeth,
+    num_poles // 2,
+    (5, 10),
+    10,
+    [4, 2, 9],
+    ["phase_a", "phase_b", "phase_c"]
+)
+
+print(timeline)
 
 print(transient_simulate(
         PhysicsType.MAGNETIC,
         renderer,
         Femmsolver,
-        ["torque_stress_tensor"],
+        ["torque_lorentz"],
         {"group": 4},
         timeline
     )

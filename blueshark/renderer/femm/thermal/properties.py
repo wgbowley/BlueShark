@@ -65,47 +65,67 @@ def update_conductor(
 
 def assign_conductor(
     element: ShapeType,
-    group: int,
     conductor: str
 ) -> None:
     """
-    Assigns a conductor to a parimeter of
-    a shape
+    Assigns a conductor to a perimeter of a shape.
+    Assumes each point tuple is (x, y, group_id)
     """
     # Assign properties to line segments
     for point in element[Connectors.LINE]:
-        femm.hi_selectsegment(point[0], point[1])
+        x, y, group = point
+        femm.hi_selectsegment(x, y)
         femm.hi_setsegmentprop("", 0, 0, 0, group, conductor)
         femm.hi_clearselected()
 
     # Assign properties to arc segments
     for point in element[Connectors.ARC]:
-        femm.hi_selectarcsegment(point[0], point[1])
+        x, y, group = point
+        femm.hi_selectarcsegment(x, y)
         femm.hi_setarcsegmentprop(0, "", 0, group, conductor)
         femm.hi_clearselected()
 
 
 def assign_boundary(
     element: ShapeType,
-    boundary: str,
-    group: int
+    boundary: str
 ) -> None:
     """
     Assigns a boundary property to the perimeter of a shape.
-
-    Args:
-        element: ShapeType object containing line and arc segments
-        group: Group number to assign to the boundary
+    Assumes each point tuple is (x, y, group_id)
     """
-
     # Assign properties to line segments
     for point in element[Connectors.LINE]:
-        femm.hi_selectsegment(point[0], point[1])
+        x, y, group = point
+        femm.hi_selectsegment(x, y)
         femm.hi_setsegmentprop(boundary, 0, 0, 0, group, "")
         femm.hi_clearselected()
 
     # Assign properties to arc segments
     for point in element[Connectors.ARC]:
-        femm.hi_selectarcsegment(point[0], point[1])
+        x, y, _ = point
+        femm.hi_selectarcsegment(x, y)
         femm.hi_setarcsegmentprop(0, boundary, 0, group, "")
+        femm.hi_clearselected()
+
+
+def assign_group(
+    element: ShapeType
+) -> None:
+    """
+    Assigns the stored group number to the perimeter of a shape.
+    Assumes each point tuple is (x, y, group_id)
+    """
+    # Assign group to line segments
+    for point in element[Connectors.LINE]:
+        x, y, group = point
+        femm.hi_selectsegment(x, y)
+        femm.hi_setgroup(group)
+        femm.hi_clearselected()
+
+    # Assign group to arc segments
+    for point in element[Connectors.ARC]:
+        x, y, group = point
+        femm.hi_selectarcsegment(x, y)
+        femm.hi_setgroup(group)
         femm.hi_clearselected()

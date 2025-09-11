@@ -31,7 +31,8 @@ from blueshark.domain.generation.geometric_centroid import (
 )
 from blueshark.renderer.femm.magnetic.properties import (
     set_properties,
-    add_phase
+    add_phase,
+    assign_group
 )
 from blueshark.renderer.femm.magnetic.materials import (
     load_materials,
@@ -59,6 +60,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         self.materials = load_materials()
         self.set_materials = []
         self.phases = []
+        self.state = False
 
     def setup(
         self,
@@ -74,7 +76,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         try:
             femm.openfemm(1)  # Opens femm in hiden window
             femm.newdocument(0)  # Magnetic simulation
-
+            self.state = True
             problem_type = None
             if sim_type == SimulationType.AXI_SYMMETRIC:
                 problem_type = "axi"
@@ -103,6 +105,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         """
         Import geometry through a dxf file
         """
+        self._check_state()
         try:
             femm.mi_readdxf(str(dxf))
             femm.mi_saveas(str(self.file_path))
@@ -125,19 +128,23 @@ class FEMMMagneticsRenderer(BaseRenderer):
         and other properties
         """
 
+        self._check_state()
         shape = geometry.get("shape")
         match shape:
             case ShapeType.POLYGON | ShapeType.RECTANGLE:
-                draw_polygon(geometry["points"], geometry["enclosed"])
+                contours = draw_polygon(
+                    geometry["points"],
+                    geometry["enclosed"]
+                )
 
             case ShapeType.CIRCLE:
-                draw_circle(
+                contours = draw_circle(
                     geometry["radius"],
                     geometry["center"]
                 )
 
             case ShapeType.ANNULUS_SECTOR:
-                draw_annulus_sector(
+                contours = draw_annulus_sector(
                     geometry["center"],
                     geometry["radius_outer"],
                     geometry["radius_inner"],
@@ -146,7 +153,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
                 )
 
             case ShapeType.ANNULUS_CIRCLE:
-                draw_annulus_circle(
+                contours = draw_annulus_circle(
                     geometry["center"],
                     geometry["radius_outer"],
                     geometry["radius_inner"]
@@ -155,10 +162,16 @@ class FEMMMagneticsRenderer(BaseRenderer):
             case ShapeType.HYBRID:
                 if "edges" not in geometry:
                     raise ValueError("Hybrid shape requires 'edges' field")
-                draw_hybrid(geometry["edges"])
+                contours = draw_hybrid(geometry["edges"])
 
             case _:
                 raise NotImplementedError(f"Shape '{shape}' not supported")
+
+        # Assigns the group to the contours
+        assign_group(
+            contours,
+            group_id
+        )
 
         # adds material to simulation space
         if material not in self.set_materials:
@@ -202,6 +215,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         Adds bounds to the simulation space
         """
 
+        self._check_state()
         if material not in self.set_materials:
             self.set_materials.append(material)
             add_femm_material(
@@ -237,6 +251,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         as the gap between the stator and armuture
         """
 
+        self._check_state()
         if material not in self.set_materials:
             self.set_materials.append(material)
             add_femm_material(
@@ -251,18 +266,18 @@ class FEMMMagneticsRenderer(BaseRenderer):
 
     def move_group(
         self,
-        group_id: int,
+        groups: int,
         delta: tuple[float, float]
     ) -> None:
         """
         Moves a group by dx and dy
         """
-        print(group_id, delta)
+        self._check_state()
         try:
-            if not isinstance(group_id, (list, tuple)):
-                groups_to_move = [group_id]
+            if not isinstance(groups, (list, tuple)):
+                groups_to_move = [groups]
             else:
-                groups_to_move = group_id
+                groups_to_move = groups
 
             for group in groups_to_move:
                 femm.mi_selectgroup(group)
@@ -274,20 +289,42 @@ class FEMMMagneticsRenderer(BaseRenderer):
             femm.mi_movetranslate(sx, sy)
             femm.mi_clearselected()
 
-            # Saves changes to femm file
-            femm.mi_saveas(str(self.file_path))
-
         except Exception as e:
             msg = f"Failed to move group(s) {groups_to_move} in FEMM: {e}"
             logging.critical(msg)
             raise RuntimeError(msg) from {e}
+
+    def rotate_group(
+        self,
+        groups: int,
+        axis: tuple[float, float],
+        angle: float
+    ) -> None:
+        """
+        Rotates a group by a angle around a point in space
+        """
+        self._check_state()
+        x, y = axis
+        if not isinstance(groups, (list, tuple)):
+            groups_to_move = [groups]
+        else:
+            groups_to_move = groups
+
+        for group in groups_to_move:
+            femm.mi_selectgroup(group)
+
+        femm.mi_moverotate(x, y, angle)
+        femm.mi_clearselected()
+
+        # Saves changes to femm file
+        femm.mi_saveas(str(self.file_path))
 
     def change_phase_current(
         self,
         phase: str,
         current: float
     ) -> None:
-        print(phase, current)
+        self._check_state()
         if phase is not None and phase not in self.phases:
             print("updating coils")
             self.phases.append(phase)
@@ -297,3 +334,21 @@ class FEMMMagneticsRenderer(BaseRenderer):
 
         # Saves changes to femm file
         femm.mi_saveas(str(self.file_path))
+
+    def _check_state(self) -> None:
+        """
+        Checks state if false reloads the femm simulation
+        """
+        if self.state:
+            return None
+
+        femm.openfemm()
+        femm.opendocument(str(self.file_path))
+        self.state = True
+
+    def clean_up(self):
+        """
+        Manages the femm environment
+        """
+        femm.closefemm()
+        self.state = False

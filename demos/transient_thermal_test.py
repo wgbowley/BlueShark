@@ -1,5 +1,5 @@
 """
-Filename: thermal_test.py
+Filename: transient_thermal_test.py
 Author: William Bowley
 Version: 1.3
 Date: 2025-08-16
@@ -24,7 +24,8 @@ from blueshark.solver.femm.thermal.solver import (
     FEMMHeatSolver as Femmsolver
 )
 from blueshark.domain.constants import (
-    Geometry, ShapeType, SimulationType, Units, CurrentPolarity
+    Geometry, ShapeType, SimulationType, Units, CurrentPolarity,
+    PhysicsType
 )
 
 from blueshark.addons.bldc.draw_stator import stator_geometries
@@ -32,7 +33,8 @@ from blueshark.addons.bldc.draw_armature import (
     slot_geometry_rotated,
     coil_array
 )
-
+from blueshark.addons.bldc.timelines import commutation_thermal
+from blueshark.simulation.transient import transient_simulate
 phases = ["phase_a", "phase_b", "phase_c"]
 
 num_poles = 16
@@ -161,18 +163,27 @@ tag = (
 )
 renderer.set_property(tag, 0)
 renderer.add_bounds((0, 0), back_plate_outer_radius*1.5)
-renderer.set_boundaries("AIR", 10)
-for i in phases:
-    renderer.change_phase_current(i, 10)
+renderer.set_boundaries("AIR")
 
-solver = Femmsolver(
-    "test.feh",
-    {"average_temp"},
-    {"group": [4]}
+timeline = commutation_thermal(
+    r_teeth,
+    num_poles // 2,
+    (0, 3),
+    2,
+    10,
+    [4, 2, 9],
+    ["phase_a", "phase_b", "phase_c"]
 )
 
-output = solver.solve()
-print(output)
+print(transient_simulate(
+        PhysicsType.THERMAL,
+        renderer,
+        Femmsolver,
+        ["average_temp"],
+        {"group": 4},
+        timeline
+    )
+)
 
 num_materials = np.max(renderer.grid.voxel_map) + 1  # 0..N
 

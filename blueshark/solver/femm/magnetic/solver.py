@@ -43,6 +43,7 @@ class FEMMMagneticsSolver(BaseSolver):
                                     (must be subset of output names)
             subjects (list): List of group/phases to do calculations on
         """
+        self.state = False
         self.file_path = file_path
         self.subjects = subjects
         self.selector = OutputSelector(requested_ouputs)
@@ -54,7 +55,9 @@ class FEMMMagneticsSolver(BaseSolver):
         fail_count = 0
         while fail_count < MAXIMUM_FAILS:
             try:
+                femm.openfemm()
                 femm.opendocument(str(self.file_path))
+                self.state = True
                 femm.mi_analyse(1)
                 femm.mi_loadsolution()
                 break
@@ -85,5 +88,6 @@ class FEMMMagneticsSolver(BaseSolver):
 
         try:
             femm.closefemm()
+            self.state = False
         except Exception as e:
             logging.warning(f"Could not close FEMM instance: {e}")

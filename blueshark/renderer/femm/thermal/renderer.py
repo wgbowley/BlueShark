@@ -13,15 +13,17 @@ Description:
 """
 
 from pathlib import Path
+import math
 import logging
 import femm
+
 
 from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.generation.geometric_centroid import centroid_point
 from blueshark.renderer.femm.thermal.hybrid_geometry import draw_hybrid
 from blueshark.renderer.femm.thermal.properties import (
     create_conductor, set_properties, assign_conductor, update_conductor,
-    assign_boundary
+    assign_boundary, assign_group
 )
 from blueshark.renderer.femm.thermal.primitives import (
     draw_polygon,
@@ -80,6 +82,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
             ambient_material,
             SimulationType.PLANAR  # This might fuck me over in the future
         )
+        self.state = False
         self.ambient_material = ambient_material
         self.grid.initalize_map()
 
@@ -96,7 +99,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
         try:
             femm.openfemm(1)  # Opens femm in hiden window
             femm.newdocument(2)  # Magnetic simulation
-
+            self.state = True
             problem_type = None
             if sim_type == SimulationType.AXI_SYMMETRIC:
                 problem_type = "axi"
@@ -133,7 +136,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
         """
         _ = turns
         _ = magnetization
-
+        self._check_state()
         elements = _
         shape = geometry.get("shape")
         self.grid.draw(geometry, material, tag_coords)
@@ -173,9 +176,25 @@ class FEMMHeatflowRenderer(BaseRenderer):
             case _:
                 raise NotImplementedError(f"Shape '{shape}' not supported")
 
+        elements_with_group = {}
+
+        for connector_type, points in elements.items():
+            elements_with_group[connector_type] = [
+                (*pt, group_id) for pt in points
+            ]
+
         if phase is None:
-            self.contours[Connectors.LINE].extend(elements[Connectors.LINE])
-            self.contours[Connectors.ARC].extend(elements[Connectors.ARC])
+            self.contours[Connectors.LINE].extend(
+                elements_with_group[Connectors.LINE]
+            )
+            self.contours[Connectors.ARC].extend(
+                elements_with_group[Connectors.ARC]
+            )
+
+        # Assigns the group to the contours
+        assign_group(
+            elements_with_group
+        )
 
         # adds material to simulation space
         if material not in self.set_materials:
@@ -192,8 +211,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
 
         if phase in self.phases:
             assign_conductor(
-                elements,
-                group_id,
+                elements_with_group,
                 phase
             )
 
@@ -217,6 +235,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
         bound_type=1,
         material="Air"
     ):
+        self._check_state()
         add_bounds(origin, radius)
         femm.hi_saveas(str(self.file_path))
 
@@ -226,14 +245,13 @@ class FEMMHeatflowRenderer(BaseRenderer):
         heat_flux,
         current: int = 0  # required by ABC, Unused
     ) -> None:
+        self._check_state()
         _ = current
         update_conductor(phase, heat_flux)
         femm.hi_saveas(str(self.file_path))
 
-    def move_group(self, group_id, delta):
-        return None
-
     def set_property(self, origin, group_id, material="Air"):
+        self._check_state()
         set_properties(
             origin,
             group_id,
@@ -241,15 +259,15 @@ class FEMMHeatflowRenderer(BaseRenderer):
         )
         femm.hi_saveas(str(self.file_path))
 
-    def set_boundaries(self, boundpropname: str, groud_id: int) -> None:
+    def set_boundaries(self, boundpropname: str) -> None:
+        self._check_state()
         # Step 1: find air boundaries
         air_boundaries = self.grid.find_boundary_segments(
             self.contours,
             self.ambient_material
         )
-
         # Step 2: assign AIR boundaries
-        assign_boundary(air_boundaries, boundpropname, groud_id)
+        assign_boundary(air_boundaries, boundpropname)
 
         # Step 4: save
         femm.hi_saveas(str(self.file_path))
@@ -278,6 +296,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
             h: Heat transfer coefficient (used for convection)
             beta: Emissivity (used for radiation)
         """
+        self._check_state()
         match condition_type:
             case "fixed_temp":
                 BdryFormat = 0
@@ -319,3 +338,76 @@ class FEMMHeatflowRenderer(BaseRenderer):
                 raise ValueError(f"Unknown condition type: {condition_type}")
 
         femm.hi_saveas(str(self.file_path))
+
+    def rotate_group(
+        self,
+        groups: int,
+        axis: tuple[float, float],
+        angle: float
+    ) -> None:
+        """
+        Rotates a group by a angle around a point in space
+        """
+        self._check_state()
+        x, y = axis
+        if not isinstance(groups, (list, tuple)):
+            groups_to_move = [groups]
+        else:
+            groups_to_move = groups
+
+        for group in groups_to_move:
+            femm.hi_selectgroup(group)
+
+        femm.hi_moverotate(x, y, angle)
+        femm.hi_clearselected()
+
+        # Saves changes to femm file
+        femm.hi_saveas(str(self.file_path))
+
+    def move_group(
+        self,
+        groups: int,
+        delta: tuple[float, float]
+    ) -> None:
+        """
+        Moves a group by dx and dy
+        """
+        self._check_state()
+        try:
+            if not isinstance(groups, (list, tuple)):
+                groups_to_move = [groups]
+            else:
+                groups_to_move = groups
+
+            for group in groups_to_move:
+                femm.hi_selectgroup(group)
+
+            step, angle = delta
+            sx = step * math.cos(angle)
+            sy = step * math.sin(angle)
+
+            femm.hi_movetranslate(sx, sy)
+            femm.hi_clearselected()
+
+        except Exception as e:
+            msg = f"Failed to move group(s) {groups_to_move} in FEMM: {e}"
+            logging.critical(msg)
+            raise RuntimeError(msg) from {e}
+
+    def _check_state(self) -> None:
+        """
+        Checks state if false reloads the femm simulation
+        """
+        if self.state:
+            return None
+
+        femm.openfemm()
+        femm.opendocument(str(self.file_path))
+        self.state = True
+
+    def clean_up(self):
+        """
+        Manages the femm environment
+        """
+        femm.closefemm()
+        self.state = False
