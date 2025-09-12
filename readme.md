@@ -12,6 +12,7 @@ Active development continues in the <code>release</code> branch.
 - Experimental and loosely structured codebase
 - Some features incomplete or unstable
 - Intended as a stepping stone toward v1.4 (Release)
+- Material library should not be trusted*
 
 ### Improvements in Newer Versions
 - Cleaner abstraction layers (Solver, Renderers, Visualization)
