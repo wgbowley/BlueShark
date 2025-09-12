@@ -7,7 +7,7 @@ This package serves to explore possible linear motor designs quickly, providing 
 Active development continues in the <code>release</code> branch.
 
 ### Limitations:
-- Outputed results have not be verified
+- Outputted results have not be verified
 - No support or updates for this version
 - Experimental and loosely structured codebase
 - Some features incomplete or unstable
