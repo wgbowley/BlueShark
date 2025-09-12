@@ -23,7 +23,7 @@ from blueshark.solver.femm.thermal.output_selector import (
 )
 
 
-class FEMMHeatSolver(BaseSolver):
+class FEMMthermalSolver(BaseSolver):
     """
     Heat solver for the femm simulator
     """
@@ -55,7 +55,7 @@ class FEMMHeatSolver(BaseSolver):
         fail_count = 0
         while fail_count < MAXIMUM_FAILS:
             try:
-                femm.openfemm()
+                femm.openfemm(1)
                 self.state = True
                 femm.opendocument(str(self.file_path))
                 femm.hi_analyse(1)

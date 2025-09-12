@@ -59,7 +59,6 @@ def _transient_magnetic(
 
             elif "axis" in motion_values and "angle" in motion_values:
                 # Rotational motion
-                print("axis")
                 renderer.rotate_group(
                     groups,
                     motion_values["axis"],
@@ -136,12 +135,11 @@ def _transient_thermal(
             else:
                 raise ValueError(f"Unknown motion dict: {motion_values}")
 
-            heat_flux_values, conductor = step["heat_flux"]
-            for i in range(0, len(heat_flux_values)):
-                renderer.change_phase_current(
-                    conductor[i],
-                    heat_flux_values[i]
-                )
+            heat, material = step["heat_flux"]
+            renderer.change_heating(
+                material,
+                heat
+            )
 
             # Clears up files and services related to renderer
             renderer.clean_up()

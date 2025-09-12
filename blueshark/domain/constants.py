@@ -54,7 +54,7 @@ class Units(Enum):
     """
     All units supported by the simulator
     """
-    MIRCOMETERS = "micrometers"
+    MICROMETERS = "micrometers"
     CENTIMETERS = "centimeters"
     MILLIMETER = "millimeters"
     METER = "meters"

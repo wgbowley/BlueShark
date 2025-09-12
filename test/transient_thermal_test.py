@@ -1,34 +1,48 @@
 """
-Filename: transient_magnetic_test.py
+Filename: transient_thermal_test.py
 Author: William Bowley
 Version: 1.3
 Date: 2025-08-16
 
 Description:
-    This script tests transient magnetic simulations
-    for the framework
+    This project tests to see
+    if blueshark can even heat flow renderer
+    and solve a bldc motor from its addon "bldc"
 """
+import numpy as np
+import matplotlib.pyplot as plot
+import matplotlib.colors as colors
 
 import math
+
 from blueshark.domain.elements.pole import Pole
 from blueshark.domain.elements.slot import Slot
-from blueshark.addons.bldc.timelines import commutation_magnetic
-from blueshark.renderer.femm.magnetic.renderer import (
-    FEMMMagneticsRenderer as Femmrenderer
+from blueshark.renderer.femm.thermal.renderer import (
+    FEMMthermalRenderer as Femmrenderer
 )
-from blueshark.solver.femm.magnetic.solver import (
-    FEMMMagneticsSolver as Femmsolver
+from blueshark.solver.femm.thermal.solver import (
+    FEMMthermalSolver as Femmsolver
 )
 from blueshark.domain.constants import (
     Geometry, ShapeType, SimulationType, Units, CurrentPolarity,
     PhysicsType
 )
+
 from blueshark.addons.bldc.draw_stator import stator_geometries
 from blueshark.addons.bldc.draw_armature import (
     slot_geometry_rotated,
     coil_array
 )
+from blueshark.addons.bldc.timelines import commutation_thermal
 from blueshark.simulation.transient import transient_simulate
+from blueshark.renderer.material_manager import MaterialManager
+
+manager = MaterialManager()
+wire = manager.use_material("Copper Wire", wire_diameter=0.35)
+magnet = manager.use_material("Neodymium", grade="N52")
+iron = manager.use_material("Pure Iron")
+air = manager.use_material("Air")
+
 phases = ["phase_a", "phase_b", "phase_c"]
 
 num_poles = 16
@@ -52,11 +66,21 @@ r_axial = 3
 
 
 # Sets the renderer to femm magnetics
-renderer = Femmrenderer("test.fem")
+renderer = Femmrenderer(
+    "test/test.feh",
+    SimulationType.PLANAR,
+    (
+        back_plate_outer_radius*3,
+        back_plate_outer_radius*3
+    ),
+    air
+)
 renderer.setup(
     SimulationType.PLANAR,
-    Units.MILLIMETER
+    Units.CENTIMETERS
 )
+
+renderer.create_surface_condition("AIR", "convection", 0, 0, 300, 25)
 
 # Stator geometry (doesn't use polar coords as inbuild shapes)
 stator = stator_geometries(
@@ -67,6 +91,7 @@ stator = stator_geometries(
     back_plate_outer_radius
 )
 
+# Armuture geometry (Uses polar coords)
 armuture = slot_geometry_rotated(
     num_slots,
     sector_angle,
@@ -94,11 +119,9 @@ axial: Geometry = {
 }
 
 # Draws objects to simulation space
-r_tag = (r_teeth+back_plate_inner_radius-pole_radial_thickness) / 2
-renderer.set_property([r_tag, 0], 10)
-renderer.draw(armuture, "Pure Iron", 2, tag_coords=(r_axial, r_axial))
-renderer.draw(axial, "Air", 9)
-renderer.draw(stator["back_iron"], "Pure Iron", 1)
+renderer.draw(armuture, iron, 2, tag_coords=(r_axial, r_axial))
+renderer.draw(axial, air, 0)
+renderer.draw(stator["back_iron"], iron, 1)
 
 for pole in range(len(stator["poles"])):
     pole_angle = 360 / num_poles
@@ -113,9 +136,9 @@ for pole in range(len(stator["poles"])):
 
     element = Pole(
         stator["poles"][pole],
-        "N52",
+        magnet,
         3,
-        angle_bisector
+        0
     )
     element.draw(renderer)
 
@@ -125,7 +148,9 @@ for idx, coil in enumerate(coils.values()):
         "points": coil,
         "enclosed": True
     }
-    phase = phases[idx % len(phases)]
+
+    # Use integer division to repeat each phase twice
+    phase = phases[(idx // 2) % len(phases)]
 
     if idx % 2 == 0:
         polarity = CurrentPolarity.FORWARD
@@ -136,7 +161,7 @@ for idx, coil in enumerate(coils.values()):
         phase,
         polarity,
         coil_geometry,
-        "0.315mm",
+        wire,
         4,
         0.315
     )
@@ -144,23 +169,46 @@ for idx, coil in enumerate(coils.values()):
     element.estimate_turns()
     element.draw(renderer)
 
-timeline = commutation_magnetic(
+tag = (
+    ((back_plate_inner_radius-pole_radial_thickness)+r_teeth)/2,
+    0
+)
+renderer.set_property(tag, 0, air)
+renderer.add_bounds((0, 0), back_plate_outer_radius*1.5, air)
+renderer.set_boundaries("AIR")
+
+timeline = commutation_thermal(
+    Units.CENTIMETERS,
     r_teeth,
     num_poles // 2,
-    (5, 10),
+    (0, 3),
+    5,
+    5,
     10,
     [4, 2, 9],
-    ["phase_a", "phase_b", "phase_c"]
+    wire
 )
 
-print(timeline)
-
 print(transient_simulate(
-        PhysicsType.MAGNETIC,
+        PhysicsType.THERMAL,
         renderer,
         Femmsolver,
-        ["torque_lorentz"],
+        ["average_temp"],
         {"group": 4},
         timeline
     )
 )
+
+num_materials = np.max(renderer.grid.voxel_map) + 1  # 0..N
+
+hues = np.linspace(0, 1, num_materials, endpoint=False)  # evenly spaced hues
+saturation = 0.8
+value = 0.9
+distinct_colors = np.array([plot.cm.hsv(h)[:3] for h in hues])  # RGB from HSV
+
+cmap = colors.ListedColormap(distinct_colors)
+
+plot.imshow(renderer.grid.voxel_map, origin='lower', cmap=cmap)
+plot.title("Map")
+plot.colorbar(label='Material')
+plot.show()

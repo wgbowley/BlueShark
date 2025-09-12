@@ -13,6 +13,7 @@ Description:
 """
 
 from pathlib import Path
+from typing import Any
 import math
 import logging
 import femm
@@ -22,8 +23,7 @@ from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.generation.geometric_centroid import centroid_point
 from blueshark.renderer.femm.thermal.hybrid_geometry import draw_hybrid
 from blueshark.renderer.femm.thermal.properties import (
-    create_conductor, set_properties, assign_conductor, update_conductor,
-    assign_boundary, assign_group
+    set_properties, assign_boundary, assign_group
 )
 from blueshark.renderer.femm.thermal.primitives import (
     draw_polygon,
@@ -39,8 +39,7 @@ from blueshark.domain.constants import (
     Connectors
 )
 from blueshark.renderer.femm.thermal.materials import (
-    load_materials,
-    add_femm_material
+    femm_add_material, femm_modify_material
 )
 from blueshark.renderer.femm.thermal.boundary import (
     add_bounds
@@ -48,15 +47,16 @@ from blueshark.renderer.femm.thermal.boundary import (
 from blueshark.visualization.renderer import Visualize
 
 
-class FEMMHeatflowRenderer(BaseRenderer):
+class FEMMthermalRenderer(BaseRenderer):
     """
     Heat flow renderer for the femm simulator
     """
     def __init__(
         self,
         file_path: Path,
+        sim_type: SimulationType,
         grid_size: tuple[int, int],
-        ambient_material: str,
+        ambient_material: dict[str, Any],
         boundary_temperature: float = 288.15
     ) -> None:
         """
@@ -68,10 +68,10 @@ class FEMMHeatflowRenderer(BaseRenderer):
         """
 
         self.file_path = file_path
-        self.materials = load_materials()
         self.set_materials = []
         self.boundary = boundary_temperature
         self.phases = []
+        self.sim_type = sim_type
         self.contours = {
             Connectors.LINE: [],
             Connectors.ARC: []
@@ -79,8 +79,8 @@ class FEMMHeatflowRenderer(BaseRenderer):
         self.grid = Visualize(
             grid_size[0],
             grid_size[1],
-            ambient_material,
-            SimulationType.PLANAR  # This might fuck me over in the future
+            ambient_material.get("name", "Unknown"),
+            sim_type
         )
         self.state = False
         self.ambient_material = ambient_material
@@ -93,20 +93,22 @@ class FEMMHeatflowRenderer(BaseRenderer):
         depth: float = 0
     ) -> None:
         """
-        Setup the rendering environment and simulation space
+        Setup the rendering environment and simulation space.
+        If the file does not exist, create it.
         """
 
         try:
-            femm.openfemm(1)  # Opens femm in hiden window
-            femm.newdocument(2)  # Magnetic simulation
+            femm.openfemm(1)  # Open FEMM in hidden window
+            femm.newdocument(2)  # Heat flow simulation
             self.state = True
-            problem_type = None
-            if sim_type == SimulationType.AXI_SYMMETRIC:
-                problem_type = "axi"
-            elif sim_type == SimulationType.PLANAR:
-                problem_type = "planar"
 
-            # Defines the problem
+            # Determine problem type
+            if self.sim_type == SimulationType.PLANAR:
+                problem_type = "planar"
+            else:
+                problem_type = "axi"
+
+            # Define the problem
             femm.hi_probdef(
                 units.value,
                 problem_type,
@@ -114,7 +116,18 @@ class FEMMHeatflowRenderer(BaseRenderer):
                 depth
             )
 
-            femm.hi_saveas(str(self.file_path))
+            # Add ambient material
+            name = self.ambient_material.get("name", "Unknown")
+            femm_add_material(self.ambient_material)
+            self.set_materials.append(name)
+
+            # Try saving; if file_path doesn't exist, just create a new file
+            try:
+                femm.hi_saveas(str(self.file_path))
+            except FileNotFoundError:
+                # Ensure parent directories exist
+                self.file_path.parent.mkdir(parents=True, exist_ok=True)
+                femm.hi_saveas(str(self.file_path))
         except Exception as e:
             msg = f"FEMM Heat flow Setup failed ({sim_type}): {e}"
             logging.critical(msg)
@@ -123,7 +136,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
     def draw(
         self,
         geometry: Geometry,
-        material: str,
+        material: dict[str, Any],
         group_id: int,
         tag_coords: tuple[float, float] = None,
         phase: str = None,
@@ -136,10 +149,12 @@ class FEMMHeatflowRenderer(BaseRenderer):
         """
         _ = turns
         _ = magnetization
+        _ = phase
         self._check_state()
         elements = _
         shape = geometry.get("shape")
-        self.grid.draw(geometry, material, tag_coords)
+        name = material.get("name", "Unknown")
+        self.grid.draw(geometry, name, tag_coords)
         match shape:
             case ShapeType.POLYGON | ShapeType.RECTANGLE:
                 elements = draw_polygon(
@@ -183,13 +198,13 @@ class FEMMHeatflowRenderer(BaseRenderer):
                 (*pt, group_id) for pt in points
             ]
 
-        if phase is None:
-            self.contours[Connectors.LINE].extend(
-                elements_with_group[Connectors.LINE]
+        self.contours[Connectors.LINE].extend(
+            elements_with_group[Connectors.LINE]
             )
-            self.contours[Connectors.ARC].extend(
-                elements_with_group[Connectors.ARC]
-            )
+
+        self.contours[Connectors.ARC].extend(
+            elements_with_group[Connectors.ARC]
+        )
 
         # Assigns the group to the contours
         assign_group(
@@ -197,22 +212,10 @@ class FEMMHeatflowRenderer(BaseRenderer):
         )
 
         # adds material to simulation space
-        if material not in self.set_materials:
-            self.set_materials.append(material)
-            add_femm_material(
-                self.materials,
+        if name not in self.set_materials:
+            self.set_materials.append(name)
+            femm_add_material(
                 material
-            )
-
-        # Checks for phase and if not than adds the phase
-        if phase is not None and phase not in self.phases:
-            self.phases.append(phase)
-            create_conductor(phase, 1)
-
-        if phase in self.phases:
-            assign_conductor(
-                elements_with_group,
-                phase
             )
 
         # Adds blocklabel and set properties of it
@@ -222,7 +225,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
         set_properties(
             tag_coords,
             group_id,
-            material
+            name
         )
 
         femm.hi_saveas(str(self.file_path))
@@ -231,31 +234,48 @@ class FEMMHeatflowRenderer(BaseRenderer):
         self,
         origin,
         radius,
-        num_shells=7,
-        bound_type=1,
-        material="Air"
-    ):
-        self._check_state()
-        add_bounds(origin, radius)
-        femm.hi_saveas(str(self.file_path))
-
-    def change_phase_current(
-        self,
-        phase,
-        heat_flux,
-        current: int = 0  # required by ABC, Unused
+        material: dict[str, Any],
+        temperature: float = 300,
+        num_shells: int = 7,
+        bound_type: int = 1,
     ) -> None:
         self._check_state()
-        _ = current
-        update_conductor(phase, heat_flux)
+        name = material.get("name", "Unknown")
+        if name not in self.set_materials:
+            self.set_materials.append(name)
+            femm_add_material(
+                material
+            )
+
+        add_bounds(origin, radius, temperature, material=name)
         femm.hi_saveas(str(self.file_path))
 
-    def set_property(self, origin, group_id, material="Air"):
+    def change_heating(
+        self,
+        material_name,
+        volumetric_heat_source,
+    ) -> None:
         self._check_state()
+        femm_modify_material(
+            material_name,
+            3,
+            volumetric_heat_source
+        )
+        femm.hi_saveas(str(self.file_path))
+
+    def set_property(self, origin, group_id, material):
+        self._check_state()
+        name = material.get("name", "Unknown")
+        if name not in self.set_materials:
+            self.set_materials.append(name)
+            femm_add_material(
+                material
+            )
+
         set_properties(
             origin,
             group_id,
-            material
+            name
         )
         femm.hi_saveas(str(self.file_path))
 
@@ -264,8 +284,9 @@ class FEMMHeatflowRenderer(BaseRenderer):
         # Step 1: find air boundaries
         air_boundaries = self.grid.find_boundary_segments(
             self.contours,
-            self.ambient_material
+            self.ambient_material.get("name", "Unknown")
         )
+
         # Step 2: assign AIR boundaries
         assign_boundary(air_boundaries, boundpropname)
 
@@ -401,7 +422,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
         if self.state:
             return None
 
-        femm.openfemm()
+        femm.openfemm(1)
         femm.opendocument(str(self.file_path))
         self.state = True
 
@@ -411,3 +432,7 @@ class FEMMHeatflowRenderer(BaseRenderer):
         """
         femm.closefemm()
         self.state = False
+
+    # Not used in thermal renderer
+    def change_phase_current(self, phase, current):
+        return None

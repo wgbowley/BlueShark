@@ -1,0 +1,216 @@
+[[material]]
+name = "Copper Wire"
+type = "Electrical"
+categories = ["Magnetic", "Electrical", "Thermal"]
+
+magnetic_relative_permeability = [1.0, 1.0]
+coercivity = 0
+coercivity_angle = 0
+residual_flux_density = 0
+electrical_conductivity = 58
+bh_curve_points = 0
+lamination_type = "solid"
+lamination_fill = 1.0
+number_of_strands = 1
+wire_diameter = 0.21
+
+# FEMM-specific hysteresis & lamination values
+phi_hmax = 0
+phi_hx = 0
+phi_hy = 0
+lam_type = 3  # magnet wire
+lam_fill = 1
+n_strands = 1
+d_wire = 0.21
+
+[material.thermal]
+thermal_conductivity_x = 401
+thermal_conductivity_y = 401
+volumetric_heat_source = 0
+temp_dependence = [
+  [273.0, 401.0],
+  [473.0, 389.0],
+  [673.0, 378.0],
+  [873.0, 366.0],
+  [1073.0, 352.0],
+  [1273.0, 336.0]
+]
+
+[[material]]
+name = "Neodymium"
+type = "Magnetic"
+categories = ["Magnetic", "Electrical", "Thermal"]
+
+magnetic_relative_permeability = [1.05, 1.05]
+coercivity = 836420
+coercivity_angle = 0
+residual_flux_density = 1.2
+electrical_conductivity = 0.667
+bh_curve_points = 0
+lamination_type = "solid"
+lamination_fill = 1.0
+number_of_strands = 1
+wire_diameter = 0
+
+# FEMM-specific hysteresis & lamination values
+phi_hmax = 0
+phi_hx = 0
+phi_hy = 0
+lam_type = 0
+lam_fill = 1
+n_strands = 1
+d_wire = 0
+
+[material.thermal]
+thermal_conductivity_x = 16.5
+thermal_conductivity_y = 16.5
+volumetric_heat_source = 0
+temp_dependence = [
+  [273.0, 16.5],
+  [323.0, 15.8],
+  [373.0, 15.0],
+  [423.0, 14.2],
+  [473.0, 13.5]
+]
+
+[material.runtime]
+grade = "N35"
+
+[material.runtime.grades]
+N30 = 836420
+N33 = 878619
+N35 = 905659
+N38 = 944771
+N40 = 969969
+N42 = 994529
+N45 = 1030272
+N48 = 1014538
+N50 = 987837
+N52 = 956180
+N55 = 922850
+
+[[material]]
+name = "Pure Iron"
+type = "Magnetic"
+categories = ["Magnetic", "Electrical", "Thermal"]
+
+magnetic_relative_permeability = [14872, 14872]
+coercivity = 0
+coercivity_angle = 0
+residual_flux_density = 0
+electrical_conductivity = 10.44
+bh_curve_points = 21
+lamination_type = "solid"
+lamination_fill = 1.0
+number_of_strands = 0
+wire_diameter = 0
+
+# FEMM-specific hysteresis & lamination values
+phi_hmax = 0
+phi_hx = 0
+phi_hy = 0
+lam_type = 0
+lam_fill = 1
+n_strands = 0
+d_wire = 0
+
+[material.thermal]
+thermal_conductivity_x = 83
+thermal_conductivity_y = 83
+volumetric_heat_source = 0
+temp_dependence = [
+  [273.0, 83.0],
+  [473.0, 66.0],
+  [673.0, 53.0],
+  [873.0, 41.0],
+  [1073.0, 32.0],
+  [1273.0, 30.0]
+]
+
+[[material]]
+name = "Air"
+type = "Magnetic"
+categories = ["Magnetic", "Electrical", "Thermal"]
+
+magnetic_relative_permeability = [1.0, 1.0]
+coercivity = 0
+coercivity_angle = 0
+residual_flux_density = 0
+electrical_conductivity = 0
+bh_curve_points = 0
+lamination_type = "solid"
+lamination_fill = 1.0
+number_of_strands = 0
+wire_diameter = 0
+
+# FEMM-specific hysteresis & lamination values
+phi_hmax = 0
+phi_hx = 0
+phi_hy = 0
+lam_type = 0
+lam_fill = 1
+n_strands = 0
+d_wire = 0
+
+[material.thermal]
+thermal_conductivity_x = 0.0181
+thermal_conductivity_y = 0.0181
+volumetric_heat_source = 0
+temp_dependence = [
+  [200.0, 0.0181],
+  [250.0, 0.0223],
+  [300.0, 0.0261],
+  [350.0, 0.0297],
+  [400.0, 0.0331],
+  [450.0, 0.0363],
+  [500.0, 0.0395],
+  [550.0, 0.0426],
+  [600.0, 0.0456],
+  [700.0, 0.0513],
+  [800.0, 0.0569],
+  [900.0, 0.0625],
+  [1000.0, 0.0672],
+  [1200.0, 0.0759],
+  [1400.0, 0.0835],
+  [1600.0, 0.0904],
+  [1800.0, 0.097],
+  [2000.0, 0.1032]
+]
+
+[[material]]
+name = "Carbon Fibre" ### Assumes that it is isotropic
+type = "Magnetic"
+categories = ["Magnetic", "Electrical", "Thermal"]
+
+magnetic_relative_permeability = [1.0, 1.0]  # non-magnetic
+coercivity = 0
+coercivity_angle = 0
+residual_flux_density = 0
+electrical_conductivity = 1e6  # S/m, approximate along fibre
+bh_curve_points = 0
+lamination_type = "solid"
+lamination_fill = 1.0
+number_of_strands = 0
+wire_diameter = 0
+
+# FEMM-specific hysteresis & lamination values
+phi_hmax = 0
+phi_hx = 0
+phi_hy = 0
+lam_type = 0
+lam_fill = 1
+n_strands = 0
+d_wire = 0
+
+[material.thermal]
+thermal_conductivity_x = 100.0  # W/m·K
+thermal_conductivity_y = 100.0  # isotropic approximation
+volumetric_heat_source = 0
+temp_dependence = [
+  [200.0, 100.0],
+  [300.0, 100.0],
+  [400.0, 100.0],
+  [500.0, 100.0],
+  [600.0, 100.0],
+  [700.0, 100.0]
+]

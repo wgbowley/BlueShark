@@ -31,7 +31,8 @@ setup(
     package_data={
         "blueshark.lib": [
             "femm_magnetic_materials.json",
-            "femm_heat_materials.json"
+            "femm_heat_materials.json",
+            "material.toml"
         ],
     },
 )

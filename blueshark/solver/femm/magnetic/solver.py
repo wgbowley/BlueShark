@@ -55,7 +55,7 @@ class FEMMMagneticsSolver(BaseSolver):
         fail_count = 0
         while fail_count < MAXIMUM_FAILS:
             try:
-                femm.openfemm()
+                femm.openfemm(1)
                 femm.opendocument(str(self.file_path))
                 self.state = True
                 femm.mi_analyse(1)

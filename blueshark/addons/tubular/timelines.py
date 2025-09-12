@@ -4,7 +4,7 @@ Author: William Bowley
 Version: 0.1
 Date: 2025-07-28
 Description:
-    This is an addon for timelines for bldc motor
+    This is an addon for timelines for tubular motor
     magnetic & heat transisent simulations
 """
 
@@ -13,7 +13,10 @@ from typing import Any
 
 from blueshark.domain.constants import Units
 from blueshark.domain.physics.convert_units import UnitConverter
-from blueshark.domain.physics.thermal import calulate_volumetric_heating
+from blueshark.domain.physics.thermal import (
+    calulate_volumetric_heating
+)
+
 from blueshark.domain.physics.commutation import (
     displacement_commutation
 )
@@ -26,7 +29,6 @@ def commutation_magnetic(
     num_samples: int,
     groups: list[int],
     phases: list[str],
-    axis: tuple[float, float, float] = (0, 0)
 ) -> list[dict[str, Any]] | None:
     """
     Magnetic Commutation (One rotation)
@@ -41,14 +43,13 @@ def commutation_magnetic(
     )
 
     timeline = []
-    for i, current_set in enumerate(currents):
+    for _, current_set in enumerate(currents):
         # cumulative rotation angle for this step
-        angle = (i * step_size) / circumference * math.tau
 
         # rotational motion dictionary
         motion = {
-            "axis": axis,
-            "angle": angle
+            "step": step_size,
+            "angle": math.pi/2
         }
 
         entry = {
@@ -70,8 +71,7 @@ def commutation_thermal(
     slot_volume: float,
     num_samples: int,
     groups: list[int],
-    material: str,
-    axis: tuple[float, float, float] = (0, 0)
+    material: str
 ) -> list[dict[str, Any]] | None:
     """
     Thermal Commutation (One rotation)
@@ -88,14 +88,13 @@ def commutation_thermal(
     area = UnitConverter.to_square_meters(slot_volume, units)
     material = material.get("name", "unknown")
     timeline = []
-    for i, current_set in enumerate(currents):
+    for _, current_set in enumerate(currents):
         # cumulative rotation angle for this step
-        angle = (i * step_size) / circumference * math.tau
 
         # rotational motion dictionary
         motion = {
-            "axis": axis,
-            "angle": angle
+            "step": step_size,
+            "angle": math.pi/2
         }
 
         heat = calulate_volumetric_heating(

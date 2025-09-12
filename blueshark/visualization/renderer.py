@@ -56,6 +56,10 @@ class Visualize:
             x = self.window[0] // 2
             y = self.window[1] // 2
 
+        if sim_type == SimulationType.AXI_SYMMETRIC:
+            x = 0
+            y = self.window[1] // 2
+
         self.ambient_material = ambient_material
         self.materials[ambient_material] = 0
         self.shift = (x, y)
@@ -157,49 +161,52 @@ class Visualize:
     def find_boundary_segments(
         self,
         connectors: Dict[Connectors, List[tuple[float, float, int]]],
-        ambient_material: str
+        ambient_material: str,
+        search_radius: int = 2   # increase for broader adjacency search
     ) -> Dict[Connectors, List[tuple[float, float, int]]]:
         """
         Filters connectors to only keep points whose shifted coordinates
-        are **adjacent** to the ambient material (top/left/bottom/right),
+        are adjacent to the ambient material (within a given search radius),
         and preserves the group information.
 
         Args:
             connectors: Dict of Connectors to list of (x, y, group) tuples
             ambient_material: Name of the ambient material to check adjacency
             against
+            search_radius: Manhattan/Chebyshev radius around point to search
 
         Returns:
             Filtered dict of connectors with (x, y, group) tuples
         """
 
-        columns, rows = len(self.voxel_map), len(self.voxel_map[0])
+        rows = len(self.voxel_map)         # number of rows (y)
+        columns = len(self.voxel_map[0])   # number of columns (x)
         shift_x, shift_y = self.shift
         filtered = {}
         material = self.materials[ambient_material]
 
-        # Offsets for 4-connected neighbors
-        neighbor_offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
         for connector_type, points in connectors.items():
             new_points = []
-            for x, y, group in points:  # unpack group
-                # Apply shift
-                sx, sy = self.scale*x + shift_x, self.scale*y + shift_y
+            for x, y, group in points:
+                # Apply scaling + shift
+                sx, sy = self.scale * x + shift_x, self.scale * y + shift_y
 
                 # Convert to voxel indices
                 vx, vy = int(round(sx)), int(round(sy))
 
-                # Bounds check
-                if 0 <= vx < rows and 0 <= vy < columns:
-                    # Check all 4 neighbors
+                if 0 <= vx < columns and 0 <= vy < rows:
                     is_adjacent_to_ambient = False
-                    for dx, dy in neighbor_offsets:
-                        nx, ny = vx + dx, vy + dy
-                        if 0 <= nx < rows and 0 <= ny < columns:
-                            if self.voxel_map[ny][nx] == material:
-                                is_adjacent_to_ambient = True
-                                break
+
+                    # Search in a square window of size (2*radius+1)
+                    for dx in range(-search_radius, search_radius + 1):
+                        for dy in range(-search_radius, search_radius + 1):
+                            nx, ny = vx + dx, vy + dy
+                            if 0 <= nx < columns and 0 <= ny < rows:
+                                if self.voxel_map[ny][nx] == material:
+                                    is_adjacent_to_ambient = True
+                                    break
+                        if is_adjacent_to_ambient:
+                            break
 
                     if is_adjacent_to_ambient:
                         new_points.append((x, y, group))

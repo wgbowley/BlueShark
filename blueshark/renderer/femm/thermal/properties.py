@@ -95,15 +95,13 @@ def assign_boundary(
     Assumes each point tuple is (x, y, group_id)
     """
     # Assign properties to line segments
-    for point in element[Connectors.LINE]:
-        x, y, group = point
+    for x, y, group in element[Connectors.LINE]:
         femm.hi_selectsegment(x, y)
         femm.hi_setsegmentprop(boundary, 0, 0, 0, group, "")
         femm.hi_clearselected()
 
     # Assign properties to arc segments
-    for point in element[Connectors.ARC]:
-        x, y, _ = point
+    for x, y, group in element[Connectors.ARC]:
         femm.hi_selectarcsegment(x, y)
         femm.hi_setarcsegmentprop(0, boundary, 0, group, "")
         femm.hi_clearselected()

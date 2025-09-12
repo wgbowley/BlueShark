@@ -6,8 +6,8 @@ Data: 2025-08-29
 
 Description:
     This demo tests to see if the topology
-    optimizer addon works to optimize a bldc
-    motor using the femm magnetic solver.
+    optimizer addon works to (optimize not implemented)
+    a bldc motor using the femm magnetic solver.
 th
 Note:
     Somewhat works very very slow ~3m 30s to run
@@ -41,6 +41,7 @@ from blueshark.addons.bldc.draw_armature import (
 from blueshark.addons.bldc.draw_stator import (
     stator_geometries
 )
+from blueshark.renderer.material_manager import MaterialManager
 
 topology_materials = {
     "Air": 0,
@@ -121,6 +122,7 @@ axial: Geometry = {
     "radius": r_axial
 }
 
+
 topology_renderer.draw(Armature, "Armature", tag_coords=(r_axial, r_axial))
 topology_renderer.draw(axial, "Axial")
 topology_renderer.draw(stator["back_iron"], "Backplate")
@@ -149,12 +151,17 @@ par2 = _material_perimeters(boundaries["Coil"], 5)
 par3 = _material_perimeters(boundaries["Backplate"])
 par4 = _material_perimeters(boundaries["Pole"])
 
-femm_renderer = FEMMMagneticsRenderer("test.fem")
+femm_renderer = FEMMMagneticsRenderer("test/test.fem")
 femm_renderer.setup(
     SimulationType.PLANAR,
     Units.CENTIMETERS,
     40
 )
+manager = MaterialManager()
+wire = manager.use_material("Copper Wire", wire_diameter=0.35)
+magnet = manager.use_material("Neodymium", grade="N52")
+iron = manager.use_material("Pure Iron")
+air = manager.use_material("Air")
 
 for i in par1:
     armuture: Geometry = {
@@ -162,7 +169,7 @@ for i in par1:
         "points": i,
         "enclosed": True
     }
-    femm_renderer.draw(armuture, "Pure Iron", 2, (0, 0))
+    femm_renderer.draw(armuture, iron, 2, (0, 0))
 
 for i in par2:
     points = interfaced_geometry(i, par1[0])
@@ -171,7 +178,7 @@ for i in par2:
         "points": points,
         "enclosed": False
     }
-    femm_renderer.draw(coil, "0.2mm", 2)
+    femm_renderer.draw(coil, wire, 2)
 
 for i in par3:
     armuture: Geometry = {
@@ -179,7 +186,7 @@ for i in par3:
         "points": i,
         "enclosed": True
     }
-    femm_renderer.draw(armuture, "Pure Iron", 2, (0, 0))
+    femm_renderer.draw(armuture, iron, 2, (0, 0))
 
 for i in par4:
     points = interfaced_geometry(i, par3[1])
@@ -188,7 +195,7 @@ for i in par4:
         "points": points,
         "enclosed": False
     }
-    femm_renderer.draw(coil, "N52", 2)
+    femm_renderer.draw(coil, magnet, 2)
 
 
 hues = np.linspace(0, 1, num_materials, endpoint=False)  # evenly spaced hues

@@ -158,3 +158,13 @@ class BaseRenderer(ABC):
         """
         Remvoes all temp files and closes the femm renderer
         """
+
+    @abstractmethod
+    def change_heating(
+        self,
+        material_name,
+        volumetric_heat_source,
+    ) -> None:
+        """
+        Changes the volumetric_heating in a material
+        """

@@ -1,122 +1,57 @@
 """
 Filename: femm_materials.py
 Author: William Bowley
-Version: 0.2
-Date: 2025-08-09
+Version: 0.3
+Date: 2025-09-12
 Description:
-    Functions for getting FEMM materials or adding new materials.
-
-    (Work in-progress not all materials in the library
-     are defined for magnetics)
+    Functions for getting FEMM materials, adding new materials, or modifying existing ones.
+    Includes hi_modifymaterial wrapper for volumetric heating and thermal properties.
 """
 
-import logging
-import pathlib
-import json
-from typing import Any, List, Dict
-from importlib import resources
-
+from typing import Any
 import femm
 
 
-def _extract_material_names(
-    materials: list[dict[str, Any]]
-) -> list[str]:
+def femm_add_material(material: dict[str, Any]) -> None:
     """
-    Extracts unique material names from a list of material dictionaries.
+    Adds a thermal material to FEMM using hi_addmaterial,
+    extracting properties from a material dict.
 
     Args:
-        materials: A list of dictionaries defining materials.
-
-    Returns:
-        A list of unique material names.
+        material: Material dictionary
     """
-    names = set()
-    for m in materials:
-        for key in ("BlockName", "material_name", "name"):
-            val = m.get(key)
-            if isinstance(val, str) and val:
-                names.add(val)
-                break
-    return list(names)
+    name = material.get("name", "Unknown")
+
+    # Thermal properties
+    thermal = material.get("thermal", {})
+    kx = thermal.get("thermal_conductivity_x", 0)
+    ky = thermal.get("thermal_conductivity_y", 0)
+    qv = thermal.get("volumetric_heat_source", 0)
+
+    # Take temp_dependence array (TKValues) as-is
+    kt = thermal.get("temp_dependence", [])
+
+    # Call FEMM function
+    femm.hi_addmaterial(name, kx, ky, qv, kt)
 
 
-def load_materials(path: str | None = None) -> List[Dict[str, any]]:
-    """
-    Loads all materials from a json file and performs validation
-
-
-    Args:
-        path: Optional file path to the material library. If None,
-              loads from package resources.
-
-    Returns:
-        A list of material dictionaries.
-    """
-
-    if path is None:
-        try:
-            with resources.open_text(
-                "blueshark.lib",
-                "femm_heat_materials.json"
-            ) as f:
-                data = json.load(f)
-        except Exception as e:
-            msg = (
-                f"Failed to load material library from package resources: {e}"
-            )
-            logging.critical(msg)
-            raise RuntimeError(msg) from e
-    else:
-        lib_path = pathlib.Path(path)
-        if not lib_path.exists():
-            msg = f"Material library not found: {lib_path}"
-            logging.error(msg)
-            raise RuntimeError(msg)
-        try:
-            with lib_path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception as e:
-            msg = f"Failed to load material library {lib_path}: {e}"
-            logging.critical(msg)
-            raise RuntimeError(msg) from e
-
-    if not isinstance(data, list):
-        msg = "Material library JSON must be a list."
-        logging.critical(msg)
-        raise ValueError(msg)
-
-    return data
-
-
-def add_femm_material(
-    materials: list[dict[str, Any]],
-    material_name: str,
+def femm_modify_material(
+    block_name: str,
+    propnum: int,
+    value: Any
 ) -> None:
     """
-    Loads a material from FEMM's internal library after validating the name.
+    Modifies a property of an existing FEMM material 
+    block without redefining the whole material.
 
     Args:
-        materials: A list of all available materials.
-        material_name: The name of the material to be added.
-
-    Raises:
-        ValueError: If the material_name is not found in the library.
-        RuntimeError: If FEMM's API fails to load the material.
+        block_name: Name of the block/material to modify
+        propnum: Property number to change
+            0 = BlockName (rename)
+            1 = kx (thermal conductivity x/r)
+            2 = ky (thermal conductivity y/z)
+            3 = qs (volumetric heat generation)
+            4 = kt (volumetric heat capacity)
+        value: New value to assign
     """
-    available = _extract_material_names(materials)
-
-    if material_name not in available:
-        msg = (
-            f"Material '{material_name}' not found in library."
-            f"Available: {sorted(available)}"
-        )
-        logging.error(msg)
-        raise ValueError(msg)
-
-    try:
-        femm.hi_getmaterial(material_name)
-    except Exception as e:
-        msg = f"FEMM failed to load material '{material_name}': {e}"
-        logging.critical(msg)
-        raise RuntimeError(msg) from e
+    femm.hi_modifymaterial(block_name, propnum, value)

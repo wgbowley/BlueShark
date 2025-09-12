@@ -13,6 +13,7 @@ Description:
 """
 
 from pathlib import Path
+from typing import Any
 import logging
 
 import math
@@ -35,8 +36,7 @@ from blueshark.renderer.femm.magnetic.properties import (
     assign_group
 )
 from blueshark.renderer.femm.magnetic.materials import (
-    load_materials,
-    add_femm_material
+    femm_add_material
 )
 from blueshark.renderer.renderer_interface import BaseRenderer
 from blueshark.domain.constants import (
@@ -57,7 +57,6 @@ class FEMMMagneticsRenderer(BaseRenderer):
         under the file_path given by the user
         """
         self.file_path = Path(file_path)
-        self.materials = load_materials()
         self.set_materials = []
         self.phases = []
         self.state = False
@@ -116,7 +115,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
     def draw(
         self,
         geometry: Geometry,
-        material: str,
+        material: dict[str, Any],
         group_id: int,
         tag_coords: tuple[float, float] = None,
         phase: str = None,
@@ -174,10 +173,10 @@ class FEMMMagneticsRenderer(BaseRenderer):
         )
 
         # adds material to simulation space
-        if material not in self.set_materials:
-            self.set_materials.append(material)
-            add_femm_material(
-                self.materials,
+        name = material.get("name", "Unknown")
+        if name not in self.set_materials:
+            self.set_materials.append(name)
+            femm_add_material(
                 material
             )
 
@@ -194,7 +193,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         set_properties(
             tag_coords,
             group_id,
-            material,
+            name,
             phase,
             turns,
             magnetization
@@ -207,34 +206,28 @@ class FEMMMagneticsRenderer(BaseRenderer):
         self,
         origin: tuple[float, float],
         radius: float,
+        material: dict[str, Any],
         num_shells: int = 7,
         bound_type: int = 1,
-        material: str = "Air"
     ) -> None:
         """
         Adds bounds to the simulation space
         """
 
         self._check_state()
-        if material not in self.set_materials:
-            self.set_materials.append(material)
-            add_femm_material(
-                self.materials,
+        name = material.get("name", "Unknown")
+        if name not in self.set_materials:
+            self.set_materials.append(name)
+            femm_add_material(
                 material
             )
-
-        # adds material to simulation space
-        add_femm_material(
-            self.materials,
-            material
-        )
 
         add_bounds(
             origin,
             radius,
             num_shells,
             bound_type,
-            material
+            name
         )
 
         # Saves changes to femm file
@@ -243,8 +236,8 @@ class FEMMMagneticsRenderer(BaseRenderer):
     def set_property(
         self,
         origin: tuple[float, float],
+        material: dict[str, Any],
         group_id: int,
-        material: str = "Air"
     ) -> None:
         """
         Sets property of a undefined region such
@@ -252,14 +245,14 @@ class FEMMMagneticsRenderer(BaseRenderer):
         """
 
         self._check_state()
-        if material not in self.set_materials:
-            self.set_materials.append(material)
-            add_femm_material(
-                self.materials,
+        name = material.get("name", "Unknown")
+        if name not in self.set_materials:
+            self.set_materials.append(name)
+            femm_add_material(
                 material
             )
 
-        set_properties(origin, group_id, material)
+        set_properties(origin, group_id, name)
 
         # Saves changes to femm file
         femm.mi_saveas(str(self.file_path))
@@ -342,7 +335,7 @@ class FEMMMagneticsRenderer(BaseRenderer):
         if self.state:
             return None
 
-        femm.openfemm()
+        femm.openfemm(1)
         femm.opendocument(str(self.file_path))
         self.state = True
 
@@ -352,3 +345,8 @@ class FEMMMagneticsRenderer(BaseRenderer):
         """
         femm.closefemm()
         self.state = False
+
+
+    # Not used in magnetic renderers
+    def change_heating(self, material_name, volumetric_heat_source):
+        return None
