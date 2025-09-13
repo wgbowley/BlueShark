@@ -1,13 +1,18 @@
+"""
+Install script -> Just do pip install -e .  (for editing)
+"""
+
 from setuptools import setup, find_packages
 
 setup(
     name='blueshark',
-    version='1.2.0',
-    description='Modular FEMM-based linear and tubular motor simulation framework',
+    version='1.4.0',
+    description=(
+        'Modular FEMM-based linear and tubular motor simulation framework'
+    ),
     author='William Bowley',
-    author_email='wgrantbowley@gmail.com', 
-    packages=find_packages(where="blueshark"),
-    package_dir={'': 'blueshark'},
+    author_email='wgrantbowley@gmail.com',
+    packages=find_packages(include=["blueshark", "blueshark.*"]),
     install_requires=[
         'PyYAML',
         'pyfemm',
@@ -22,4 +27,10 @@ setup(
         'Topic :: Scientific/Engineering',
     ],
     python_requires='>=3.8',
+    include_package_data=True,
+    package_data={
+        "blueshark.library": [
+            "material.toml"
+        ],
+    },
 )
