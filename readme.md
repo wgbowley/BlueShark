@@ -1,4 +1,4 @@
-![BlueShark Logo](assets/logo.png)
+![BlueShark Logo](assests/logo.png)
 
 # An Idealized Linear Motor Design Explorer
 
