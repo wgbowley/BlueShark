@@ -10,6 +10,10 @@ Description:
     NOTE:
         Material manager is independent of specific renderer/
         solver implementations.
+
+        This manager handles only static material definitions.
+        Do Not attempt to modify simulation-specific dynamic properties
+        here those must be managed within the renderer.
 """
 
 import tomllib
@@ -20,8 +24,12 @@ from importlib import resources
 
 class MaterialManager:
     """
-    Manages material usage for the user. Enforces specific parameters,
-    keeps track of used materials
+    Manages material (STATIC definitions) for the user.
+    Enforces specific parameters, keeps track of used materials
+
+    Note:
+        This manager does NOT track simulation-specific dynamic properties
+        - e.g: volumetric_heat_source, current_density, or temperature.
     """
     def __init__(
         self,

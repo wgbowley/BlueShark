@@ -13,15 +13,17 @@ Description:
 """
 
 from typing import TypedDict, Optional
+from dataclasses import dataclass
 from enum import Enum, auto
 
 
-class SimulationType(Enum):
+class CoordinateSystem(Enum):
     """
-    Types of simulation spaces.
+    Types of coordinate systems.
     """
     AXI_SYMMETRIC = auto()
     PLANAR = auto()
+    SPATIAL = auto()
 
 
 class PhysicsType(Enum):
@@ -41,12 +43,22 @@ class Units(Enum):
     """
     All units supported by the renderer & solvers.
     """
-    MICROMETERS = "micrometers"
-    CENTIMETERS = "centimeters"
-    MILLIMETER = "millimeters"
-    METER = "meters"
-    INCH = "inches"
-    MILS = "mils"
+    MICROMETERS = auto()
+    CENTIMETERS = auto()
+    MILLIMETER = auto()
+    METER = auto()
+
+
+@dataclass
+class Problem:
+    """
+    Defines the problem for the solver
+    """
+    frequency: Optional[float] = None
+    units: Optional[str] = None
+    type: Optional[str] = None
+    depth: Optional[float] = None
+    tolerance: float = 0
 
 
 class ShapeType(Enum):
@@ -74,11 +86,12 @@ class Connection(TypedDict, total=False):
     Describes a connection in a hybrid geometry.
     """
     type: Connectors
-    start: tuple[float, float]             # Start point for line/arc
-    end: tuple[float, float]               # End point for line/arc
-    center: Optional[tuple[float, float]]  # Center for arcs/circle
-    angle: Optional[float]                 # Sweep angle for arcs
-    radius: Optional[float]                # Radius for circle/arc
+    start: tuple[float, float]              # Start point for line/arc
+    end: tuple[float, float]                # End point for line/arc
+    center: Optional[tuple[float, float]]   # Center for arcs/circle
+    start_angle: Optional[float]            # start angle for arcs
+    end_angle: Optional[float]              # start angle for arcs
+    radius: Optional[float]                 # Radius for circle/arc
 
 
 class Geometry(TypedDict, total=False):
@@ -97,6 +110,22 @@ class Geometry(TypedDict, total=False):
     end_angle: Optional[float]                      # Degrees, for arcs
     enclosed: Optional[bool]                        # Enclosed [true] / [false]
     edges: Optional[list[Connection]]               # For HYBRID
+
+
+class BoundaryType(Enum):
+    """
+    Different boundary types available
+    """
+    DIRICHLET = auto()
+    NEUMANN = auto()
+
+
+class CircuitType(Enum):
+    """
+    Different circuit configurations
+    """
+    PARALLEL = auto()
+    SERIES = auto()
 
 
 class CurrentPolarity(Enum):

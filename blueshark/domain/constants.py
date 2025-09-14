@@ -26,6 +26,12 @@ MAXIMUM_FAILS: int = 5
 # Maximum allowed consecutive simulation failures (e.g., solver not converging)
 # before aborting a run or skipping a parameter set.
 
+DEFAULT_TOLERANCE: float = 1e-8
+# Default tolerance for the solver to meet
+
+MAXIMUM_TOLERANCE: float = 1e-2
+# Maximum allowed tolerance for retries. Aborts solving the problem
+
 SETUP_CURRENT = 0  # Amps
 
 ROOM_TEMPERATURE = 293  # Kelvin

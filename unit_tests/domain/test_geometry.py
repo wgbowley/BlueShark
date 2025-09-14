@@ -15,8 +15,9 @@ from blueshark.domain.constants import PRECISION, PI
 from blueshark.domain.geometry.area import calculate_area
 from blueshark.domain.geometry.validation import validate_shape
 from blueshark.domain.geometry.graphical_centroid import centroid_point
-from blueshark.domain.geometry.utils import mid_points_arc, mid_points_line
-
+from blueshark.domain.geometry.utils import (
+    mid_points_arc, mid_points_line, find_arc_center
+)
 
 from blueshark.domain.definitions import (
     ShapeType, Geometry, Connection, Connectors
@@ -374,9 +375,9 @@ class ValidateShape(unittest.TestCase):
             validate_shape(geometry)
 
 
-class MidPointsArc(unittest.TestCase):
+class MidPoints(unittest.TestCase):
     """
-    Tests the calculate area function under geometry module
+    Tests the calculate midPoints under geometry module
     """
     def test_standard_line_segment(self) -> None:
         """
@@ -427,5 +428,168 @@ class MidPointsArc(unittest.TestCase):
         end_point = (10, 0)
         center = None
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             mid_points_arc(start_point, end_point, center)
+
+
+class FindCenterArc(unittest.TestCase):
+    """
+    Tests the calculate arc center under geometry module
+    """
+    def test_standard_arc(self) -> None:
+        """
+        Tests the calculate arc center with standard input
+        """
+        start = (10, 0)
+        end = (0, 10)
+        start_angle = 0
+        end_angle = PI / 2
+
+        expected = (0, 0)
+        result = find_arc_center(start, end, start_angle, end_angle)
+        self.assertEqual(result, expected)
+
+    def test_cross_quadrant_angle(self) -> None:
+        """
+        Tests the calculate arc center with a angle
+        that cross quadrants
+        """
+        start = (10, 0)
+        end = (-10, 0)
+        start_angle = 0
+        end_angle = PI
+
+        expected = (0, 0)
+        result = find_arc_center(start, end, start_angle, end_angle)
+        self.assertEqual(result, expected)
+
+    def test_quadrant_four_on_center(self) -> None:
+        """
+        Tests the calculate arc center with negative angle
+        """
+        start = (0, -10)
+        end = (10, 0)
+        start_angle = - PI / 2
+        end_angle = 0
+
+        expected = (0, 0)
+        result = find_arc_center(start, end, start_angle, end_angle)
+        self.assertEqual(result, expected)
+
+    def test_off_center_arc(self) -> None:
+        """
+        Tests the calculate arc center with off center points
+        """
+        start = (25, 15)
+        end = (15, 25)
+        start_angle = 0
+        end_angle = PI / 2
+
+        expected = (15, 15)
+        result = find_arc_center(start, end, start_angle, end_angle)
+        self.assertEqual(result, expected)
+
+    def test_quadrant_two_off_center(self) -> None:
+        """
+        Tests the calculate arc center with off center points
+        and angle in quadrant two
+        """
+        start = (15, 25)
+        end = (5, 15)
+        start_angle = PI / 2
+        end_angle = PI
+
+        expected = (15, 15)
+        result = find_arc_center(start, end, start_angle, end_angle)
+        self.assertEqual(result, expected)
+
+    def test_quadrant_three_off_center(self) -> None:
+        """
+        Tests the calculate arc center with off center points
+        and angle in quadrant three
+        """
+        start = (5, 15)
+        end = (15, 5)
+        start_angle = PI
+        end_angle = 3 * PI / 2
+
+        expected = (15, 15)
+        result = find_arc_center(start, end, start_angle, end_angle)
+        self.assertEqual(result, expected)
+
+    def test_floating_point_precision(self) -> None:
+        """
+        Tests the calculate arc center with small tuple values
+        for the points
+        """
+        start = (1, 0)
+        end = (0, 1)
+        start_angle = 0
+        end_angle = PI / 2
+
+        expected = (0, 0)
+        result = find_arc_center(start, end, start_angle, end_angle)
+        self.assertEqual(result, expected)
+
+    def test_small_arc_angle(self) -> None:
+        """
+        Tests the calculate arc center with small arc angle
+        """
+        start = (10, 0)
+        end = (sqrt(50), sqrt(50))
+        start_angle = 0
+        end_angle = PI / 4
+
+        expected = (0, 0)
+        result = find_arc_center(start, end, start_angle, end_angle)
+        self.assertEqual(result, expected)
+
+    def test_invalid_angles(self) -> None:
+        """
+        Invalid angle relative to its points
+        """
+        start = (0, -10)
+        end = (10, 0)
+        start_angle = - 1
+        end_angle = 0
+
+        with self.assertRaises(ValueError):
+            find_arc_center(start, end, start_angle, end_angle)
+
+    def test_invalid_points(self) -> None:
+        """
+        Invalid points relative to its angle
+        """
+        start = (0, -10)
+        end = (1, 121)
+        start_angle = - PI / 2
+        end_angle = 0
+
+        with self.assertRaises(ValueError):
+            find_arc_center(start, end, start_angle, end_angle)
+
+    def test_non_distinct_points(self) -> None:
+        """
+        Invalid points as they are not distinct
+        """
+        start = (0, 0)
+        end = (0, 0)
+
+        start_angle = - PI / 2
+        end_angle = 0
+
+        with self.assertRaises(ValueError):
+            find_arc_center(start, end, start_angle, end_angle)
+
+    def test_invalid_point_type(self) -> None:
+        """
+        start point is invalid as its not fully defined and not tuple
+        """
+        start = "I am in danger"
+        end = (0, 0)
+
+        start_angle = - PI / 2
+        end_angle = 0
+
+        with self.assertRaises(TypeError):
+            find_arc_center(start, end, start_angle, end_angle)

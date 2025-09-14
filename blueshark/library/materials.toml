@@ -5,7 +5,7 @@ tag = ""
 [material.physical]
 lamination = "solid"
 lamination_fill = 1.0
-number_of_strands = 1
+lamination_thickness = 1
 wire_diameter = 0
 
 [material.magnetic]
@@ -50,7 +50,7 @@ type = ""
 [material.physical]
 lamination = "solid"
 lamination_fill = 1.0
-number_of_strands = 1
+lamination_thickness = 1
 wire_diameter = 0
 
 [material.magnetic]
@@ -84,7 +84,7 @@ tag = "wire"
 [material.physical]
 lamination = "solid"
 lamination_fill = 1.0
-number_of_strands = 1
+lamination_thickness = 1
 wire_diameter = 0
 
 [material.magnetic]
@@ -118,7 +118,7 @@ tag = "magnet"
 [material.physical]
 lamination = "solid"
 lamination_fill = 1.0
-number_of_strands = 1
+lamination_thickness = 1
 wire_diameter = 0
 
 [material.magnetic]

@@ -6,7 +6,9 @@ Date: 2025-08-12
 
 Description:
     Runs tests:
-    - domain/unit_generation
+    - domain/test_generation
+    - domain/test_physics
+    - domain/test_material_manager
 """
 
 import unittest
@@ -21,7 +23,8 @@ suite = unittest.TestSuite()
 suite.addTests(loader.loadTestsFromTestCase(test_gen.ShapeArea))
 suite.addTests(loader.loadTestsFromTestCase(test_gen.GraphicalCentroid))
 suite.addTests(loader.loadTestsFromTestCase(test_gen.ValidateShape))
-suite.addTests(loader.loadTestsFromTestCase(test_gen.MidPointsArc))
+suite.addTests(loader.loadTestsFromTestCase(test_gen.MidPoints))
+suite.addTests(loader.loadTestsFromTestCase(test_gen.FindCenterArc))
 
 # domain/test_physics
 suite.addTests(loader.loadTestsFromTestCase(test_phy.ConvertMeters))
