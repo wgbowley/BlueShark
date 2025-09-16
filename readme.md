@@ -11,7 +11,7 @@ This package serves to explore linear motor designs quickly, providing easy inte
 This initial release supports FEMM (Finite Element Method Magnetics) as the primary solver and renderer. Planned future releases will expand support to include additional solvers.
 
 ## Example Simulation
-A full example of a magnetic simulation of a tubular linear motor is available in the repository:<br>
+A full example of a magnetic simulation of a tubular linear motor is available in the repository:
 [examples/tubular/simulate.py](examples/tubular/simulate.py)
 
 ## Installation
