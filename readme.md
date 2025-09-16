@@ -1,4 +1,4 @@
-![BlueShark Logo](assets/logo.png)
+<img src="assests/logo.png" alt="BlueShark Logo" width="200"/> 
 
 # An Idealized Linear Motor Design Explorer
 
