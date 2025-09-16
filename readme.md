@@ -12,7 +12,7 @@ This initial release supports FEMM (Finite Element Method Magnetics) as the prim
 
 ## Example Simulation
 A full example of a magnetic simulation of a tubular linear motor is available in the repository:
-[examples/tubular/simulate.py](examples/tubular/simulate.py)
+[examples/tubular/simulate.py](examples/tubular_motor.py)
 
 ## Installation
 
