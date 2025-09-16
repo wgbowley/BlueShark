@@ -1,4 +1,4 @@
-<img src="assests/logo.png" alt="BlueShark Logo" width="200"/> 
+<img src="media/logo.png" alt="BlueShark Logo" width="200"/> 
 
 # An Idealized Linear Motor Design Explorer
 
@@ -12,7 +12,7 @@ This initial release supports FEMM (Finite Element Method Magnetics) as the prim
 
 ## Example Simulation
 A full example of a magnetic simulation of a tubular linear motor is available in the repository:
-[examples/tubular/simulate.py](examples/tubular_motor.py)
+[examples/tubular/simulate.py](examples/tubular/simulate.py)
 
 ## Installation
 
@@ -28,7 +28,7 @@ A full example of a magnetic simulation of a tubular linear motor is available i
     Clone the repository and install the package locally in editable mode:
 
     ```bash
-    git clone [https://github.com/wgbowley/blueshark.git](https://github.com/wgbowley/blueshark.git)
+    git clone https://github.com/wgbowley/blueshark.git
     cd blueshark
     pip install -e .
     ```
