@@ -45,9 +45,12 @@ class FEMMagneticSolver(BaseSolver):
             elements: List of element IDs for element-based outputs.
             circuits: List of circuit names for circuit-based outputs.
         """
+        renderer.clean_up()
+        self.is_active = renderer.is_active
+
         self.file_path = Path(renderer.file_path)
         self.problem = renderer.problem
-        self.is_active = False
+        self.original_tolerance = renderer.original_tolerance
 
         self.selector = FEMMagneticSelector(requested_outputs)
         self.subjects = {
@@ -78,7 +81,6 @@ class FEMMagneticSolver(BaseSolver):
                 break
 
             except RuntimeError as e:
-                self.clean_up()
                 if tolerance > MAXIMUM_TOLERANCE or attempt == MAXIMUM_FAILS:
                     msg = (
                         f"Solver failed after {attempt} attempts with "
@@ -101,7 +103,11 @@ class FEMMagneticSolver(BaseSolver):
             elements=self.subjects.get("elements"),
             circuits=self.subjects.get("circuits")
         )
+
+        # Resets the tolerance to user tolerance for next step
+        self._change_tolerance(self.original_tolerance)
         self.clean_up()
+
         return outputs
 
     def _change_tolerance(self, tolerance: float) -> None:
@@ -128,6 +134,7 @@ class FEMMagneticSolver(BaseSolver):
 
     def _check_active(self) -> None:
         """Ensures FEMM is active and the document is open."""
+
         if self.is_active:
             return
         try:
@@ -141,16 +148,18 @@ class FEMMagneticSolver(BaseSolver):
             raise RuntimeError(msg) from e
 
     def clean_up(self) -> None:
-        """Removes the temp .ans file and closes FEMM."""
+        """Closes FEMM and removes the temp .ans file"""
+        if self.is_active:
+            try:
+                femm.closefemm()
+                self.is_active = False
+
+            except Exception as e:
+                logging.warning(f"Could not close FEMM instance: {e}")
+
         ans_path = self.file_path.with_suffix(".ans")
         if ans_path.exists():
             try:
                 ans_path.unlink()
             except Exception as e:
                 logging.warning(f"Could not delete .ans file: {e}")
-
-        try:
-            femm.closefemm()
-            self.is_active = False
-        except Exception as e:
-            logging.warning(f"Could not close FEMM instance: {e}")

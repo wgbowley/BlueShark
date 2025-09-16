@@ -139,6 +139,10 @@ class MaterialManager:
 
                 material["physical"]["wire_diameter"] = wire_diameter
 
+            case "environmental":
+                # Just a flag for specific renderer that need domain conditions
+                pass
+
             case "":
                 # Generic material, no mandatory parameters
                 pass

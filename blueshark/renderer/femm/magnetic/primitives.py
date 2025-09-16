@@ -360,6 +360,13 @@ def draw_primitive(
                 shape["center"]
             )
 
+        case ShapeType.ANNULUS_CIRCLE:
+            contours = _draw_annulus_circle(
+                shape["center"],
+                shape["radius_outer"],
+                shape["radius_inner"]
+            )
+
         case ShapeType.ANNULUS_SECTOR:
             contours = _draw_annulus_sector(
                 shape["center"],
@@ -369,18 +376,12 @@ def draw_primitive(
                 shape["end_angle"]
             )
 
-        case ShapeType.ANNULUS_CIRCLE:
-            contours = _draw_annulus_circle(
-                shape["center"],
-                shape["radius_outer"],
-                shape["radius_inner"]
-            )
-
         case ShapeType.HYBRID:
             if "edges" not in shape:
                 raise ValueError("Hybrid shape requires 'edges' field")
             contours = _draw_hybrid(shape["edges"])
+
         case _:
-            raise NotImplementedError(f"Shape '{shape}' not supported")
+            raise NotImplementedError(f"Shape '{shape_type}' not supported")
 
     return contours

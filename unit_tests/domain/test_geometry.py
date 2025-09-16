@@ -16,7 +16,8 @@ from blueshark.domain.geometry.area import calculate_area
 from blueshark.domain.geometry.validation import validate_shape
 from blueshark.domain.geometry.graphical_centroid import centroid_point
 from blueshark.domain.geometry.utils import (
-    mid_points_arc, mid_points_line, find_arc_center
+    mid_points_arc, mid_points_line, find_arc_center,
+    scale_geometry, _scale_polygon
 )
 
 from blueshark.domain.definitions import (
@@ -593,3 +594,155 @@ class FindCenterArc(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             find_arc_center(start, end, start_angle, end_angle)
+
+
+class ScalePolygon(unittest.TestCase):
+    """
+    Tests the scale polygon point function
+    """
+    def test_standard_expand(self) -> None:
+        """
+        Tests with standard 2 by 2 square with scale factor of 2
+        """
+        points = [(0, 0), (2, 0), (2, 2), (0, 2)]
+        scale_factor = 2
+
+        expected = [(-1.0, -1.0), (3.0, -1.0), (3.0, 3.0), (-1.0, 3.0)]
+        result = _scale_polygon(points, scale_factor)
+
+        self.assertEqual(result, expected)
+
+    def test_standard_shrink(self) -> None:
+        """
+        Tests the standard 2 by 2 square with square factor of 0.1
+        """
+        points = [(0, 0), (2, 0), (2, 2), (0, 2)]
+        scale_factor = 0.1
+
+        expected = [(0.9, 0.9), (1.1, 0.9), (1.1, 1.1), (0.9, 1.1)]
+        result = _scale_polygon(points, scale_factor)
+        self.assertEqual(expected, result)
+
+    def test_zero_case(self) -> None:
+        """
+        Tests the case where zero points are entered
+        """
+        points = []
+        scale_factor = 2
+
+        # Error raised by centroid calculation
+        with self.assertRaises(ValueError):
+            _scale_polygon(points, scale_factor)
+
+    def test_same_points(self) -> None:
+        """
+        Tests the same point case
+        """
+        points = [(1, 1), (1, 1), (1, 1), (1, 1)]
+        scale_factor = 2
+
+        # Error raised by centroid calculation
+        with self.assertRaises(ValueError):
+            _scale_polygon(points, scale_factor)
+
+    def test_string_points(self) -> None:
+        """
+        Tests the case where the point array is str instead
+        of float or integers
+        """
+        points = ["I shouldn't", "exist;", "I'm meant to be int | float"]
+        scale_factor = 2
+
+        # Error raised by centroid calculation
+        with self.assertRaises(ValueError):
+            _scale_polygon(points, scale_factor)
+
+
+class ScaleGeometry(unittest.TestCase):
+    """
+    Tests the scale geometry function
+    """
+    def test_standard_polygon(self) -> None:
+        """
+        Standard polygon case
+        """
+        polygon: Geometry = {
+            "shape": ShapeType.POLYGON,
+            "points": [(0, 0), (2, 0), (2, 2), (0, 2)],
+            "enclosed": True
+        }
+        scale_factor = 2
+        result = scale_geometry(polygon, scale_factor)
+
+        # Expected points
+        polygon["points"] = [(0.9, 0.9), (1.1, 0.9), (1.1, 1.1), (0.9, 1.1)]
+        self.assertEqual(result, polygon)
+
+    def test_standard_circle(self) -> None:
+        """
+        Standard circle case
+        """
+        circle: Geometry = {
+            "shape": ShapeType.CIRCLE,
+            "radius": 5,
+            "center": (0, 0)
+        }
+        scale_factor = 2
+        result = scale_geometry(circle, scale_factor)
+
+        # Expected radius
+        circle["radius"] = 10
+        self.assertEqual(result, circle)
+
+    def test_standard_annulus(self) -> None:
+        """
+        Standard annulus sector case
+        """
+        annulus_sector: Geometry = {
+            "shape": ShapeType.ANNULUS_SECTOR,
+            "radius_outer": 10,
+            "radius_inner": 5,
+            "start_angle": 10,
+            "end_angle": 50,
+            "center": (0, 0)
+        }
+        scale_factor = 5
+        result = scale_geometry(annulus_sector, scale_factor)
+
+        # Expected radius
+        annulus_sector["radius_outer"] = 10 * 5
+        annulus_sector["radius_inner"] = 5 * 5
+        self.assertEqual(result, annulus_sector)
+
+    def test_polygon_shrink(self) -> None:
+        """
+        Tests polygon shrink
+        """
+        polygon: Geometry = {
+            "shape": ShapeType.POLYGON,
+            "points": [(0, 0), (2, 0), (2, 2), (0, 2)]
+        }
+        scale_factor = 0.1
+        result = scale_geometry(polygon, scale_factor)
+
+        polygon["point"] = [(0.9, 0.9), (1.1, 0.9), (1.1, 1.1), (0.9, 1.1)]
+        self.assertEqual(result, polygon)
+
+    def test_invalid_shape_type(self) -> None:
+        """
+        Test shape with hybrid shape type which isn't supported
+        """
+        edges: list[Connection] = [
+            {"type": Connectors.LINE, "start": (0, 0), "end": (0, 5)},
+            {"type": Connectors.LINE, "start": (0, 5), "end": (5, 5)},
+            {"type": Connectors.LINE, "start": (5, 5), "end": (5, 0)},
+        ]
+
+        polygon: Geometry = {
+            "shape": ShapeType.HYBRID,
+            "edges": edges
+        }
+        scale_factor = 2
+
+        with self.assertRaises(NotImplementedError):
+            scale_geometry(polygon, scale_factor)

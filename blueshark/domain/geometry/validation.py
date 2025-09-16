@@ -6,7 +6,7 @@ Date: 2025-09-13
 
 Description:
     These functions are used to validate
-    input primitive shapes for renderers.
+    input primitive shapes for all renderers.
 """
 
 import logging

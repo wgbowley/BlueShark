@@ -5,69 +5,77 @@ Version: 1.4
 Date: 2025-07-28
 
 Description:
-    Sets concentric boundary shells emulating an unbounded domain
-    for the FEMMagneticRenderer
+    Adds custom shape and boundary type to the FEMMagneticRenderer
 """
 
-import logging
 import femm
 
-from typing import Optional
-from blueshark.domain.definitions import BoundaryType
+from blueshark.domain.definitions import Geometry, ShapeType, BoundaryType
+from blueshark.renderer.femm.magnetic.primitives import draw_primitive
+from blueshark.renderer.femm.magnetic.properties import assign_boundary
+from blueshark.domain.geometry.validation import validate_shape
 
 
-def concentric_boundary(
-    origin: tuple[float, float],
-    radius: float,
-    material_name: str,
-    num_shells: Optional[int] = 7,
-    boundary_type: Optional[BoundaryType] = BoundaryType.NEUMANN
-) -> None:
+def _neumann(shape: Geometry, shells: int = 7) -> None:
     """
-    Adds a series of concentric circular shells that emulate
-    an unbounded domain.
-
-    By default, applies Neumann boundary conditions.
+    Creates a Neumann ABC boundary domain using FEMM's built-in method.
 
     Args:
-        origin: Center coordinates (x, y) for the shells
-        radius: Radius of the innermost shell (solution domain)
-        material_name: Name of the material assigned to outer domain
-        num_shells: Number of concentric shells to create
-        boundary_type: Type of boundary (Ref. domain/definitions.py)
+        shape: Shape definition (dict-like with 'type' and size info)
+        shells: Number of concentric shells to create
     """
+    name = shape.get("shape")
+    match name:
+        case ShapeType.CIRCLE:
+            origin = shape["center"]
+            radius = shape["radius"]
+            femm.mi_makeABC(shells, radius, origin[0], origin[1], 1)
 
-    if radius <= 0 or not isinstance(radius, (float, int)):
-        raise ValueError(f"Radius must be a positive float, got {radius}")
+        case ShapeType.ANNULUS_SECTOR:
+            origin = shape["center"]
+            radius = shape["radius_outer"]
+            femm.mi_makeABC(shells, radius, origin[0], origin[1], 1)
 
-    if not isinstance(material_name, str) or not material_name.strip():
-        raise ValueError("Material name must be a non-empty string")
+        case _:
+            msg = (
+                f"Shape '{name}' not supported for Neumann boundary in FEMM"
+            )
+            raise NotImplementedError(msg)
 
-    if boundary_type not in (BoundaryType.NEUMANN, BoundaryType.DIRICHLET):
-        logging.warning(
-            f"Boundary type '{boundary_type}' not supported; "
-            "defaulting to Neumann"
-        )
-    femm_boundary = 0 if boundary_type == BoundaryType.DIRICHLET else 1
 
-    try:
-        femm.mi_makeABC(
-            num_shells,
-            radius,
-            origin[0],
-            origin[1],
-            femm_boundary
-        )
+def _dirichlet(shape: Geometry) -> None:
+    """
+    Creates the Dirichlet boundary domain by setting vector
+    potential at boundary to 0 (A=0).
 
-        # Label placement offset by 60& radius along x and y
-        label_x = origin[0] + 0.6 * radius
-        label_y = origin[1] + 0.6 * radius
+    Args:
+        shape: Shape definition (Enum)
+    """
+    femm.mi_addboundprop("A=0", 0, 0, 0, 0)
+    contours = draw_primitive(shape)
+    assign_boundary(contours, "A=0")
 
-        femm.mi_addblocklabel(label_x, label_y)
-        femm.mi_selectlabel(label_x, label_y)
-        femm.mi_setblockprop(material_name, 0, 0, "<None>", 0, 0, 0)
-        femm.mi_clearselected()
 
-    except Exception as e:
-        msg = f"Failed to add concentric boundary to FEMMagneticRenderer: {e}"
-        raise RuntimeError(msg) from e
+def draw_domain(
+    shape: Geometry,
+    boundary_type: BoundaryType,
+    shells: int = 7
+) -> None:
+    """
+    Draws the boundary domain in FEMMagneticRenderer.
+
+    Args:
+        shape: Shape definition (dict-like)
+        boundary_type: Type of boundary (NEUMANN or DIRICHLET)
+        shells: Number of concentric shells for Neumann boundary
+    """
+    validate_shape(shape)
+
+    match boundary_type:
+        case BoundaryType.NEUMANN:
+            _neumann(shape, shells)
+        case BoundaryType.DIRICHLET:
+            _dirichlet(shape)
+        case _:
+            msg = f"BoundaryType '{boundary_type}' not supported"
+            raise NotImplementedError(msg)

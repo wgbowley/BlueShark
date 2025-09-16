@@ -8,11 +8,20 @@ Description:
     OutputSelector dynamically selects and executes
     FEMMagneticSolver modules based on user requests.
 
-    Supported outputs:
+    All outputs:
+    - all
+
+    Element-based outputs:
     - force_lorentz
     - torque_lorentz
     - force_stress_tensor
     - torque_stress_tensor
+    - field_energy
+    - aj_interaction
+    - vector_potential
+    - element_volume
+
+    Circuit-based outputs:
     - circuit_power
     - circuit_voltage
     - circuit_current
@@ -27,7 +36,8 @@ from blueshark.solver.output_interface import BaseSelector
 from blueshark.solver.femm.magnetic import (
     circuits,
     force,
-    torque
+    torque,
+    elements
 )
 
 
@@ -47,18 +57,26 @@ class FEMMagneticSelector(BaseSelector):
                 of names that must be a subset of available outputs.
         """
         self.available_outputs = {
-            "force_lorentz": (force.lorentz, self._run_element),
-            "torque_lorentz": (torque.lorentz, self._run_element),
-            "force_stress_tensor": (force.weighted_stress_tensor,
-                                    self._run_element),
-            "torque_stress_tensor": (torque.weighted_stress_tensor,
-                                     self._run_element),
-            "circuit_power": (circuits.power, self._run_circuit),
-            "circuit_voltage": (circuits.voltage, self._run_circuit),
-            "circuit_current": (circuits.current, self._run_circuit),
-            "circuit_resistance": (circuits.resistance, self._run_circuit),
+            "force_lorentz":    (force.lorentz, self._run_element),
+            "torque_lorentz":   (torque.lorentz, self._run_element),
+            "force_stress_tensor": (
+                force.weighted_stress_tensor,
+                self._run_element
+            ),
+            "torque_stress_tensor": (
+                torque.weighted_stress_tensor,
+                self._run_element
+            ),
+            "field_energy":     (elements.field_energy, self._run_element),
+            "aj_interaction":   (elements.aj_interaction, self._run_element),
+            "vector_potential": (elements.vector_potential, self._run_element),
+            "element_volume":   (elements.element_volume, self._run_element),
+            "circuit_power":    (circuits.power, self._run_circuit),
+            "circuit_voltage":  (circuits.voltage, self._run_circuit),
+            "circuit_current":  (circuits.current, self._run_circuit),
+            "circuit_resistance":   (circuits.resistance, self._run_circuit),
             "circuit_flux_linkage": (circuits.flux_linkage, self._run_circuit),
-            "circuit_inductance": (circuits.inductance, self._run_circuit)
+            "circuit_inductance":   (circuits.inductance, self._run_circuit)
         }
 
         if isinstance(requested_outputs, str):

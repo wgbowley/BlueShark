@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from blueshark.domain.constants import SETUP_CURRENT
 from blueshark.domain.definitions import (
     Geometry, Units, CoordinateSystem, CircuitType,
-    CurrentPolarity
+    CurrentPolarity, BoundaryType
 )
 
 
@@ -57,9 +57,21 @@ class BaseRenderer(ABC):
         """
 
     @abstractmethod
+    def draw_domain_boundary(
+        self,
+        shape: Geometry,
+        material: dict[str, Any],
+        boundary_type: BoundaryType,
+        shells: Optional[int]
+    ) -> None:
+        """
+        draw domain boundary for the problem
+        """
+
+    @abstractmethod
     def move_element(
         self,
-        element_id: int | list[int],
+        element_ids: list[int] | int,
         magnitude: float,
         angles: tuple[float, float, float],
     ) -> None:
@@ -70,7 +82,7 @@ class BaseRenderer(ABC):
     @abstractmethod
     def rotate_element(
         self,
-        element_id: int | list[int],
+        element_ids: list[int] | int,
         axis: tuple[float, float, float],
         angles: tuple[float, float, float]
     ) -> None:
@@ -96,10 +108,10 @@ class MagneticRenderer(BaseRenderer, ABC):
         material: dict[str, Any],
         element_id: int,
         circuit: Optional[str],
-        polarity: CurrentPolarity,
-        turns: int = 1,
-        magnetization: float = 0.0
-    ) -> None:
+        polarity: Optional[CurrentPolarity],
+        turns: Optional[int] = 1,
+        magnetization: Optional[float] = 0.0
+    ) -> Any:
         """
         Draw shape with given material and element_id
         """

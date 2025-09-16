@@ -12,6 +12,7 @@ model:
   d_currents: 0             # Direct-axis current (A)
   q_currents: 6             # Quadrature-axis current (A)
   fill_factor: 0.70         # Fraction of the slot filled by the slot material 
+  boundary_material: Air
 
 slot:
   inner_radius: 7           # Inner radius of the slot (mm)

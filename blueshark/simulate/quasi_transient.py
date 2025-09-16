@@ -107,7 +107,6 @@ def quasi_transient(
         for step_idx, frame in enumerate(frames, start=1):
             # Apply motion, currents, or other frame-specific effects
             if isinstance(frame.motion, LinearMotion):
-                print(frame)
                 renderer.move_element(
                     frame.elements,
                     frame.motion.magnitude,

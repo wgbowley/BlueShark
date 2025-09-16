@@ -22,7 +22,7 @@ from blueshark.renderer.renderer_interface import MagneticRenderer
 from blueshark.domain.geometry.graphical_centroid import centroid_point
 from blueshark.domain.constants import SETUP_CURRENT, DEFAULT_TOLERANCE
 from blueshark.renderer.femm.magnetic.materials import femm_add_material
-from blueshark.renderer.femm.magnetic.boundary import concentric_boundary
+from blueshark.renderer.femm.magnetic.boundary import draw_domain
 from blueshark.domain.definitions import (
     Units,
     Geometry,
@@ -61,6 +61,7 @@ class FEMMagneticRenderer(MagneticRenderer):
 
         # Magnetic problem
         self.problem = Problem()
+        self.original_tolerance = None
 
     def setup(
         self,
@@ -82,6 +83,8 @@ class FEMMagneticRenderer(MagneticRenderer):
             frequency: [Optional] Approach with Care this implementation isn't
                         designed for AC (Also: Femm, disables magnets in AC)
         """
+        self.original_tolerance = tolerance
+
         if depth < 0 or frequency < 0:
             raise ValueError("Depth and frequency must be non-negative")
 
@@ -117,6 +120,11 @@ class FEMMagneticRenderer(MagneticRenderer):
                 raise NotImplementedError(msg)
 
         try:
+            # Ensures the users file path exists
+            file = self.file_path
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.touch(exist_ok=True)
+
             femm.openfemm(1)  # Opens FEMM in hidden window
             femm.newdocument(0)  # Magnetic simulation
 
@@ -162,7 +170,7 @@ class FEMMagneticRenderer(MagneticRenderer):
         and sets properties
 
         Args:
-            shape: Defines the shape within the framework (Geometry (Enum))
+            shape: Defines the shape (Geometry (Enum))
             material: Material from imported from static material manager
             element_id: element identifier for element
             element_tag: [Optional] (x, y) coordinates of element tag
@@ -215,6 +223,27 @@ class FEMMagneticRenderer(MagneticRenderer):
 
         self.save_changes()
 
+    def draw_domain_boundary(
+        self,
+        shape: Geometry,
+        material: dict[str, Any] = None,
+        boundary_type: BoundaryType = BoundaryType.DIRICHLET,
+        shells: Optional[int] = 7,
+    ) -> None:
+        """
+        Args:
+            shape: Defines the boundary shape (Geometry (Enum))
+            boundary_type: Type of boundary (Defaults=DIRICHLET)
+
+            ** Only for NEUMANN
+            num_shells: Number of concentric shells to create (defaults=7)
+        """
+        self._check_active()
+        _ = material
+
+        draw_domain(shape, boundary_type, shells)
+        self.save_changes()
+
     def create_circuit(
         self,
         circuit: str,
@@ -241,37 +270,6 @@ class FEMMagneticRenderer(MagneticRenderer):
 
         self.save_changes()
 
-    def add_concentric_boundary(
-        self,
-        origin: tuple[float, float],
-        radius: float,
-        material: dict[str, Any],
-        num_shells: Optional[int] = 7,
-        boundary_type: Optional[BoundaryType] = BoundaryType.NEUMANN
-    ) -> None:
-        """
-        Adds a concentric boundary with boundary type, material and
-        num_shells
-
-        Args:
-            origin: Center coordinates (x, y) for the shells
-            radius: Radius of the innermost shell (solution domain)
-            material: Material to be assigned to the outer domain
-            num_shells: Number of concentric shells to create (defaults=7)
-            boundary_type: Type of boundary (Defaults=NEUMANN)
-        """
-        self._check_active()
-        name = self._add_material(material)
-        concentric_boundary(
-            origin,
-            radius,
-            name,
-            num_shells,
-            boundary_type
-        )
-
-        self.save_changes()
-
     def change_circuit_current(
         self,
         circuit: str,
@@ -285,6 +283,7 @@ class FEMMagneticRenderer(MagneticRenderer):
             circuit: circuit name
             current: New current value in amps
         """
+        self._check_active()
         if circuit not in self.circuits:
             msg = f"'{circuit}' hasn't been initiated within the renderer"
             raise RuntimeError(msg)
@@ -295,13 +294,17 @@ class FEMMagneticRenderer(MagneticRenderer):
 
     def move_element(
         self,
-        element_id: int | list[int],
+        element_ids: int | list[int],
         magnitude: float,
         angles: tuple[float, float, float],
     ) -> None:
         """
         Moves one or more blocks (elements) by a vector (magnitude, angle).
         Works like the old implementation that moved individual blocks.
+
+        Implementation Note:
+        - Given that femm is planar or axial symmetric.
+        - Angle should be (theta, 0, 0)
 
         args:
             element_id: ID(s) of element blocks
@@ -319,10 +322,10 @@ class FEMMagneticRenderer(MagneticRenderer):
         theta = angles[0]
 
         # Ensure we have a list
-        if not isinstance(element_id, (list, tuple)):
-            elements_to_move = [element_id]
+        if not isinstance(element_ids, (list, tuple)):
+            elements_to_move = [element_ids]
         else:
-            elements_to_move = element_id
+            elements_to_move = element_ids
 
         dx = magnitude * cos(theta)
         dy = magnitude * sin(theta)
@@ -337,7 +340,7 @@ class FEMMagneticRenderer(MagneticRenderer):
 
     def rotate_element(
         self,
-        element_id: int | list[int],
+        element_ids: int | list[int],
         axis: tuple[float, float, float],
         angles: tuple[float, float, float],
     ) -> None:
@@ -356,6 +359,12 @@ class FEMMagneticRenderer(MagneticRenderer):
             angles: Angle with respect to the horizontal (Radians)
         """
         self._check_active()
+
+        if self.problem.type == "axi":
+            msg = "Elements cannot be rotated in axially symmetrical system"
+            logging.warning(msg)
+            return None
+
         if len(axis) != 3 or len(angles) != 3:
             msg = f"Expected 3D axis/angles tuples, got {axis}, {angles}"
             raise ValueError(msg)
@@ -367,10 +376,10 @@ class FEMMagneticRenderer(MagneticRenderer):
         x, y, _ = axis
         angle = angles[0]
 
-        if not isinstance(element_id, (list, tuple)):
-            elements_to_move = [element_id]
+        if not isinstance(element_ids, (list, tuple)):
+            elements_to_move = [element_ids]
         else:
-            elements_to_move = element_id
+            elements_to_move = element_ids
 
         for element in elements_to_move:
             femm.mi_selectgroup(element)
@@ -431,7 +440,11 @@ class FEMMagneticRenderer(MagneticRenderer):
             material: Material from imported from static material manager
         """
         self._check_active()
-        name = material.get("name", "Unknown")
+        name = material.get("name", None)
+        if name is None:
+            msg = "Material isn't formatted correctly for FEMMagneticRenderer"
+            raise ValueError(msg)
+
         if name not in self.materials:
             self.materials.add(name)
             femm_add_material(

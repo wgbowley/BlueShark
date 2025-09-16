@@ -38,6 +38,16 @@
     "mo_getcircuitproperties",
     "pyfemm",
     "mi_loadsolution",
-    "elec"
+    "elec",
+    "xlabel", 
+    "ylabel",
+    "figsize",
+    "linestyle",
+    "addboundprop",
+    "setsegmentprop",
+    "setarcsegmentprop",
+    "ylim",
+    "radi",
+    "coilgun"
   ]
 }

@@ -125,3 +125,42 @@ def assign_element_id(
             f"in FEMMagneticRenderer {e}"
         )
         raise RuntimeError(msg) from e
+
+
+def assign_boundary(
+    contours: dict[Connectors, tuple[float, float]],
+    boundary: str
+) -> None:
+    """
+    Assigns a boundary to the contours of a shape
+
+    Args:
+        contours: ShapeType object containing line and arc segments
+        boundary: boundary name to assign to individual contours
+    """
+
+    # Assign boundary to line segments
+    try:
+        for segment in contours[Connectors.LINE]:
+            femm.mi_selectsegment(segment[0], segment[1])
+            femm.mi_setsegmentprop(boundary, 0, 0, 0, 0)
+            femm.mi_clearselected()
+    except Exception as e:
+        msg = (
+            "Failed to add assign boundary to line segments "
+            f"in FEMMagneticRenderer {e}"
+        )
+        raise RuntimeError(msg) from e
+
+    # Assign boundary to arc segment:
+    try:
+        for segment in contours[Connectors.ARC]:
+            femm.mi_selectarcsegment(segment[0], segment[1])
+            femm.mi_setarcsegmentprop(0, boundary, 0, 0)
+            femm.mi_clearselected()
+    except Exception as e:
+        msg = (
+            "Failed to add assign elements to arc segments "
+            f"in FEMMagneticRenderer {e}"
+        )
+        raise RuntimeError(msg) from e

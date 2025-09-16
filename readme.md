@@ -3,7 +3,7 @@
 # An Idealized Linear Motor Design Explorer
 
 ## Note: A work in progress 
-This repository is an active work in progress. It represents a core set of functionalities that were submitted as an early-release version for the RMIT Early Entry application. The code is currently being refactored and expanded upon.
+This repository is an active work in progress. It represents a core set of functionalities that were submitted as an early-release version for the RMIT Early Entry application. The code is currently being refactored from <code>v1.3-dev</code> to <code>release</code> and is also expanded upon.
  
 ## Overview  
 This package serves to explore linear motor designs quickly, providing easy integration for optimizers. It targets applications such as 3D printers, pick-and-place machines, laser cutters, and other electromechanical systems.

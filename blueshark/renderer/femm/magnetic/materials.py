@@ -22,11 +22,11 @@ def femm_add_material(material: dict[str, Any]) -> None:
         material: Material dictionary from material manager
     """
     name = material.get("name", "unknown")
+    tag = material.get("tag", "").lower()
 
     physical_data = material.get("physical", {}) or {}
     magnetic_data = material.get("magnetic", {}) or {}
     electric_data = material.get("electrical", {}) or {}
-
     lamination = physical_data.get("lamination", "solid")
     lamination_fill = physical_data.get("lamination_fill", 1.0)
     lamination_thickness = physical_data.get("lamination_thickness", 0.0)
@@ -52,8 +52,13 @@ def femm_add_material(material: dict[str, Any]) -> None:
     coercivity = magnetic_data.get("coercivity", 0.0)        # A/m
     current_density = magnetic_data.get("current_density", 0.0)  # A/mm²
 
-    conductivity = electric_data.get("conductivity", 0.0)    # expect S/m
-    conductivity_ms = conductivity / 1e6    # FEMM expects MS/m
+    # Maxwell stress tensor is only valid in non-conductive environments 
+    # Assumes (conductivity=0)
+    if tag != "environmental":
+        conductivity = electric_data.get("conductivity", 0.0)    # expect S/m
+        conductivity_ms = conductivity / 1e6    # FEMM expects MS/m
+    else:
+        conductivity_ms = 0
 
     # Phi_h_max, Phi_hx, Phi_hy are set to 0.0; hysteresis not yet supported
     femm.mi_addmaterial(

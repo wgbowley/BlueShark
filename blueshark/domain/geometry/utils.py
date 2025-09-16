@@ -11,6 +11,9 @@ Description:
 
 from math import atan2, hypot, cos, sin
 from blueshark.domain.constants import PI, PRECISION, EPSILON
+from blueshark.domain.definitions import Geometry, ShapeType
+from blueshark.domain.geometry.graphical_centroid import _polygon
+from blueshark.domain.geometry.validation import validate_shape
 
 
 def _check_point(
@@ -33,6 +36,33 @@ def _check_point(
     if not all(isinstance(coord, (float, int)) for coord in point):
         msg = f"Tuple '{name}' must contain only float or int, got {point}"
         raise ValueError(msg)
+
+
+def _scale_polygon(
+    points: list[tuple[float, float]],
+    factor: float
+) -> list[tuple[float, float]]:
+    """
+    Scales (expands or shrinks) a polygon away from a given
+    centroid
+
+    Args:
+        points: list of (x, y) tuple
+        factor: float > 1 expands, < 1 shrinks
+    """
+
+    # Assumes that the centroid is geometric center
+    x0, y0 = _polygon(points)
+    print(x0, y0)
+
+    scaled_points = []
+    for x1, y1 in points:
+        scaled_points.append((
+            x0 + factor * (x1 - x0),
+            y0 + factor * (y1 - y0)
+        ))
+
+    return scaled_points
 
 
 def mid_points_line(
@@ -173,3 +203,41 @@ def find_arc_center(
     cy = y0 - radius * sin(start_angle)
 
     return tuple(round(coord, PRECISION) for coord in (cx, cy))
+
+
+def scale_geometry(
+    shape: Geometry,
+    factor: float
+) -> Geometry:
+    """
+    Scales shape by factor
+
+    Implementation Note:
+    - Hybrid shapes are not currently supported
+
+    Args:
+        shape: Defines the boundary shape (Geometry (Enum))
+        factor: scaling factor
+    """
+    validate_shape(shape)
+
+    shape_type = shape.get("shape")
+    match shape_type:
+        case ShapeType.POLYGON | ShapeType.RECTANGLE:
+            shape["points"] = _scale_polygon(
+                shape["points"],
+                factor
+            )
+
+        case ShapeType.CIRCLE:
+            shape["radius"] = factor * shape["radius"]
+
+        case ShapeType.ANNULUS_CIRCLE | ShapeType.ANNULUS_SECTOR:
+            shape["radius_outer"] = factor * shape["radius_outer"]
+            shape["radius_inner"] = factor * shape["radius_inner"]
+
+        case _:
+            msg = f"Shape '{shape_type}' not supported for scaling"
+            raise NotImplementedError(msg)
+
+    return shape
