@@ -17,7 +17,7 @@ from yaml import safe_load, YAMLError
 from pathlib import Path
 from blueshark.models.tubular.utils import require
 from blueshark.domain.constants import PI
-from blueshark.models.tubular.physics.number_types import estimate_turns
+from blueshark.models.tubular.physics.number_turns import estimate_turns
 from blueshark.renderer.renderer_interface import MagneticRenderer
 from blueshark.domain.material_manager.manager import MaterialManager
 from blueshark.models.tubular.physics.commutation import commutation
@@ -30,7 +30,8 @@ from blueshark.domain.definitions import (
     Geometry,
     ShapeType,
     CircuitType,
-    CurrentPolarity
+    CurrentPolarity,
+    BoundaryType
 )
 
 
@@ -38,6 +39,7 @@ class TubularLinearMotor:
     """
     Generic model of a tubular linear motor
     """
+    BOUNDARY = -1
     SLOT_ID = 1
     POLE_ID = 2
     TUBE_ID = 3
@@ -51,6 +53,7 @@ class TubularLinearMotor:
         self.manager = MaterialManager()
         self.type = CoordinateSystem.AXI_SYMMETRIC
         self.units = Units.MILLIMETER
+        self.step_size = 0
 
         # Motor parameters
         self.parameter_path = Path(parameter_file)
@@ -134,6 +137,9 @@ class TubularLinearMotor:
         self.pole_material = self.manager.use_material(
             self.pole_material, grade=self.pole_grade
         )
+        self.boundary_material = self.manager.use_material(
+            self.boundary_material
+        )
 
     def _unpack(self, param_file: Path) -> None:
         """
@@ -171,6 +177,7 @@ class TubularLinearMotor:
         self.d_currents = require("d_currents", model)
         self.q_currents = require("q_currents", model)
         self.fill_factor = require("fill_factor", model)
+        self.boundary_material = require("boundary_material", model)
 
         # Slot parameters
         self.slot_inner_radius = require("inner_radius", slot)
@@ -217,6 +224,7 @@ class MagneticPhysics:
         self._create_circuits()
         self._add_stator()
         self._add_armature()
+        self._add_boundary()
 
     def timeline(
         self,
@@ -234,21 +242,12 @@ class MagneticPhysics:
             phase_offset
         )
 
-        motion = LinearMotion(
-            step_size,
-            (PI / 2, 0, 0)
-        )
-
+        motion = LinearMotion(step_size, (PI / 2, 0, 0))
+        self.motor.step_size = step_size
         timeline = []
         for profile in current_profile:
-            currents = Currents(
-                profile,
-                self.motor.phases
-            )
-
-            frame = Frame(
-                elements=self.motor.SLOT_ID
-            )
+            currents = Currents(profile, self.motor.phases)
+            frame = Frame(elements=self.motor.SLOT_ID)
 
             frame.motion = motion
             frame.currents = currents
@@ -256,6 +255,25 @@ class MagneticPhysics:
             timeline.append(frame)
 
         return timeline
+
+    def _add_boundary(self) -> None:
+        """
+        Adds domain boundary to renderer.
+        """
+        shape: Geometry = {
+            "shape": ShapeType.CIRCLE,
+            "center": (0, -self.motor.pole_axial_length),
+            "radius": (
+                self.motor.total_number_poles * self.motor.pole_axial_length
+            )
+        }
+
+        self.renderer.draw_domain_boundary(
+            shape,
+            self.motor.boundary_material,
+            BoundaryType.NEUMANN,
+            7
+        )
 
     def _add_armature(self) -> None:
         """
@@ -268,13 +286,17 @@ class MagneticPhysics:
         slot_origins = []
         for slot in range(self.motor.number_slots):
             # Each slot has spacing except every third one
-            if slot % 3 != 0:
-                z += (
-                    self.motor.slot_axial_length +
-                    self.motor.slot_axial_spacing
-                )
-            else:
-                z += self.motor.slot_axial_length
+            # if slot % 3 != 0:
+            #     z += (
+            #         self.motor.slot_axial_length +
+            #         self.motor.slot_axial_spacing
+            #     )
+            # else:
+            #     z += self.motor.slot_axial_length
+            z += (
+                self.motor.slot_axial_length +
+                self.motor.slot_axial_spacing
+            )
 
             r = self.motor.slot_inner_radius
             slot_origins.append((r, z))

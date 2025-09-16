@@ -21,7 +21,7 @@ from blueshark.domain.definitions import ShapeType, Geometry
 
 def _polygon(points: list[tuple[float, float]]) -> tuple[float, float]:
     """
-    Calculates the graphical centroid of a polygon.
+    Calculates the centroid of a polygon.
 
     Args:
         points: List of (x, y) coordinates defining the polygon vertices.

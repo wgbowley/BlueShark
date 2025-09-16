@@ -1,6 +1,6 @@
 [[material]]
 name = "Air"
-tag = ""
+tag = "environmental"
 
 [material.physical]
 lamination = "solid"
@@ -54,7 +54,7 @@ lamination_thickness = 1
 wire_diameter = 0
 
 [material.magnetic]
-magnetic_relative_permeability = [14872, 14872]
+relative_permeability = [14872, 14872]
 coercivity = 0
 Remanence = 0
 current_density = 0

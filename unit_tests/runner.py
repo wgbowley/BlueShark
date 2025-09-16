@@ -15,6 +15,7 @@ import unittest
 import domain.test_geometry as test_gen
 import domain.test_physics as test_phy
 import domain.test_material_manager as test_mm
+import modules.tubular.test_physics as tub_phy
 
 loader = unittest.TestLoader()
 suite = unittest.TestSuite()
@@ -25,6 +26,8 @@ suite.addTests(loader.loadTestsFromTestCase(test_gen.GraphicalCentroid))
 suite.addTests(loader.loadTestsFromTestCase(test_gen.ValidateShape))
 suite.addTests(loader.loadTestsFromTestCase(test_gen.MidPoints))
 suite.addTests(loader.loadTestsFromTestCase(test_gen.FindCenterArc))
+suite.addTests(loader.loadTestsFromTestCase(test_gen.ScalePolygon))
+suite.addTests(loader.loadTestsFromTestCase(test_gen.ScaleGeometry))
 
 # domain/test_physics
 suite.addTests(loader.loadTestsFromTestCase(test_phy.ConvertMeters))
@@ -33,6 +36,13 @@ suite.addTests(loader.loadTestsFromTestCase(test_phy.RippleSeries))
 
 # domain/test_material_manager
 suite.addTests(loader.loadTestsFromTestCase(test_mm.ManagerTest))
+
+# modules/tubular/test_physics
+suite.addTests(loader.loadTestsFromTestCase(tub_phy.TestMechanical))
+suite.addTests(loader.loadTestsFromTestCase(tub_phy.TestElectrical))
+suite.addTests(loader.loadTestsFromTestCase(tub_phy.TestCommutation))
+suite.addTests(loader.loadTestsFromTestCase(tub_phy.TestTransforms))
+suite.addTests(loader.loadTestsFromTestCase(tub_phy.TestNumberTurns))
 
 runner = unittest.TextTestRunner(verbosity=2)
 
