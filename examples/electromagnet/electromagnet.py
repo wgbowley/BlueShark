@@ -25,7 +25,7 @@ iron = manager.use_material("Pure Iron")
 air = manager.use_material("Air")
 
 # Initializes renderer, defines problems and circuit
-file_location = "examples/electromagnet.fem"
+file_location = "examples/electromagnet/electromagnet.fem"
 renderer = FEMMagneticRenderer(file_location)
 renderer.setup(CoordinateSystem.PLANAR, Units.CENTIMETERS, depth=10)
 renderer.create_circuit("phase_1", CircuitType.SERIES, 1)

@@ -17,8 +17,8 @@ from blueshark.solver.femm.magnetic.solver import FEMMagneticSolver
 from blueshark.simulate.quasi_transient import quasi_transient
 
 # Motor parameter file and renderer file
-param_path = "examples/tubular_motor_params.yaml"
-file_path = "examples/tubular.fem"
+param_path = "examples/tubular_motor/tubular_motor_params.yaml"
+file_path = "examples/tubular_motor/tubular.fem"
 
 renderer = FEMMagneticRenderer(file_path)
 motor = TubularLinearMotor(

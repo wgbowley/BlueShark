@@ -12,11 +12,11 @@ This initial release supports FEMM (Finite Element Method Magnetics) as the prim
 
 ## Example Simulation
 A full example of a magnetic simulation of a tubular linear motor is available in the repository:
-[examples/tubular/simulate.py](examples/tubular/simulate.py)
+[examples/tubular/simulate.py](examples/tubular_motor/tubular_motor.py)
 
 ## Installation
 
-1.  **Install FEMM**  
+1.  **Install FEMM**<br>  `(Windows Only)`
     FEMM (Finite Element Method Magnetics) is a free, open-source tool for low-frequency electromagnetic simulations, ideal for motor design.
 
     Download and install FEMM from the official website:  
