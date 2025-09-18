@@ -23,7 +23,7 @@ slot:
   wire_diameter: 0.315      # Diameter of the wire (mm)
 
 pole:
-  outer_radius: 6           # Outer radius of the pole (mm)
+  outer_radius: 5           # Outer radius of the pole (mm)
   axial_length: 20          # Length of the pole along axial direction (mm)
   material: NdFeB           # Magnet material
   grade: N52                # Magnet Grade

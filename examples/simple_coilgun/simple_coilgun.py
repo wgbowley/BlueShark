@@ -6,7 +6,8 @@ Version: 1.4
 Date: 2025-09-16
 Description:
     Simple script to do analysis of
-    a battery powered coil gun in FEMM: Magnetic
+    a battery powered coil gun using
+    FEM: Magnetic Renderer & Solver
 
     Uses mm-g-s Units:
         - Millimeter, gram, second, ampere
@@ -32,7 +33,7 @@ voltage = 8     # Volts
 test_current = 0.001  # very small to start loop
 fluid_density = 1.225  # kg/m^3
 coefficient_drag = 0.82  # dimensionless
-file_location = "examples/coilgun.fem"
+file_location = "examples/simple_coilgun/coilgun.fem"
 time_step = 5e-4    # Seconds
 
 # Coil Parameters (mm)
@@ -100,7 +101,7 @@ copper = manager.use_material("Copper Wire", wire_diameter=wire_dia)
 
 # Haven't implemented soft iron in blueshark library yet
 iron = manager.use_material("Pure Iron")
-iron["magnetic"]["relative_permeability"] = [1000, 1000]
+iron["magnetic"]["relative_permeability"] = [100, 100]
 
 renderer = FEMMagneticRenderer(file_location)
 renderer.setup(CoordinateSystem.AXI_SYMMETRIC, Units.MILLIMETER)
